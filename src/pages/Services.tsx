@@ -1,0 +1,281 @@
+import { useLayoutEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Link } from "react-router-dom";
+import {
+  ShieldCheck, Cloud, Layers, Wrench, BarChart3, Handshake,
+  Network, Globe, Settings, Headphones, Lock, Database,
+} from "lucide-react";
+import { DARK, LIGHT_GRAY, NAVY, ORANGE } from "../constants";
+import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const services = [
+  {
+    id: "cybersecurite",
+    Icon: ShieldCheck,
+    title: "Cybersécurité",
+    subtitle: "Protection & Conformité",
+    desc: "Protégez votre organisation avec une approche holistique de la sécurité : audit, SOC managé, gestion des vulnérabilités et réponse aux incidents. Nous assurons la conformité RGPD et ISO 27001 de vos systèmes.",
+    features: ["SOC managé 24/7", "Tests d'intrusion (pentest)", "Gestion des identités (IAM)", "Conformité RGPD / ISO 27001"],
+  },
+  {
+    id: "cloud",
+    Icon: Cloud,
+    title: "Cloud & Infrastructure",
+    subtitle: "Agilité & Scalabilité",
+    desc: "De la migration cloud à l'infogérance multi-cloud, nos équipes certifiées AWS, Azure et Google Cloud conçoivent et opèrent votre infrastructure avec un niveau de service garanti (SLA 99,9%).",
+    features: ["Migration vers le cloud", "Cloud hybride et multi-cloud", "Optimisation des coûts (FinOps)", "Monitoring et MCO proactif"],
+  },
+  {
+    id: "erp",
+    Icon: Layers,
+    title: "Solutions ERP",
+    subtitle: "Efficacité opérationnelle",
+    desc: "Implémentation, personnalisation et support de solutions ERP (Microsoft Dynamics 365, SAP, Odoo). Nous digitalisons vos processus RH, Finance, Supply Chain et CRM pour une performance maximale.",
+    features: ["Déploiement Microsoft Dynamics / SAP / Odoo", "Migration et intégration de données", "Formation des utilisateurs", "Support et évolution"],
+  },
+  {
+    id: "support",
+    Icon: Headphones,
+    title: "Support & Maintenance",
+    subtitle: "Réactivité & Disponibilité",
+    desc: "Notre équipe de techniciens certifiés assure la disponibilité et les performances de votre parc informatique 24h/24, 7j/7. Contrats de support niveau 1, 2 et 3 adaptés à vos besoins.",
+    features: ["Helpdesk N1/N2/N3", "Maintenance préventive et curative", "Gestion du parc informatique (ITSM)", "Astreinte et intervention sur site"],
+  },
+  {
+    id: "bi",
+    Icon: BarChart3,
+    title: "Business Intelligence",
+    subtitle: "Données & Analytics",
+    desc: "Transformez vos données en avantages concurrentiels. Nos experts BI conçoivent des entrepôts de données, des tableaux de bord interactifs et des modèles analytiques avancés pour guider vos décisions.",
+    features: ["Datawarehouse et lac de données", "Tableaux de bord Power BI / Qlik", "Analytics avancé et reporting", "KPIs et pilotage de la performance"],
+  },
+  {
+    id: "conseil",
+    Icon: Handshake,
+    title: "Conseil & Audit",
+    subtitle: "Stratégie & Gouvernance",
+    desc: "Nos consultants seniors vous accompagnent dans la définition et l'exécution de votre stratégie IT : schéma directeur, gouvernance, gestion de projet et conduite du changement.",
+    features: ["Audit complet du Système d'Information", "Schéma directeur informatique", "AMOA et gestion de projets", "Accompagnement au changement"],
+  },
+  {
+    id: "reseau",
+    Icon: Network,
+    title: "Réseau & Télécommunications",
+    subtitle: "Connectivité & Performance",
+    desc: "Nous concevons et déployons des architectures réseau LAN, WAN, Wi-Fi et SD-WAN adaptées à vos sites et à vos exigences de performance, de redondance et de sécurité.",
+    features: ["Architecture réseau LAN/WAN", "Wi-Fi entreprise haute densité", "SD-WAN et MPLS", "VOIP et téléphonie IP"],
+  },
+  {
+    id: "securite-physique",
+    Icon: Lock,
+    title: "Sécurité Physique & IoT",
+    subtitle: "Contrôle & Surveillance",
+    desc: "Au-delà du numérique, nous sécurisons également vos locaux avec des solutions de vidéosurveillance IP, contrôle d'accès biométrique et systèmes d'alarme intégrés.",
+    features: ["Vidéosurveillance IP (CCTV)", "Contrôle d'accès biométrique", "Intégration IoT industriel", "Systèmes d'alarme et intrusion"],
+  },
+  {
+    id: "digital-workplace",
+    Icon: Globe,
+    title: "Digital Workplace",
+    subtitle: "Mobilité & Collaboration",
+    desc: "Créez un environnement de travail numérique fluide et sécurisé avec nos solutions Microsoft 365, outils collaboratifs et gestion de la mobilité d'entreprise (MDM).",
+    features: ["Déploiement Microsoft 365 / Google Workspace", "Gestion des appareils mobiles (MDM)", "Solutions de visioconférence", "Intranet et portails collaboratifs"],
+  },
+  {
+    id: "data",
+    Icon: Database,
+    title: "Gestion des Données",
+    subtitle: "Sécurité & Conformité",
+    desc: "Nous vous aidons à maîtriser votre patrimoine data : stratégie de sauvegarde, plan de reprise d'activité (PRA/PCA), protection contre les ransomwares et gouvernance des données.",
+    features: ["Stratégie de sauvegarde et restauration", "Plan de reprise d'activité (PRA/PCA)", "Protection contre les ransomwares", "Gouvernance et qualité des données"],
+  },
+  {
+    id: "integration",
+    Icon: Settings,
+    title: "Intégration & Interopérabilité",
+    subtitle: "API & Middleware",
+    desc: "Nous interconnectons vos applications métier (ERP, CRM, e-commerce) et créez des flux automatisés pour éliminer les silos d'information et améliorer votre productivité.",
+    features: ["Intégration API et services web", "Middleware et ESB", "Automatisation des processus (RPA)", "Développement d'applications sur mesure"],
+  },
+  {
+    id: "formation",
+    Icon: Wrench,
+    title: "Formation & Montée en compétences",
+    subtitle: "Excellence & Capital humain",
+    desc: "Renforcez les compétences IT de vos équipes avec nos programmes de formation personnalisés, dispensés par des formateurs certifiés dans nos centres ou dans vos locaux.",
+    features: ["Formations certifiantes (Microsoft, Cisco, etc.)", "Ateliers pratiques sur site", "E-learning et blended learning", "Coaching technique individualisé"],
+  },
+];
+
+function ServiceCard({ s, index }: { s: (typeof services)[0]; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    const ctx = gsap.context(() => {
+      gsap.from(el, {
+        opacity: 0,
+        y: 50,
+        duration: 0.7,
+        ease: "power3.out",
+        delay: (index % 3) * 0.12,
+        scrollTrigger: { trigger: el, start: "top 85%", once: true },
+      });
+
+      // hover
+      const onEnter = () =>
+        gsap.to(el, { y: -6, boxShadow: `0 20px 48px rgba(230,126,34,0.18)`, duration: 0.35, ease: "power2.out" });
+      const onLeave = () =>
+        gsap.to(el, { y: 0, boxShadow: "0 4px 20px rgba(0,0,0,0.06)", duration: 0.35, ease: "power2.out" });
+
+      el.addEventListener("mouseenter", onEnter);
+      el.addEventListener("mouseleave", onLeave);
+    }, el);
+
+    return () => ctx.revert();
+  }, [index]);
+
+  return (
+    <div
+      ref={ref}
+      id={s.id}
+      style={{
+        background: "#fff",
+        borderRadius: 16,
+        padding: "32px 28px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+        borderTop: `3px solid ${ORANGE}`,
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
+        cursor: "default",
+      }}
+    >
+      <div style={{ width: 52, height: 52, borderRadius: 12, background: `rgba(230,126,34,0.1)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+        <s.Icon size={24} color={ORANGE} />
+      </div>
+      <div style={{ color: ORANGE, fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontFamily: "Open Sans, sans-serif" }}>
+        {s.subtitle}
+      </div>
+      <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 20, color: DARK, marginBottom: 12, lineHeight: 1.3 }}>
+        {s.title}
+      </h3>
+      <p style={{ fontFamily: "Open Sans, sans-serif", color: "#6C7A89", fontSize: 14, lineHeight: 1.75, marginBottom: 16, flex: 1 }}>
+        {s.desc}
+      </p>
+
+      {expanded && (
+        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {s.features.map((f) => (
+            <li key={f} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: ORANGE, flexShrink: 0, display: "inline-block" }} />
+              <span style={{ fontFamily: "Open Sans, sans-serif", color: DARK, fontSize: 13 }}>{f}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div style={{ display: "flex", gap: 12, marginTop: "auto", flexWrap: "wrap" }}>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          style={{ background: "none", border: `1px solid ${ORANGE}`, color: ORANGE, fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 13, padding: "8px 16px", borderRadius: 8, cursor: "pointer" }}
+        >
+          {expanded ? "Réduire" : "En savoir plus"}
+        </button>
+        <Link
+          to="/contact"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, background: ORANGE, color: "#fff", fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 13, padding: "8px 16px", borderRadius: 8, textDecoration: "none" }}
+        >
+          Demander →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default function ServicesPage() {
+  usePageTransitionEffect();
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    const ctx = gsap.context(() => {
+      gsap.from(el.querySelectorAll<HTMLElement>("[data-hero]"), {
+        opacity: 0, y: 30, duration: 0.7, ease: "power3.out", stagger: 0.15,
+      });
+    }, el);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <div id="services">
+      {/* Hero */}
+      <div ref={heroRef} style={{ background: DARK, color: "#fff", padding: "100px 80px 80px", textAlign: "center" }} className="services-hero">
+        <div data-hero style={{ color: ORANGE, fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 14, fontFamily: "Open Sans, sans-serif" }}>
+          NOS SERVICES
+        </div>
+        <h1 data-hero style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 48, lineHeight: 1.15, maxWidth: 720, margin: "0 auto 20px" }}>
+          Support, Conseil Et Maintenance
+        </h1>
+        <p data-hero style={{ fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.75)", fontSize: 17, lineHeight: 1.8, maxWidth: 640, margin: "0 auto 36px" }}>
+          Nous accompagnons vos équipes avec une gamme complète de services IT — de l'assistance quotidienne aux projets de transformation stratégique.
+        </p>
+        <Link
+          data-hero
+          to="/contact"
+          style={{ display: "inline-flex", alignItems: "center", gap: 10, background: ORANGE, color: "#fff", fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 15, padding: "14px 32px", borderRadius: 10, textDecoration: "none" }}
+        >
+          Demander un audit →
+        </Link>
+      </div>
+
+      {/* Grid */}
+      <div style={{ background: LIGHT_GRAY, padding: "80px 80px" }} className="services-page-body">
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <h2 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 36, color: DARK, marginBottom: 12 }}>
+              Une offre complète pour votre activité
+            </h2>
+            <p style={{ fontFamily: "Open Sans, sans-serif", color: "#6C7A89", fontSize: 16, maxWidth: 580, margin: "0 auto" }}>
+              Cliquez sur "En savoir plus" pour découvrir le détail de chaque service.
+            </p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }} className="services-page-grid">
+            {services.map((s, i) => (
+              <ServiceCard key={s.id} s={s} index={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div style={{ background: NAVY, padding: "72px 80px", textAlign: "center" }}>
+        <h2 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 38, color: "#fff", marginBottom: 16 }}>
+          Un service sur mesure pour votre entreprise
+        </h2>
+        <p style={{ fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.75)", fontSize: 16, marginBottom: 36 }}>
+          Nos experts sont disponibles pour analyser vos besoins et vous proposer un contrat de service adapté.
+        </p>
+        <Link
+          to="/contact"
+          style={{ display: "inline-flex", alignItems: "center", gap: 10, background: ORANGE, color: "#fff", fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 15, padding: "16px 40px", borderRadius: 10, textDecoration: "none" }}
+        >
+          Nous contacter →
+        </Link>
+      </div>
+    </div>
+  );
+}
