@@ -274,3 +274,136 @@ export const MOCK_SUBSCRIBERS: Subscriber[] = [
   { id: 17, email: "hanae.lemniai@media.ma", is_active: true, subscribed_at: "2026-06-05T13:00:00Z" },
   { id: 18, email: "badr.regragui@sport.ma", is_active: true, subscribed_at: "2026-05-28T15:45:00Z" },
 ];
+
+// ── Blog CMS (Categories, Tags, Posts) ──
+
+export type PostStatus = "draft" | "published" | "archived";
+
+export interface Category {
+  id: number;
+  name: { fr: string; en: string; ar: string };
+  slug: string;
+  order: number;
+}
+
+export interface Post {
+  id: number;
+  slug: string;
+  title: { fr: string; en: string; ar: string };
+  content: { fr: string; en: string; ar: string };
+  excerpt: { fr: string; en: string; ar: string };
+  category_id: number | null;
+  author: string;
+  cover_image: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  status: PostStatus;
+  published_at: string | null;
+  created_at: string;
+  tags: string[];
+}
+
+export const POST_STATUS_CONFIG: Record<PostStatus, { label: string; color: string; bg: string }> = {
+  draft: { label: "Brouillon", color: "#64748B", bg: "rgba(100,116,139,0.1)" },
+  published: { label: "Publié", color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
+  archived: { label: "Archivé", color: "#EF4444", bg: "rgba(239,68,68,0.1)" },
+};
+
+export const MOCK_CATEGORIES: Category[] = [
+  { id: 1, name: { fr: "Transformation Numérique", en: "Digital Transformation", ar: "التحول الرقمي" }, slug: "transformation-numerique", order: 1 },
+  { id: 2, name: { fr: "Cybersécurité", en: "Cybersecurity", ar: "الأمن السيبراني" }, slug: "cybersecurite", order: 2 },
+  { id: 3, name: { fr: "Cloud Computing", en: "Cloud Computing", ar: "الحوسبة السحابية" }, slug: "cloud-computing", order: 3 },
+  { id: 4, name: { fr: "Développement Sur Mesure", en: "Custom Development", ar: "تطوير البرمجيات المخصصة" }, slug: "developpement-sur-mesure", order: 4 },
+  { id: 5, name: { fr: "Intelligence Artificielle", en: "Artificial Intelligence", ar: "الذكاء الاصطناعي" }, slug: "intelligence-artificielle", order: 5 },
+];
+
+export const MOCK_TAGS: string[] = [
+  "React", "Laravel", "AWS", "Sécurité", "DevOps", "Fintech", "IoT", "IA", "ERP"
+];
+
+export const MOCK_POSTS: Post[] = [
+  {
+    id: 1,
+    slug: "reussir-sa-transformation-digitale-en-2026",
+    title: {
+      fr: "Comment réussir sa transformation digitale en 2026",
+      en: "How to succeed in your digital transformation in 2026",
+      ar: "كيفية النجاح في التحول الرقمي في عام 2026"
+    },
+    excerpt: {
+      fr: "Découvrez les étapes indispensables pour digitaliser vos processus d'entreprise avec succès.",
+      en: "Discover the essential steps to successfully digitize your business processes.",
+      ar: "اكتشف الخطوات الأساسية لرقمنة عمليات عملك بنجاح."
+    },
+    content: {
+      fr: "La transformation digitale n'est plus une option mais une nécessité. En 2026, l'adoption de l'IA et du cloud hybride redéfinit la compétitivité des entreprises marocaines...",
+      en: "Digital transformation is no longer an option but a necessity. In 2026, the adoption of AI and hybrid cloud is redefining the competitiveness of Moroccan companies...",
+      ar: "لم يعد التحول الرقمي خيارًا بل ضرورة. في عام 2026، يعيد اعتماد الذكاء الاصطناعي والسحابة الهجينة تحديد القدرة التنافسية للشركات المغربية..."
+    },
+    category_id: 1,
+    author: "Super Admin",
+    cover_image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&auto=format&fit=crop&q=60",
+    seo_title: "Transformation Digitale 2026 | Guide complet",
+    seo_description: "Guide pratique pour piloter la transformation digitale de votre PME.",
+    status: "published",
+    published_at: "2026-07-14T08:00:00Z",
+    created_at: "2026-07-14T08:00:00Z",
+    tags: ["DevOps", "Fintech"]
+  },
+  {
+    id: 2,
+    slug: "cybersecurite-pme-marocaines-menaces-solutions",
+    title: {
+      fr: "Cybersécurité : menaces et solutions pour les PME marocaines",
+      en: "Cybersecurity: threats and solutions for Moroccan SMEs",
+      ar: "الأمن السيبراني: التهديدات والحلول للمقاولات الصغرى والمتوسطة بالمغرب"
+    },
+    excerpt: {
+      fr: "Face à la hausse des cyberattaques, voici comment protéger vos données sensibles efficacement.",
+      en: "Faced with the rise in cyberattacks, here is how to protect your sensitive data effectively.",
+      ar: "في مواجهة ارتفاع الهجمات السيبرانية، إليك كيفية حماية بياناتك الحساسة بفعالية."
+    },
+    content: {
+      fr: "Les PME marocaines sont de plus en plus ciblées par les ransomwares. Mettre en place une politique de sécurité rigoureuse et former ses collaborateurs est le premier rempart...",
+      en: "Moroccan SMEs are increasingly targeted by ransomware. Implementing a rigorous security policy and training employees is the first line of defense...",
+      ar: "تتعرض الشركات المغربية الصغيرة والمتوسطة بشكل متزايد للاستهداف من قبل برامج الفدية. يعد تطبيق سياسة أمنية صارمة وتدريب الموظفين خط الدفاع الأول..."
+    },
+    category_id: 2,
+    author: "Éditeur",
+    cover_image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=500&auto=format&fit=crop&q=60",
+    seo_title: "Cybersécurité PME Maroc | Solutions Sécurité",
+    seo_description: "Protégez vos serveurs et réseaux des cyberattaques courantes au Maroc.",
+    status: "published",
+    published_at: "2026-07-12T10:30:00Z",
+    created_at: "2026-07-12T10:30:00Z",
+    tags: ["Sécurité"]
+  },
+  {
+    id: 3,
+    slug: "pourquoi-migrer-vers-le-cloud-hybride",
+    title: {
+      fr: "Pourquoi migrer vers le cloud hybride en tant que grande entreprise",
+      en: "Why migrate to hybrid cloud as a large enterprise",
+      ar: "لماذا الانتقال إلى السحابة الهجينة كشركة كبرى"
+    },
+    excerpt: {
+      fr: "Alliez la flexibilité du cloud public et la sécurité du cloud privé pour vos applications critiques.",
+      en: "Combine the flexibility of public cloud and the security of private cloud for your critical applications.",
+      ar: "اجمع بين مرونة السحابة العامة وأمان السحابة الخاصة لتطبيقاتك الحيوية."
+    },
+    content: {
+      fr: "Le cloud hybride offre un équilibre parfait pour les structures gérant des données hautement confidentielles tout en nécessitant une forte puissance de calcul à la demande...",
+      en: "The hybrid cloud offers a perfect balance for structures managing highly confidential data while requiring high computing power on demand...",
+      ar: "توفر السحابة الهجينة توازنًا مثاليًا للهياكل التي تدير بيانات سرية للغاية مع تطلبها قوة حوسبة عالية عند الطلب..."
+    },
+    category_id: 3,
+    author: "Super Admin",
+    cover_image: "https://images.unsplash.com/photo-1484417894907-623942c8ea29?w=500&auto=format&fit=crop&q=60",
+    seo_title: "Avantages Cloud Hybride Entreprise",
+    seo_description: "Découvrez pourquoi le cloud hybride est le choix privilégié des grandes entreprises.",
+    status: "draft",
+    published_at: null,
+    created_at: "2026-07-11T16:00:00Z",
+    tags: ["AWS", "DevOps"]
+  }
+];
