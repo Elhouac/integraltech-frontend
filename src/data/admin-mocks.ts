@@ -244,3 +244,33 @@ export const MOCK_LEAD_NOTES: LeadNote[] = [
   { id: 4, lead_id: 5, author: "Super Admin", content: "Projet terminé avec succès. Le client est satisfait. Facture envoyée.", created_at: "2026-07-11T16:00:00Z" },
   { id: 5, lead_id: 7, author: "Éditeur", content: "Spécifications reçues : app iOS + Android, paiement mobile, KYC intégré.", created_at: "2026-07-10T10:00:00Z" },
 ];
+
+// ── Newsletter Subscribers ──
+
+export interface Subscriber {
+  id: number;
+  email: string;
+  is_active: boolean;
+  subscribed_at: string;
+}
+
+export const MOCK_SUBSCRIBERS: Subscriber[] = [
+  { id: 1, email: "ahmed.b@company.ma", is_active: true, subscribed_at: "2026-07-14T09:00:00Z" },
+  { id: 2, email: "fatima.zahra@gmail.com", is_active: true, subscribed_at: "2026-07-13T14:20:00Z" },
+  { id: 3, email: "karim.idrissi@bank.ma", is_active: true, subscribed_at: "2026-07-12T08:45:00Z" },
+  { id: 4, email: "sara.bennani@outlook.com", is_active: false, subscribed_at: "2026-07-10T16:30:00Z" },
+  { id: 5, email: "omar.tazi@gov.ma", is_active: true, subscribed_at: "2026-07-09T10:15:00Z" },
+  { id: 6, email: "nadia.amrani@clinic.ma", is_active: true, subscribed_at: "2026-07-08T11:00:00Z" },
+  { id: 7, email: "youssef.mansouri@tech.ma", is_active: true, subscribed_at: "2026-07-07T15:45:00Z" },
+  { id: 8, email: "amal.chakir@school.ma", is_active: false, subscribed_at: "2026-07-05T09:30:00Z" },
+  { id: 9, email: "hassan.boujemaa@factory.ma", is_active: true, subscribed_at: "2026-07-03T12:00:00Z" },
+  { id: 10, email: "leila.fassi@agency.ma", is_active: true, subscribed_at: "2026-07-01T17:20:00Z" },
+  { id: 11, email: "rachid.alaoui@logistics.ma", is_active: true, subscribed_at: "2026-06-28T08:00:00Z" },
+  { id: 12, email: "imane.berrada@hotel.ma", is_active: false, subscribed_at: "2026-06-25T14:30:00Z" },
+  { id: 13, email: "zineb.ouazzani@ngo.ma", is_active: true, subscribed_at: "2026-06-22T10:45:00Z" },
+  { id: 14, email: "driss.kettani@retail.ma", is_active: true, subscribed_at: "2026-06-18T16:00:00Z" },
+  { id: 15, email: "meryem.elharrak@design.ma", is_active: true, subscribed_at: "2026-06-15T09:15:00Z" },
+  { id: 16, email: "soufiane.bouazza@dev.ma", is_active: false, subscribed_at: "2026-06-10T11:30:00Z" },
+  { id: 17, email: "hanae.lemniai@media.ma", is_active: true, subscribed_at: "2026-06-05T13:00:00Z" },
+  { id: 18, email: "badr.regragui@sport.ma", is_active: true, subscribed_at: "2026-05-28T15:45:00Z" },
+];

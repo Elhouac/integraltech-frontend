@@ -8,6 +8,11 @@ interface LeadExportButtonProps {
 
 export default function LeadExportButton({ leads }: LeadExportButtonProps) {
   const handleExport = () => {
+    const escapeCsv = (val: unknown): string => {
+      const str = String(val ?? "").replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
     const headers = ["ID", "Nom", "Email", "Téléphone", "Sujet", "Statut", "Date"];
     const rows = leads.map((l) => [
       l.id,
@@ -19,7 +24,7 @@ export default function LeadExportButton({ leads }: LeadExportButtonProps) {
       new Date(l.created_at).toLocaleDateString("fr-FR"),
     ]);
 
-    const csv = [headers, ...rows].map((row) => row.map((v) => `"${v}"`).join(",")).join("\n");
+    const csv = [headers, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");

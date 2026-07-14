@@ -26,6 +26,7 @@ const ResetPasswordPage = lazy(() => import("./pages/admin/ResetPasswordPage"));
 const DashboardPage = lazy(() => import("./pages/admin/DashboardPage"));
 const LeadsPage = lazy(() => import("./pages/admin/LeadsPage"));
 const LeadDetailPage = lazy(() => import("./pages/admin/LeadDetailPage"));
+const SubscribersPage = lazy(() => import("./pages/admin/SubscribersPage"));
 
 // ── Suspense fallback for admin chunk loading ──
 function AdminFallback() {
@@ -107,6 +108,7 @@ export default function App() {
                     <Route path="dashboard" element={<Suspense fallback={<AdminFallback />}><DashboardPage /></Suspense>} />
                     <Route path="leads" element={<Suspense fallback={<AdminFallback />}><LeadsPage /></Suspense>} />
                     <Route path="leads/:id" element={<Suspense fallback={<AdminFallback />}><LeadDetailPage /></Suspense>} />
+                    <Route path="subscribers" element={<Suspense fallback={<AdminFallback />}><SubscribersPage /></Suspense>} />
                     <Route path="*" element={<div style={{ padding: 40, fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--text)" }}>Page en construction</div>} />
                   </Route>
                 </Routes>
