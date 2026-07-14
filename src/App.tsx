@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
@@ -16,12 +16,42 @@ import { PageTransitionProvider } from "./context/PageTransitionContext";
 import { AuthProvider } from "./context/AuthContext";
 import GlobalSearch from "./components/ui/GlobalSearch";
 import BackToTop from "./components/ui/BackToTop";
-import AdminLayout from "./components/admin/layout/AdminLayout";
-import ProtectedRoute from "./components/admin/auth/ProtectedRoute";
-import LoginPage from "./pages/admin/LoginPage";
-import ForgotPasswordPage from "./pages/admin/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/admin/ResetPasswordPage";
-import DashboardPage from "./pages/admin/DashboardPage";
+
+// ── Lazy-loaded admin modules (code-split from public bundle) ──
+const AdminLayout = lazy(() => import("./components/admin/layout/AdminLayout"));
+const ProtectedRoute = lazy(() => import("./components/admin/auth/ProtectedRoute"));
+const LoginPage = lazy(() => import("./pages/admin/LoginPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/admin/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/admin/ResetPasswordPage"));
+const DashboardPage = lazy(() => import("./pages/admin/DashboardPage"));
+const LeadsPage = lazy(() => import("./pages/admin/LeadsPage"));
+const LeadDetailPage = lazy(() => import("./pages/admin/LeadDetailPage"));
+
+// ── Suspense fallback for admin chunk loading ──
+function AdminFallback() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100vh",
+        background: "var(--background)",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          border: "3px solid var(--border)",
+          borderTopColor: "var(--accent)",
+          borderRadius: "50%",
+          animation: "admin-spin 0.8s linear infinite",
+        }}
+      />
+    </div>
+  );
+}
 
 function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -57,22 +87,26 @@ export default function App() {
                   <Route path="/blog" element={<AppShell><BlogPage /></AppShell>} />
                   <Route path="/contact" element={<AppShell><ContactPage /></AppShell>} />
 
-                  {/* ── Admin Auth Pages (standalone, no layout) ── */}
-                  <Route path="/admin/login" element={<LoginPage />} />
-                  <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/admin/reset-password" element={<ResetPasswordPage />} />
+                  {/* ── Admin Auth Pages (lazy-loaded, standalone) ── */}
+                  <Route path="/admin/login" element={<Suspense fallback={<AdminFallback />}><LoginPage /></Suspense>} />
+                  <Route path="/admin/forgot-password" element={<Suspense fallback={<AdminFallback />}><ForgotPasswordPage /></Suspense>} />
+                  <Route path="/admin/reset-password" element={<Suspense fallback={<AdminFallback />}><ResetPasswordPage /></Suspense>} />
 
-                  {/* ── Admin Protected Routes ── */}
+                  {/* ── Admin Protected Routes (lazy-loaded) ── */}
                   <Route
                     path="/admin"
                     element={
-                      <ProtectedRoute>
-                        <AdminLayout />
-                      </ProtectedRoute>
+                      <Suspense fallback={<AdminFallback />}>
+                        <ProtectedRoute>
+                          <AdminLayout />
+                        </ProtectedRoute>
+                      </Suspense>
                     }
                   >
                     <Route index element={<Navigate to="dashboard" replace />} />
-                    <Route path="dashboard" element={<DashboardPage />} />
+                    <Route path="dashboard" element={<Suspense fallback={<AdminFallback />}><DashboardPage /></Suspense>} />
+                    <Route path="leads" element={<Suspense fallback={<AdminFallback />}><LeadsPage /></Suspense>} />
+                    <Route path="leads/:id" element={<Suspense fallback={<AdminFallback />}><LeadDetailPage /></Suspense>} />
                     <Route path="*" element={<div style={{ padding: 40, fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--text)" }}>Page en construction</div>} />
                   </Route>
                 </Routes>

@@ -622,3 +622,21 @@ a:focus-visible,
 .admin-dashboard-grid button:hover {
   background: var(--hover) !important;
 }
+
+/* Admin leads responsive */
+@media (max-width: 640px) {
+  .admin-lead-info-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .admin-lead-filters {
+    flex-direction: column;
+  }
+}
+
+/* DataTable responsive scroll */
+.admin-data-table-wrapper {
+  -webkit-overflow-scrolling: touch;
+}
+.admin-data-table-wrapper table {
+  min-width: 580px;
+}

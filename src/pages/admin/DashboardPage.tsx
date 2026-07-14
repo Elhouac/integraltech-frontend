@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import KpiGrid from "../../components/admin/dashboard/KpiGrid";
 import RecentActivity from "../../components/admin/dashboard/RecentActivity";
 import QuickActions from "../../components/admin/dashboard/QuickActions";
+import { MOCK_KPI_DATA, MOCK_ACTIVITIES, MOCK_QUICK_ACTIONS } from "../../data/admin-mocks";
 import { TEXT, TEXT_SECONDARY } from "../../constants";
 
 function getGreeting(): string {
@@ -49,7 +50,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* ── KPI Cards ── */}
-      <KpiGrid />
+      <KpiGrid data={MOCK_KPI_DATA} />
 
       {/* ── Main Content: Activity + Quick Actions ── */}
       <div
@@ -61,8 +62,8 @@ export default function DashboardPage() {
           alignItems: "start",
         }}
       >
-        <RecentActivity />
-        <QuickActions />
+        <RecentActivity activities={MOCK_ACTIVITIES} />
+        <QuickActions actions={MOCK_QUICK_ACTIONS} />
       </div>
     </div>
   );

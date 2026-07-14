@@ -1,0 +1,166 @@
+import { memo } from "react";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../../constants";
+
+// ── Types ──
+
+export interface Column<T> {
+  key: string;
+  label: string;
+  sortable?: boolean;
+  width?: string | number;
+  render?: (item: T, index: number) => React.ReactNode;
+}
+
+export interface SortState {
+  key: string;
+  direction: "asc" | "desc";
+}
+
+interface DataTableProps<T> {
+  columns: Column<T>[];
+  data: T[];
+  loading?: boolean;
+  sort?: SortState;
+  onSort?: (key: string) => void;
+  getRowKey: (item: T) => string | number;
+  onRowClick?: (item: T) => void;
+  emptyContent?: React.ReactNode;
+}
+
+function DataTableInner<T>({
+  columns,
+  data,
+  loading,
+  sort,
+  onSort,
+  getRowKey,
+  onRowClick,
+  emptyContent,
+}: DataTableProps<T>) {
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sort?.key !== columnKey) return <ArrowUpDown size={12} style={{ opacity: 0.3 }} />;
+    return sort.direction === "asc"
+      ? <ArrowUp size={12} style={{ opacity: 0.7 }} />
+      : <ArrowDown size={12} style={{ opacity: 0.7 }} />;
+  };
+
+  return (
+    <div className="admin-data-table-wrapper" style={{ overflow: "auto" }}>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          fontFamily: "var(--font-sans)",
+          fontSize: 13,
+        }}
+      >
+        {/* Head */}
+        <thead>
+          <tr>
+            {columns.map((col) => (
+              <th
+                key={col.key}
+                onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
+                style={{
+                  padding: "12px 16px",
+                  textAlign: "left",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: TEXT_SECONDARY,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  borderBottom: `1px solid ${BORDER}`,
+                  background: SURFACE,
+                  whiteSpace: "nowrap",
+                  cursor: col.sortable ? "pointer" : "default",
+                  userSelect: col.sortable ? "none" : "auto",
+                  width: col.width,
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 1,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  {col.label}
+                  {col.sortable && <SortIcon columnKey={col.key} />}
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        {/* Body */}
+        <tbody>
+          {loading ? (
+            // Loading skeleton rows
+            Array.from({ length: 5 }).map((_, i) => (
+              <tr key={`skeleton-${i}`}>
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    style={{ padding: "14px 16px", borderBottom: `1px solid ${BORDER}` }}
+                  >
+                    <div
+                      style={{
+                        height: 14,
+                        borderRadius: 4,
+                        background: "var(--hover)",
+                        animation: "admin-spin 1.5s ease-in-out infinite",
+                        opacity: 0.5,
+                        width: `${60 + Math.random() * 30}%`,
+                      }}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))
+          ) : data.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} style={{ padding: 0 }}>
+                {emptyContent}
+              </td>
+            </tr>
+          ) : (
+            data.map((item, rowIndex) => (
+              <tr
+                key={getRowKey(item)}
+                onClick={onRowClick ? () => onRowClick(item) : undefined}
+                style={{
+                  cursor: onRowClick ? "pointer" : "default",
+                  transition: "background 0.12s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--hover)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    style={{
+                      padding: "12px 16px",
+                      borderBottom: `1px solid ${BORDER}`,
+                      color: TEXT,
+                      verticalAlign: "middle",
+                    }}
+                  >
+                    {col.render
+                      ? col.render(item, rowIndex)
+                      : String((item as Record<string, unknown>)[col.key] ?? "")}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Type-safe memo wrapper
+const DataTable = memo(DataTableInner) as typeof DataTableInner;
+export default DataTable;

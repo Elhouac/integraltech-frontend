@@ -1,9 +1,8 @@
 import { motion } from "framer-motion";
-import { Inbox, FileText, Users, Mail, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../../constants";
 
-interface ActivityItem {
+export interface ActivityItem {
   id: number;
   icon: LucideIcon;
   iconColor: string;
@@ -13,56 +12,11 @@ interface ActivityItem {
   time: string;
 }
 
-// ── Mock activity data (replaced by API in Phase 2) ──
-const ACTIVITIES: ActivityItem[] = [
-  {
-    id: 1,
-    icon: Inbox,
-    iconColor: "#F97316",
-    iconBg: "rgba(249,115,22,0.08)",
-    title: "Nouveau lead",
-    description: "Ahmed Benali a soumis une demande de contact",
-    time: "Il y a 12 min",
-  },
-  {
-    id: 2,
-    icon: FileText,
-    iconColor: "#22C55E",
-    iconBg: "rgba(34,197,94,0.08)",
-    title: "Article publié",
-    description: '"Sécurité cloud en 2026" est maintenant en ligne',
-    time: "Il y a 1h",
-  },
-  {
-    id: 3,
-    icon: Users,
-    iconColor: "#3B82F6",
-    iconBg: "rgba(59,130,246,0.08)",
-    title: "Nouvel utilisateur",
-    description: "Karim Idrissi a été ajouté comme éditeur",
-    time: "Il y a 3h",
-  },
-  {
-    id: 4,
-    icon: Mail,
-    iconColor: "#8B5CF6",
-    iconBg: "rgba(139,92,246,0.08)",
-    title: "Newsletter envoyée",
-    description: "Campagne \"Offre été 2026\" envoyée à 1,240 abonnés",
-    time: "Hier, 16:30",
-  },
-  {
-    id: 5,
-    icon: Settings,
-    iconColor: "#64748B",
-    iconBg: "rgba(100,116,139,0.08)",
-    title: "Configuration mise à jour",
-    description: "Les paramètres SEO ont été modifiés",
-    time: "Hier, 09:15",
-  },
-];
+interface RecentActivityProps {
+  activities: ActivityItem[];
+}
 
-export default function RecentActivity() {
+export default function RecentActivity({ activities }: RecentActivityProps) {
   return (
     <div
       style={{
@@ -113,7 +67,7 @@ export default function RecentActivity() {
 
       {/* Activity list */}
       <div style={{ padding: "8px 0" }}>
-        {ACTIVITIES.map((activity, index) => (
+        {activities.map((activity, index) => (
           <motion.div
             key={activity.id}
             initial={{ opacity: 0, x: -12 }}

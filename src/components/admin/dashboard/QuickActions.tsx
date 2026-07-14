@@ -1,10 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FilePlus, Inbox, Upload, BarChart3, Send, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../../constants";
 
-interface QuickAction {
+export interface QuickActionItem {
   icon: LucideIcon;
   label: string;
   description: string;
@@ -13,58 +12,11 @@ interface QuickAction {
   bg: string;
 }
 
-const ACTIONS: QuickAction[] = [
-  {
-    icon: FilePlus,
-    label: "Nouvel article",
-    description: "Créer un article de blog",
-    to: "/admin/posts/create",
-    color: "#22C55E",
-    bg: "rgba(34,197,94,0.08)",
-  },
-  {
-    icon: Inbox,
-    label: "Voir les leads",
-    description: "Consulter les demandes",
-    to: "/admin/leads",
-    color: "#F97316",
-    bg: "rgba(249,115,22,0.08)",
-  },
-  {
-    icon: Upload,
-    label: "Uploader un média",
-    description: "Ajouter images ou fichiers",
-    to: "/admin/media",
-    color: "#3B82F6",
-    bg: "rgba(59,130,246,0.08)",
-  },
-  {
-    icon: BarChart3,
-    label: "Statistiques",
-    description: "Voir les performances",
-    to: "/admin/dashboard",
-    color: "#8B5CF6",
-    bg: "rgba(139,92,246,0.08)",
-  },
-  {
-    icon: Send,
-    label: "Newsletter",
-    description: "Gérer les abonnés",
-    to: "/admin/subscribers",
-    color: "#EC4899",
-    bg: "rgba(236,72,153,0.08)",
-  },
-  {
-    icon: Settings,
-    label: "Paramètres",
-    description: "Configuration du site",
-    to: "/admin/settings/general",
-    color: "#64748B",
-    bg: "rgba(100,116,139,0.08)",
-  },
-];
+interface QuickActionsProps {
+  actions: QuickActionItem[];
+}
 
-export default function QuickActions() {
+export default function QuickActions({ actions }: QuickActionsProps) {
   const navigate = useNavigate();
 
   return (
@@ -105,7 +57,7 @@ export default function QuickActions() {
           background: BORDER,
         }}
       >
-        {ACTIONS.map((action, index) => (
+        {actions.map((action, index) => (
           <motion.button
             key={action.label}
             initial={{ opacity: 0, scale: 0.96 }}
