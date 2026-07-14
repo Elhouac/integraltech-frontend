@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { MapPin, Phone, Mail, Clock, ChevronDown, Facebook, Linkedin, Instagram, Twitter, Youtube } from "lucide-react";
-import { DARK, LIGHT_GRAY, NAVY, ORANGE } from "../constants";
+import { MapPin, Phone, Mail, Clock, ChevronDown, Facebook, Linkedin, Instagram, Twitter, Youtube, ArrowRight } from "lucide-react";
+import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -37,7 +37,7 @@ function FaqItem({ item, index }: { item: (typeof FAQ_ITEMS)[0]; index: number }
   }, [open]);
 
   return (
-    <div style={{ borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "20px 0" }}>
+    <div style={{ borderBottom: `1px solid ${BORDER}`, padding: "20px 0" }}>
       <button
         onClick={() => setOpen(!open)}
         style={{
@@ -56,7 +56,7 @@ function FaqItem({ item, index }: { item: (typeof FAQ_ITEMS)[0]; index: number }
         />
       </button>
       <div ref={answerRef} style={{ height: 0, overflow: "hidden" }}>
-        <p style={{ fontFamily: "Open Sans, sans-serif", color: "#6C7A89", fontSize: 14, lineHeight: 1.8, marginTop: 12, paddingRight: 32 }}>
+        <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 14, lineHeight: 1.8, marginTop: 12, paddingRight: 32 }}>
           {item.a}
         </p>
       </div>
@@ -85,11 +85,22 @@ function ContactFormFull() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    // Simulate async
     setStatus("success");
     setForm({ name: "", email: "", phone: "", subject: "", message: "" });
     setTimeout(() => setStatus("idle"), 5000);
   };
+
+  const inputStyle = (hasError: boolean) => ({
+    padding: "13px 16px",
+    borderRadius: 12,
+    border: `1px solid ${hasError ? "#EF4444" : BORDER}`,
+    fontFamily: "Open Sans, sans-serif",
+    fontSize: 14,
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+    background: hasError ? "#FEF2F2" : LIGHT_GRAY,
+    color: DARK,
+  });
 
   const field = (id: keyof FormData, label: string, type = "text", required = false) => (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -101,22 +112,19 @@ function ContactFormFull() {
         type={type}
         value={form[id]}
         onChange={(e) => setForm({ ...form, [id]: e.target.value })}
-        style={{
-          padding: "12px 14px",
-          borderRadius: 8,
-          border: `1px solid ${errors[id] ? "#e74c3c" : "rgba(0,0,0,0.12)"}`,
-          fontFamily: "Open Sans, sans-serif",
-          fontSize: 14,
-          outline: "none",
-          transition: "border-color 0.2s",
-          background: errors[id] ? "#fff5f5" : "#fff",
+        style={inputStyle(!!errors[id])}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = ORANGE;
+          e.currentTarget.style.boxShadow = `0 0 0 3px ${ORANGE}20`;
         }}
-        onFocus={(e) => { e.currentTarget.style.borderColor = ORANGE; }}
-        onBlur={(e) => { e.currentTarget.style.borderColor = errors[id] ? "#e74c3c" : "rgba(0,0,0,0.12)"; }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = errors[id] ? "#EF4444" : BORDER;
+          e.currentTarget.style.boxShadow = "none";
+        }}
         aria-required={required}
         aria-describedby={errors[id] ? `${id}-error` : undefined}
       />
-      {errors[id] && <span id={`${id}-error`} style={{ color: "#e74c3c", fontFamily: "Open Sans, sans-serif", fontSize: 12 }}>{errors[id]}</span>}
+      {errors[id] && <span id={`${id}-error`} style={{ color: "#EF4444", fontFamily: "Open Sans, sans-serif", fontSize: 12 }}>{errors[id]}</span>}
     </div>
   );
 
@@ -140,41 +148,63 @@ function ContactFormFull() {
           onChange={(e) => setForm({ ...form, message: e.target.value })}
           rows={6}
           style={{
-            padding: "12px 14px",
-            borderRadius: 8,
-            border: `1px solid ${errors.message ? "#e74c3c" : "rgba(0,0,0,0.12)"}`,
-            fontFamily: "Open Sans, sans-serif",
-            fontSize: 14,
+            ...inputStyle(!!errors.message),
             resize: "vertical",
-            outline: "none",
-            background: errors.message ? "#fff5f5" : "#fff",
           }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = ORANGE; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = errors.message ? "#e74c3c" : "rgba(0,0,0,0.12)"; }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = ORANGE;
+            e.currentTarget.style.boxShadow = `0 0 0 3px ${ORANGE}20`;
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = errors.message ? "#EF4444" : BORDER;
+            e.currentTarget.style.boxShadow = "none";
+          }}
           aria-required
           aria-describedby={errors.message ? "message-error" : undefined}
         />
-        {errors.message && <span id="message-error" style={{ color: "#e74c3c", fontFamily: "Open Sans, sans-serif", fontSize: 12 }}>{errors.message}</span>}
+        {errors.message && <span id="message-error" style={{ color: "#EF4444", fontFamily: "Open Sans, sans-serif", fontSize: 12 }}>{errors.message}</span>}
       </div>
 
       {status === "success" && (
-        <div style={{ background: "#e8f5e9", border: "1px solid #81C784", borderRadius: 10, padding: "16px 20px", fontFamily: "Open Sans, sans-serif", color: "#2e7d32", fontSize: 14, fontWeight: 600 }}>
+        <div style={{
+          background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)",
+          borderRadius: 12, padding: "16px 20px",
+          fontFamily: "Open Sans, sans-serif", color: "#22C55E", fontSize: 14, fontWeight: 600,
+        }}>
           ✓ Votre message a été envoyé avec succès ! Nous vous répondrons sous 24h ouvrées.
         </div>
       )}
       {status === "error" && (
-        <div style={{ background: "#fbe9e7", border: "1px solid #FF8A65", borderRadius: 10, padding: "16px 20px", fontFamily: "Open Sans, sans-serif", color: "#bf360c", fontSize: 14 }}>
+        <div style={{
+          background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+          borderRadius: 12, padding: "16px 20px",
+          fontFamily: "Open Sans, sans-serif", color: "#EF4444", fontSize: 14,
+        }}>
           Une erreur est survenue. Veuillez réessayer ou nous contacter par téléphone.
         </div>
       )}
 
       <button
         type="submit"
-        style={{ padding: "15px 36px", background: ORANGE, color: "#fff", border: "none", borderRadius: 10, fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", alignSelf: "flex-start", transition: "opacity 0.2s" }}
-        onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.04, duration: 0.25, ease: "power2.out" })}
-        onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, duration: 0.25, ease: "power2.out" })}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "15px 32px", background: ORANGE, color: "#fff", border: "none",
+          borderRadius: 12, fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 15,
+          cursor: "pointer", alignSelf: "flex-start",
+          boxShadow: "0 4px 14px rgba(249,115,22,0.2)",
+          transition: "all 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = "0 6px 18px rgba(249,115,22,0.35)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "none";
+          e.currentTarget.style.boxShadow = "0 4px 14px rgba(249,115,22,0.2)";
+        }}
       >
-        Envoyer le message →
+        Envoyer le message
+        <ArrowRight size={16} />
       </button>
     </form>
   );
@@ -228,87 +258,162 @@ export default function ContactPage() {
   return (
     <div id="contact">
       {/* Hero */}
-      <div ref={heroRef} style={{ background: DARK, color: "#fff", padding: "100px 80px 80px", textAlign: "center" }} className="contact-hero">
-        <div data-hero style={{ color: ORANGE, fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 14, fontFamily: "Open Sans, sans-serif" }}>
-          CONTACTEZ-NOUS
+      <div ref={heroRef} style={{
+        background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 50%, #1a2a5e 100%)`,
+        color: "#fff", padding: "120px 0 96px", textAlign: "center",
+        position: "relative", overflow: "hidden",
+      }} className="contact-hero">
+        <div style={{
+          position: "absolute", top: "20%", left: "50%", transform: "translate(-50%, -50%)",
+          width: 700, height: 350, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(249,115,22,0.1) 0%, transparent 70%)",
+          filter: "blur(60px)", pointerEvents: "none",
+        }} />
+        <div style={{ width: "90%", maxWidth: 700, margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div data-hero style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.2)",
+            padding: "6px 16px", borderRadius: "99px",
+            color: ORANGE, fontWeight: 600, fontSize: 12, fontFamily: "Outfit, sans-serif",
+            textTransform: "uppercase", letterSpacing: "1px", marginBottom: 24,
+          }}>
+            CONTACTEZ-NOUS
+          </div>
+          <h1 data-hero style={{
+            fontFamily: "Outfit, sans-serif", fontWeight: 800,
+            fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1.15,
+            maxWidth: 640, margin: "0 auto 20px", letterSpacing: "-0.5px",
+          }}>
+            Prêt À Échanger ?
+          </h1>
+          <p data-hero style={{
+            fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.7)",
+            fontSize: 17, lineHeight: 1.8, maxWidth: 580, margin: "0 auto",
+          }}>
+            Contactez-nous pour organiser un audit gratuit de votre infrastructure IT et découvrir les solutions adaptées à votre entreprise.
+          </p>
         </div>
-        <h1 data-hero style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 48, lineHeight: 1.15, maxWidth: 640, margin: "0 auto 20px" }}>
-          Prêt À Échanger ?
-        </h1>
-        <p data-hero style={{ fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.75)", fontSize: 17, lineHeight: 1.8, maxWidth: 580, margin: "0 auto" }}>
-          Contactez-nous pour organiser un audit gratuit de votre infrastructure IT et découvrir les solutions adaptées à votre entreprise.
-        </p>
       </div>
 
       {/* Form + Info */}
-      <div ref={infoRef} style={{ background: LIGHT_GRAY, padding: "80px 80px" }} className="contact-body">
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 56, alignItems: "flex-start", flexWrap: "wrap" }}>
+      <div ref={infoRef} style={{ background: LIGHT_GRAY, padding: "100px 0" }} className="contact-body">
+        <div style={{
+          width: "90%", maxWidth: 1200, margin: "0 auto",
+          display: "flex", gap: 48, alignItems: "flex-start", flexWrap: "wrap",
+        }}>
           {/* Form */}
-          <div data-reveal style={{ flex: "1 1 500px", background: "#fff", borderRadius: 20, padding: "44px 40px", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}>
-            <h2 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 26, color: DARK, marginBottom: 8 }}>Envoyez-nous un message</h2>
-            <p style={{ fontFamily: "Open Sans, sans-serif", color: "#6C7A89", fontSize: 14, marginBottom: 28 }}>
+          <div data-reveal style={{
+            flex: "1 1 500px", background: CARD_BG, borderRadius: 20,
+            padding: "44px 40px", border: `1px solid ${BORDER}`,
+            boxShadow: "0 4px 20px rgba(15,23,42,0.06)",
+          }}>
+            <h2 style={{
+              fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 24,
+              color: DARK, margin: "0 0 8px",
+            }}>
+              Envoyez-nous un message
+            </h2>
+            <p style={{
+              fontFamily: "Open Sans, sans-serif", color: BODY_TEXT,
+              fontSize: 14, margin: "0 0 28px",
+            }}>
               Décrivez votre besoin et nous reviendrons vers vous sous 24h ouvrées.
             </p>
             <ContactFormFull />
           </div>
 
           {/* Info column */}
-          <div style={{ flex: "0 1 320px", display: "flex", flexDirection: "column", gap: 24 }}>
+          <div style={{ flex: "0 1 320px", display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Coordonnées */}
-            <div data-reveal style={{ background: "#fff", borderRadius: 16, padding: "28px 24px", boxShadow: "0 4px 18px rgba(0,0,0,0.07)" }}>
-              <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 18, color: DARK, marginBottom: 20 }}>Nos coordonnées</h3>
+            <div data-reveal style={{
+              background: CARD_BG, borderRadius: 18, padding: "28px 24px",
+              border: `1px solid ${BORDER}`,
+            }}>
+              <h3 style={{
+                fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 17,
+                color: DARK, margin: "0 0 20px",
+              }}>
+                Nos coordonnées
+              </h3>
               {[
                 { Icon: MapPin, text: "Av Allal Elfassi Centre Itrane, 3ème Étage N° 33 - Marrakech" },
                 { Icon: Phone, text: "+212 (0) 688164547" },
                 { Icon: Mail, text: "contact@integraltech.ma" },
               ].map((item, i) => (
                 <div key={i} style={{ display: "flex", gap: 14, marginBottom: 16, alignItems: "flex-start" }}>
-                  <div style={{ width: 38, height: 38, borderRadius: "50%", background: `rgba(230,126,34,0.1)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    background: `${ORANGE}12`, display: "flex", alignItems: "center",
+                    justifyContent: "center", flexShrink: 0,
+                  }}>
                     <item.Icon size={16} color={ORANGE} />
                   </div>
-                  <span style={{ fontFamily: "Open Sans, sans-serif", color: "#6C7A89", fontSize: 14, lineHeight: 1.6 }}>{item.text}</span>
+                  <span style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 14, lineHeight: 1.6, paddingTop: 2 }}>{item.text}</span>
                 </div>
               ))}
             </div>
 
             {/* Horaires */}
-            <div data-reveal style={{ background: "#fff", borderRadius: 16, padding: "28px 24px", boxShadow: "0 4px 18px rgba(0,0,0,0.07)" }}>
+            <div data-reveal style={{
+              background: CARD_BG, borderRadius: 18, padding: "28px 24px",
+              border: `1px solid ${BORDER}`,
+            }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
                 <Clock size={18} color={ORANGE} />
-                <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 18, color: DARK, margin: 0 }}>Horaires d'ouverture</h3>
+                <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 17, color: DARK, margin: 0 }}>Horaires d'ouverture</h3>
               </div>
               {[
                 { jours: "Lundi – Vendredi", heure: "08h30 – 18h00" },
                 { jours: "Samedi", heure: "09h00 – 13h00" },
                 { jours: "Support urgent", heure: "24h/24 – 7j/7" },
               ].map((h, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", paddingBottom: 12, marginBottom: 12, borderBottom: i < 2 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
-                  <span style={{ fontFamily: "Open Sans, sans-serif", color: "#6C7A89", fontSize: 13 }}>{h.jours}</span>
+                <div key={i} style={{
+                  display: "flex", justifyContent: "space-between",
+                  paddingBottom: 12, marginBottom: 12,
+                  borderBottom: i < 2 ? `1px solid ${BORDER}` : "none",
+                }}>
+                  <span style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 13 }}>{h.jours}</span>
                   <span style={{ fontFamily: "Open Sans, sans-serif", color: DARK, fontSize: 13, fontWeight: 700 }}>{h.heure}</span>
                 </div>
               ))}
             </div>
 
             {/* Map placeholder */}
-            <div data-reveal style={{ background: NAVY, borderRadius: 16, overflow: "hidden", height: 200, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12, boxShadow: "0 4px 18px rgba(0,0,0,0.12)" }}>
-              <MapPin size={32} color={ORANGE} />
-              <p style={{ fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.75)", fontSize: 13, textAlign: "center", margin: 0 }}>
+            <div data-reveal style={{
+              background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 100%)`,
+              borderRadius: 18, overflow: "hidden", height: 200,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexDirection: "column", gap: 12,
+            }}>
+              <MapPin size={28} color={ORANGE} />
+              <p style={{
+                fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.65)",
+                fontSize: 13, textAlign: "center", margin: 0, maxWidth: 200,
+              }}>
                 Av Allal Elfassi Centre Itrane, 3ème Étage N° 33 - Marrakech
               </p>
               <a
                 href="https://maps.google.com/?q=Av+Allal+Elfassi+Centre+Itrane+Marrakech"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: ORANGE, fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 12, textDecoration: "none" }}
+                style={{
+                  color: ORANGE, fontFamily: "Outfit, sans-serif", fontWeight: 600,
+                  fontSize: 12, textDecoration: "none",
+                  display: "flex", alignItems: "center", gap: 4,
+                }}
               >
-                Voir sur Google Maps →
+                Voir sur Google Maps
+                <ArrowRight size={12} />
               </a>
             </div>
 
             {/* Réseaux sociaux */}
-            <div data-reveal style={{ background: "#fff", borderRadius: 16, padding: "24px 24px", boxShadow: "0 4px 18px rgba(0,0,0,0.07)" }}>
-              <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 17, color: DARK, marginBottom: 16 }}>Suivez-nous</h3>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div data-reveal style={{
+              background: CARD_BG, borderRadius: 18, padding: "24px 24px",
+              border: `1px solid ${BORDER}`,
+            }}>
+              <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK, margin: "0 0 16px" }}>Suivez-nous</h3>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {socials.map((s) => (
                   <a
                     key={s.label}
@@ -316,9 +421,24 @@ export default function ContactPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.label}
-                    style={{ width: 42, height: 42, borderRadius: 10, background: LIGHT_GRAY, display: "flex", alignItems: "center", justifyContent: "center", color: DARK, textDecoration: "none", transition: "background 0.2s" }}
-                    onMouseEnter={(e) => gsap.to(e.currentTarget, { backgroundColor: ORANGE, color: "#fff", scale: 1.1, duration: 0.25, ease: "power2.out" })}
-                    onMouseLeave={(e) => gsap.to(e.currentTarget, { backgroundColor: LIGHT_GRAY, scale: 1, duration: 0.25, ease: "power2.out" })}
+                    style={{
+                      width: 42, height: 42, borderRadius: 12,
+                      background: LIGHT_GRAY, border: `1px solid ${BORDER}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: DARK, textDecoration: "none", transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = ORANGE;
+                      e.currentTarget.style.borderColor = ORANGE;
+                      e.currentTarget.style.color = "#fff";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = LIGHT_GRAY;
+                      e.currentTarget.style.borderColor = BORDER;
+                      e.currentTarget.style.color = DARK;
+                      e.currentTarget.style.transform = "none";
+                    }}
                   >
                     <s.Icon size={18} />
                   </a>
@@ -330,11 +450,22 @@ export default function ContactPage() {
       </div>
 
       {/* FAQ */}
-      <div style={{ background: "#fff", padding: "80px 80px" }} className="contact-faq">
-        <div style={{ maxWidth: 780, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <div style={{ color: ORANGE, fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 12, fontFamily: "Open Sans, sans-serif" }}>FAQ</div>
-            <h2 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 36, color: DARK }}>Questions fréquentes</h2>
+      <div style={{ background: CARD_BG, padding: "100px 0" }} className="contact-faq">
+        <div style={{ width: "90%", maxWidth: 780, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <div style={{
+              color: ORANGE, fontWeight: 700, fontSize: 12, letterSpacing: 2,
+              textTransform: "uppercase", marginBottom: 14, fontFamily: "Outfit, sans-serif",
+            }}>
+              FAQ
+            </div>
+            <h2 style={{
+              fontFamily: "Outfit, sans-serif", fontWeight: 800,
+              fontSize: "clamp(28px, 4vw, 36px)", color: DARK,
+              margin: 0, letterSpacing: "-0.5px",
+            }}>
+              Questions fréquentes
+            </h2>
           </div>
           {FAQ_ITEMS.map((item, i) => (
             <FaqItem key={i} item={item} index={i} />

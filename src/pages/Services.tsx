@@ -5,8 +5,9 @@ import { Link } from "react-router-dom";
 import {
   ShieldCheck, Cloud, Layers, Wrench, BarChart3, Handshake,
   Network, Globe, Settings, Headphones, Lock, Database,
+  ArrowRight,
 } from "lucide-react";
-import { DARK, LIGHT_GRAY, NAVY, ORANGE } from "../constants";
+import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -132,9 +133,9 @@ function ServiceCard({ s, index }: { s: (typeof services)[0]; index: number }) {
 
       // hover
       const onEnter = () =>
-        gsap.to(el, { y: -6, boxShadow: `0 20px 48px rgba(230,126,34,0.18)`, duration: 0.35, ease: "power2.out" });
+        gsap.to(el, { y: -6, boxShadow: `0 20px 48px rgba(249,115,22,0.15)`, duration: 0.35, ease: "power2.out" });
       const onLeave = () =>
-        gsap.to(el, { y: 0, boxShadow: "0 4px 20px rgba(0,0,0,0.06)", duration: 0.35, ease: "power2.out" });
+        gsap.to(el, { y: 0, boxShadow: "0 2px 16px rgba(15,23,42,0.05)", duration: 0.35, ease: "power2.out" });
 
       el.addEventListener("mouseenter", onEnter);
       el.addEventListener("mouseleave", onLeave);
@@ -148,27 +149,42 @@ function ServiceCard({ s, index }: { s: (typeof services)[0]; index: number }) {
       ref={ref}
       id={s.id}
       style={{
-        background: "#fff",
-        borderRadius: 16,
-        padding: "32px 28px",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+        background: CARD_BG,
+        borderRadius: 18,
+        padding: "36px 28px",
+        boxShadow: "0 2px 16px rgba(15,23,42,0.05)",
         borderTop: `3px solid ${ORANGE}`,
         display: "flex",
         flexDirection: "column",
         gap: 0,
         cursor: "default",
+        border: `1px solid ${BORDER}`,
+        borderTopColor: ORANGE,
       }}
     >
-      <div style={{ width: 52, height: 52, borderRadius: 12, background: `rgba(230,126,34,0.1)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+      <div style={{
+        width: 52, height: 52, borderRadius: 14,
+        background: `${ORANGE}12`, display: "flex", alignItems: "center",
+        justifyContent: "center", marginBottom: 20,
+      }}>
         <s.Icon size={24} color={ORANGE} />
       </div>
-      <div style={{ color: ORANGE, fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontFamily: "Open Sans, sans-serif" }}>
+      <div style={{
+        color: ORANGE, fontWeight: 700, fontSize: 11, letterSpacing: 2,
+        textTransform: "uppercase", marginBottom: 6, fontFamily: "Outfit, sans-serif",
+      }}>
         {s.subtitle}
       </div>
-      <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 20, color: DARK, marginBottom: 12, lineHeight: 1.3 }}>
+      <h3 style={{
+        fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 20,
+        color: DARK, marginBottom: 12, lineHeight: 1.3, margin: "0 0 12px",
+      }}>
         {s.title}
       </h3>
-      <p style={{ fontFamily: "Open Sans, sans-serif", color: "#6C7A89", fontSize: 14, lineHeight: 1.75, marginBottom: 16, flex: 1 }}>
+      <p style={{
+        fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 14,
+        lineHeight: 1.75, marginBottom: 16, flex: 1, margin: "0 0 16px",
+      }}>
         {s.desc}
       </p>
 
@@ -186,15 +202,39 @@ function ServiceCard({ s, index }: { s: (typeof services)[0]; index: number }) {
       <div style={{ display: "flex", gap: 12, marginTop: "auto", flexWrap: "wrap" }}>
         <button
           onClick={() => setExpanded(!expanded)}
-          style={{ background: "none", border: `1px solid ${ORANGE}`, color: ORANGE, fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 13, padding: "8px 16px", borderRadius: 8, cursor: "pointer" }}
+          style={{
+            background: "none", border: `1px solid ${ORANGE}`, color: ORANGE,
+            fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 13,
+            padding: "8px 18px", borderRadius: 10, cursor: "pointer",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = `${ORANGE}0D`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "none";
+          }}
         >
           {expanded ? "Réduire" : "En savoir plus"}
         </button>
         <Link
           to="/contact"
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, background: ORANGE, color: "#fff", fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 13, padding: "8px 16px", borderRadius: 8, textDecoration: "none" }}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            background: ORANGE, color: "#fff",
+            fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 13,
+            padding: "8px 18px", borderRadius: 10, textDecoration: "none",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = "0 4px 12px rgba(249,115,22,0.3)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = "none";
+          }}
         >
-          Demander →
+          Demander
+          <ArrowRight size={14} />
         </Link>
       </div>
     </div>
@@ -223,33 +263,82 @@ export default function ServicesPage() {
   return (
     <div id="services">
       {/* Hero */}
-      <div ref={heroRef} style={{ background: DARK, color: "#fff", padding: "100px 80px 80px", textAlign: "center" }} className="services-hero">
-        <div data-hero style={{ color: ORANGE, fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 14, fontFamily: "Open Sans, sans-serif" }}>
-          NOS SERVICES
+      <div
+        ref={heroRef}
+        style={{
+          background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 50%, #1a2a5e 100%)`,
+          color: "#fff", padding: "120px 0 96px", textAlign: "center",
+          position: "relative", overflow: "hidden",
+        }}
+        className="services-hero"
+      >
+        <div style={{
+          position: "absolute", top: "20%", left: "50%", transform: "translate(-50%, -50%)",
+          width: 700, height: 350, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(249,115,22,0.1) 0%, transparent 70%)",
+          filter: "blur(60px)", pointerEvents: "none",
+        }} />
+        <div style={{ width: "90%", maxWidth: 780, margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div data-hero style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.2)",
+            padding: "6px 16px", borderRadius: "99px",
+            color: ORANGE, fontWeight: 600, fontSize: 12, fontFamily: "Outfit, sans-serif",
+            textTransform: "uppercase", letterSpacing: "1px", marginBottom: 24,
+          }}>
+            NOS SERVICES
+          </div>
+          <h1 data-hero style={{
+            fontFamily: "Outfit, sans-serif", fontWeight: 800,
+            fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1.15,
+            maxWidth: 720, margin: "0 auto 20px", letterSpacing: "-0.5px",
+          }}>
+            Support, Conseil Et Maintenance
+          </h1>
+          <p data-hero style={{
+            fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.7)",
+            fontSize: 17, lineHeight: 1.8, maxWidth: 640, margin: "0 auto 40px",
+          }}>
+            Nous accompagnons vos équipes avec une gamme complète de services IT — de l'assistance quotidienne aux projets de transformation stratégique.
+          </p>
+          <Link
+            data-hero
+            to="/contact"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 10,
+              background: ORANGE, color: "#fff",
+              fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 15,
+              padding: "16px 32px", borderRadius: 12, textDecoration: "none",
+              boxShadow: "0 4px 16px rgba(249,115,22,0.3)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 8px 24px rgba(249,115,22,0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "none";
+              e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.3)";
+            }}
+          >
+            Demander un audit
+            <ArrowRight size={16} />
+          </Link>
         </div>
-        <h1 data-hero style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 48, lineHeight: 1.15, maxWidth: 720, margin: "0 auto 20px" }}>
-          Support, Conseil Et Maintenance
-        </h1>
-        <p data-hero style={{ fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.75)", fontSize: 17, lineHeight: 1.8, maxWidth: 640, margin: "0 auto 36px" }}>
-          Nous accompagnons vos équipes avec une gamme complète de services IT — de l'assistance quotidienne aux projets de transformation stratégique.
-        </p>
-        <Link
-          data-hero
-          to="/contact"
-          style={{ display: "inline-flex", alignItems: "center", gap: 10, background: ORANGE, color: "#fff", fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 15, padding: "14px 32px", borderRadius: 10, textDecoration: "none" }}
-        >
-          Demander un audit →
-        </Link>
       </div>
 
       {/* Grid */}
-      <div style={{ background: LIGHT_GRAY, padding: "80px 80px" }} className="services-page-body">
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <h2 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 36, color: DARK, marginBottom: 12 }}>
+      <div style={{ background: LIGHT_GRAY, padding: "100px 0" }} className="services-page-body">
+        <div style={{ width: "90%", maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 64 }}>
+            <h2 style={{
+              fontFamily: "Outfit, sans-serif", fontWeight: 800,
+              fontSize: "clamp(28px, 4vw, 36px)", color: DARK,
+              margin: "0 0 14px", letterSpacing: "-0.5px",
+            }}>
               Une offre complète pour votre activité
             </h2>
-            <p style={{ fontFamily: "Open Sans, sans-serif", color: "#6C7A89", fontSize: 16, maxWidth: 580, margin: "0 auto" }}>
+            <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 16, maxWidth: 580, margin: "0 auto", lineHeight: 1.7 }}>
               Cliquez sur "En savoir plus" pour découvrir le détail de chaque service.
             </p>
           </div>
@@ -262,19 +351,53 @@ export default function ServicesPage() {
       </div>
 
       {/* CTA */}
-      <div style={{ background: NAVY, padding: "72px 80px", textAlign: "center" }}>
-        <h2 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 38, color: "#fff", marginBottom: 16 }}>
-          Un service sur mesure pour votre entreprise
-        </h2>
-        <p style={{ fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.75)", fontSize: 16, marginBottom: 36 }}>
-          Nos experts sont disponibles pour analyser vos besoins et vous proposer un contrat de service adapté.
-        </p>
-        <Link
-          to="/contact"
-          style={{ display: "inline-flex", alignItems: "center", gap: 10, background: ORANGE, color: "#fff", fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 15, padding: "16px 40px", borderRadius: 10, textDecoration: "none" }}
-        >
-          Nous contacter →
-        </Link>
+      <div style={{
+        background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 100%)`,
+        padding: "96px 0", textAlign: "center", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{
+          position: "absolute", top: "40%", left: "50%", transform: "translate(-50%, -50%)",
+          width: 500, height: 300, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%)",
+          filter: "blur(50px)", pointerEvents: "none",
+        }} />
+        <div style={{ width: "90%", maxWidth: 700, margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <h2 style={{
+            fontFamily: "Outfit, sans-serif", fontWeight: 800,
+            fontSize: "clamp(28px, 4vw, 38px)", color: "#fff",
+            margin: "0 0 18px", letterSpacing: "-0.5px",
+          }}>
+            Un service sur mesure pour votre entreprise
+          </h2>
+          <p style={{
+            fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.65)",
+            fontSize: 16, lineHeight: 1.7, margin: "0 auto 40px", maxWidth: 560,
+          }}>
+            Nos experts sont disponibles pour analyser vos besoins et vous proposer un contrat de service adapté.
+          </p>
+          <Link
+            to="/contact"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 10,
+              background: ORANGE, color: "#fff",
+              fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 15,
+              padding: "16px 36px", borderRadius: 12, textDecoration: "none",
+              boxShadow: "0 4px 16px rgba(249,115,22,0.3)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 8px 24px rgba(249,115,22,0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "none";
+              e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.3)";
+            }}
+          >
+            Nous contacter
+            <ArrowRight size={16} />
+          </Link>
+        </div>
       </div>
     </div>
   );

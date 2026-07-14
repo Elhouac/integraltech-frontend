@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Mail, CheckCircle } from "lucide-react";
-import { DARK, NAVY, ORANGE } from "../../constants";
+import { Mail, CheckCircle, ArrowRight } from "lucide-react";
+import { ORANGE, NAVY, DARK, BODY_TEXT, BORDER, CARD_BG } from "../../constants";
 import { useTranslation } from "../../context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -49,79 +49,222 @@ export default function Newsletter() {
     <section
       ref={sectionRef}
       aria-label="Newsletter IntegralTech"
-      style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #1a2a4a 100%)`, padding: "80px 80px" }}
       className="newsletter-section"
+      style={{
+        background: CARD_BG,
+        padding: "96px 0",
+        position: "relative",
+        overflow: "hidden",
+      }}
     >
-      <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "center" }}>
+      <div
+        style={{
+          width: "90%",
+          maxWidth: 680,
+          margin: "0 auto",
+          textAlign: "center",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {/* Icon */}
         <div
           data-nl
-          style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(230,126,34,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}
+          style={{
+            width: 60,
+            height: 60,
+            borderRadius: "16px",
+            background: `${ORANGE}12`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 24px",
+            border: `1px solid ${ORANGE}20`,
+          }}
         >
-          <Mail size={28} color={ORANGE} />
+          <Mail size={26} color={ORANGE} />
         </div>
 
-        <div data-nl style={{ color: ORANGE, fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 12, fontFamily: "Open Sans, sans-serif" }}>
+        {/* Badge */}
+        <div
+          data-nl
+          style={{
+            color: ORANGE,
+            fontWeight: 700,
+            fontSize: 12,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            marginBottom: 12,
+            fontFamily: "Outfit, sans-serif",
+          }}
+        >
           {t.newsletter.badge}
         </div>
 
-        <h2 data-nl style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 38, color: "#fff", marginBottom: 16, lineHeight: 1.2 }}>
+        {/* Title */}
+        <h2
+          data-nl
+          style={{
+            fontFamily: "Outfit, sans-serif",
+            fontWeight: 800,
+            fontSize: "clamp(26px, 4vw, 36px)",
+            color: DARK,
+            marginBottom: 16,
+            lineHeight: 1.2,
+            letterSpacing: "-0.5px",
+            margin: "0 0 16px",
+          }}
+        >
           {t.newsletter.title}
         </h2>
 
-        <p data-nl style={{ fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.7)", fontSize: 16, lineHeight: 1.8, marginBottom: 36, maxWidth: 520, margin: "0 auto 36px" }}>
+        {/* Description */}
+        <p
+          data-nl
+          style={{
+            fontFamily: "Open Sans, sans-serif",
+            color: BODY_TEXT,
+            fontSize: 16,
+            lineHeight: 1.8,
+            maxWidth: 520,
+            margin: "0 auto 36px",
+          }}
+        >
           {t.newsletter.description}
         </p>
 
         {status === "success" ? (
           <div
             data-nl
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(129,199,132,0.15)", border: "1px solid rgba(129,199,132,0.4)", borderRadius: 12, padding: "20px 32px" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              background: "rgba(34, 197, 94, 0.08)",
+              border: "1px solid rgba(34, 197, 94, 0.25)",
+              borderRadius: 14,
+              padding: "20px 32px",
+            }}
           >
-            <CheckCircle size={22} color="#81C784" />
-            <span style={{ fontFamily: "Open Sans, sans-serif", color: "#81C784", fontSize: 15, fontWeight: 700 }}>
+            <CheckCircle size={22} color="#22C55E" />
+            <span
+              style={{
+                fontFamily: "Open Sans, sans-serif",
+                color: "#22C55E",
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
               {t.newsletter.success}
             </span>
           </div>
         ) : (
-          <form data-nl onSubmit={handleSubmit} noValidate aria-label="Formulaire d'inscription à la newsletter">
-            <div style={{ display: "flex", gap: 12, maxWidth: 520, margin: "0 auto", flexWrap: "wrap" }} className="newsletter-form-row">
+          <form
+            data-nl
+            onSubmit={handleSubmit}
+            noValidate
+            aria-label="Formulaire d'inscription à la newsletter"
+          >
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                maxWidth: 520,
+                margin: "0 auto",
+                flexWrap: "wrap",
+              }}
+              className="newsletter-form-row"
+            >
               <div style={{ flex: 1, minWidth: 200 }}>
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); if (status === "error") setStatus("idle"); }}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (status === "error") setStatus("idle");
+                  }}
                   placeholder={t.newsletter.placeholder}
                   aria-label={t.newsletter.ariaLabel}
                   required
                   style={{
                     width: "100%",
                     padding: "14px 18px",
-                    borderRadius: 10,
-                    border: `1px solid ${status === "error" ? "#e74c3c" : "rgba(255,255,255,0.15)"}`,
-                    background: "rgba(255,255,255,0.08)",
-                    color: "#fff",
+                    borderRadius: 12,
+                    border: `1px solid ${status === "error" ? "#EF4444" : BORDER}`,
+                    background: "#F8FAFC",
+                    color: DARK,
                     fontFamily: "Open Sans, sans-serif",
                     fontSize: 15,
                     outline: "none",
                     boxSizing: "border-box",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
                   }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = ORANGE; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = status === "error" ? "#e74c3c" : "rgba(255,255,255,0.15)"; }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = ORANGE;
+                    e.currentTarget.style.boxShadow = `0 0 0 3px ${ORANGE}20`;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = status === "error" ? "#EF4444" : BORDER;
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                 />
                 {status === "error" && errorMsg && (
-                  <p style={{ color: "#FF8A65", fontFamily: "Open Sans, sans-serif", fontSize: 12, marginTop: 6, textAlign: "left" }}>{errorMsg}</p>
+                  <p
+                    style={{
+                      color: "#EF4444",
+                      fontFamily: "Open Sans, sans-serif",
+                      fontSize: 12,
+                      marginTop: 6,
+                      textAlign: "left",
+                    }}
+                  >
+                    {errorMsg}
+                  </p>
                 )}
               </div>
               <button
                 type="submit"
-                style={{ padding: "14px 28px", background: ORANGE, color: "#fff", border: "none", borderRadius: 10, fontFamily: "Open Sans, sans-serif", fontWeight: 700, fontSize: 15, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}
-                onMouseEnter={(e) => gsap.to(e.currentTarget, { scale: 1.05, duration: 0.25, ease: "power2.out" })}
-                onMouseLeave={(e) => gsap.to(e.currentTarget, { scale: 1, duration: 0.25, ease: "power2.out" })}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "14px 28px",
+                  background: ORANGE,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  fontFamily: "Outfit, sans-serif",
+                  fontWeight: 600,
+                  fontSize: 15,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 4px 14px rgba(249, 115, 22, 0.2)",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                  e.currentTarget.style.boxShadow = "0 6px 18px rgba(249, 115, 22, 0.35)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = "0 4px 14px rgba(249, 115, 22, 0.2)";
+                }}
               >
-                {t.newsletter.button} →
+                {t.newsletter.button}
+                <ArrowRight size={16} />
               </button>
             </div>
-            <p style={{ fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 14 }}>
+            <p
+              style={{
+                fontFamily: "Open Sans, sans-serif",
+                color: BODY_TEXT,
+                fontSize: 12,
+                marginTop: 14,
+                opacity: 0.6,
+              }}
+            >
               {t.newsletter.disclaimer}
             </p>
           </form>

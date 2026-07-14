@@ -50,7 +50,7 @@ export default function TrustedBy() {
       // ─── Infinite horizontal scroll ───
       const totalWidth = track.scrollWidth / 2; // half = one set of logos
 
-      gsap.to(track, {
+      const scrollTween = gsap.to(track, {
         x: -totalWidth,
         duration: 28,
         ease: "none",
@@ -61,8 +61,8 @@ export default function TrustedBy() {
       });
 
       // Pause on hover
-      const pause = () => gsap.globalTimeline.pause();
-      const resume = () => gsap.globalTimeline.resume();
+      const pause = () => scrollTween.pause();
+      const resume = () => scrollTween.play();
       track.addEventListener("mouseenter", pause);
       track.addEventListener("mouseleave", resume);
     }, sectionRef);
@@ -74,7 +74,7 @@ export default function TrustedBy() {
     <section
       ref={sectionRef}
       aria-label="Ils nous font confiance"
-      style={{ background: DARK, padding: "72px 0 64px", overflow: "hidden" }}
+      style={{ background: "var(--background)", padding: "72px 0 64px", overflow: "hidden" }}
       className="trustedby-section"
     >
       <div style={{ textAlign: "center", marginBottom: 48, padding: "0 80px" }}>
@@ -86,7 +86,7 @@ export default function TrustedBy() {
         </div>
         <h2
           ref={titleRef}
-          style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 36, color: "#fff", margin: 0 }}
+          style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 36, color: "var(--text)", margin: 0 }}
         >
           Plus de 500 entreprises nous font confiance
         </h2>
@@ -95,8 +95,8 @@ export default function TrustedBy() {
       {/* Scrolling track */}
       <div style={{ overflow: "hidden", position: "relative" }}>
         {/* Left / right gradient fades */}
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, background: `linear-gradient(to right, ${DARK}, transparent)`, zIndex: 2, pointerEvents: "none" }} />
-        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, background: `linear-gradient(to left, ${DARK}, transparent)`, zIndex: 2, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, background: "linear-gradient(to right, var(--background), transparent)", zIndex: 2, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 120, background: "linear-gradient(to left, var(--background), transparent)", zIndex: 2, pointerEvents: "none" }} />
 
         <div
           ref={trackRef}
@@ -106,17 +106,18 @@ export default function TrustedBy() {
             <div
               key={i}
               style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
                 borderRadius: 12,
                 padding: "20px 28px",
                 minWidth: 180,
                 textAlign: "center",
                 flexShrink: 0,
                 backdropFilter: "blur(4px)",
+                boxShadow: "var(--shadow-sm)",
               }}
             >
-              <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 15, color: "#fff", marginBottom: 4 }}>
+              <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>
                 {c.name}
               </div>
               <div style={{ fontFamily: "Open Sans, sans-serif", fontSize: 11, color: ORANGE, textTransform: "uppercase", letterSpacing: 1 }}>

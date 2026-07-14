@@ -1,21 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavLink } from "react-router-dom";
-import { Search, Globe } from "lucide-react";
+import { Search, Globe, Sun, Menu, X, Moon } from "lucide-react";
 import useSearch from "../../context/SearchContext";
 import { useLanguage, useTranslation } from "../../context/LanguageContext";
+import { useTheme } from "../../context/ThemeContext";
 import type { Language } from "../../i18n";
-
-const ORANGE = "#E67E22";
-const NAVY = "#34568B";
-const DARK = "#2C3E50";
+import { ORANGE, NAVY, DARK, BODY_TEXT, BORDER } from "../../constants";
 
 export default function Navbar() {
+  const { theme, toggleTheme } = useTheme();
   const { openSearch } = useSearch();
   const { language, setLanguage } = useLanguage();
   const t = useTranslation();
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const links = [
     { to: "/", label: t.nav.home },
@@ -23,7 +31,6 @@ export default function Navbar() {
     { to: "/solutions", label: t.nav.solutions },
     { to: "/services", label: t.nav.services },
     { to: "/blog", label: t.nav.blog },
-    { to: "/contact", label: t.nav.contact },
   ];
 
   const closeMobile = () => setMobileOpen(false);
@@ -37,49 +44,307 @@ export default function Navbar() {
     <motion.nav
       aria-label="Navigation principale"
       className="navbar-shell"
-      initial={{ y: -60, opacity: 0 }}
+      initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5, delay: 0.15 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
       style={{
-        background: "#fff",
-        boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
-        padding: "0 40px",
+        background: isScrolled ? "var(--glass-bg)" : "transparent",
+        backdropFilter: isScrolled ? "blur(12px)" : "none",
+        WebkitBackdropFilter: isScrolled ? "blur(12px)" : "none",
+        border: isScrolled ? "1px solid var(--glass-border)" : "1px solid transparent",
+        boxShadow: isScrolled ? "var(--shadow-md)" : "none",
+        padding: "0 24px 0 32px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        height: 72,
-        position: "relative",
-        zIndex: 10,
+        height: 76,
+        position: "sticky",
+        top: 20,
+        width: "90%",
+        maxWidth: 1400,
+        margin: "20px auto 0",
+        borderRadius: "18px",
+        zIndex: 1000,
+        boxSizing: "border-box",
+        transition: "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease",
       }}
     >
+      {/* Brand Logo */}
       <div className="navbar-logo" style={{ display: "flex", alignItems: "center" }}>
         <img
           src="/logo.png"
           alt="Integral Progress Technology"
-          style={{ height: 52, objectFit: "contain" }}
+          style={{ height: 48, objectFit: "contain" }}
         />
       </div>
 
-      <div className="navbar-links" style={{ display: "flex", gap: 28, alignItems: "center" }}>
+      {/* Desktop Links */}
+      <div className="navbar-links" style={{ display: "flex", gap: 8, alignItems: "center" }}>
         {links.map((link) => (
-          <motion.div key={link.to} whileHover={{ color: ORANGE, y: -1 }} transition={{ duration: 0.15 }}>
-              <NavLink
-              to={link.to}
-              style={({ isActive }: { isActive: boolean }) => ({
-                color: isActive ? ORANGE : DARK,
-                fontWeight: isActive ? 600 : 500,
-                fontSize: 14,
-                textDecoration: "none",
-                fontFamily: "Open Sans, sans-serif",
-              })}
-            >
-              {link.label}
-              {['/solutions', '/services'].includes(link.to) && (
-                <span style={{ marginLeft: 4, fontSize: 10 }}>▼</span>
-              )}
-            </NavLink>
-          </motion.div>
+          <NavLink
+            key={link.to}
+            to={link.to}
+            style={({ isActive }: { isActive: boolean }) => ({
+              color: isActive ? ORANGE : DARK,
+              fontWeight: isActive ? 600 : 500,
+              fontSize: 14,
+              textDecoration: "none",
+              fontFamily: "Outfit, sans-serif",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              position: "relative",
+              transition: "all 0.2s ease",
+            })}
+          >
+            {({ isActive }) => (
+              <>
+                {link.label}
+                {["/solutions", "/services"].includes(link.to) && (
+                  <span style={{ marginLeft: 4, fontSize: 8 }}>▼</span>
+                )}
+                {isActive && (
+                  <motion.span
+                    layoutId="navbar-active-dot"
+                    style={{
+                      position: "absolute",
+                      bottom: -2,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: 4,
+                      height: 4,
+                      borderRadius: "50%",
+                      background: ORANGE,
+                    }}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </>
+            )}
+          </NavLink>
         ))}
+      </div>
+
+      {/* Right Side Actions */}
+      <div className="navbar-actions" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 38,
+            height: 38,
+            borderRadius: "10px",
+            color: BODY_TEXT,
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = DARK;
+            e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.04)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = BODY_TEXT;
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+          aria-label={theme === "light" ? "Activer le mode sombre" : "Activer le mode clair"}
+        >
+          {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
+
+        {/* Language Selector */}
+        <div
+          style={{ position: "relative" }}
+          onMouseEnter={() => setShowLanguageMenu(true)}
+          onMouseLeave={() => setShowLanguageMenu(false)}
+        >
+          <button
+            onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 38,
+              height: 38,
+              borderRadius: "10px",
+              color: BODY_TEXT,
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = DARK;
+              e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.04)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = BODY_TEXT;
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+            aria-label={t.nav.language}
+            aria-expanded={showLanguageMenu}
+          >
+            <Globe size={18} />
+          </button>
+
+          <AnimatePresence>
+            {showLanguageMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  right: 0,
+                  marginTop: 6,
+                  background: "var(--surface)",
+                  borderRadius: 12,
+                  border: `1px solid ${BORDER}`,
+                  boxShadow: "var(--shadow-lg)",
+                  overflow: "hidden",
+                  minWidth: 140,
+                  zIndex: 1000,
+                }}
+              >
+                {(["fr", "en", "ar"] as Language[]).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => handleLanguageChange(lang)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      border: "none",
+                      background: language === lang ? "rgba(249, 115, 22, 0.08)" : "transparent",
+                      color: language === lang ? ORANGE : DARK,
+                      cursor: "pointer",
+                      fontSize: 13,
+                      fontFamily: "Outfit, sans-serif",
+                      fontWeight: language === lang ? 600 : 500,
+                      textAlign: language === "ar" ? "right" : "left",
+                      transition: "background-color 0.15s",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (language !== lang) {
+                        e.currentTarget.style.backgroundColor = "var(--hover)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (language !== lang) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }
+                    }}
+                  >
+                    <span>{lang === "fr" ? "🇫🇷" : lang === "en" ? "🇬🇧" : "🇲🇦"}</span>
+                    <span>
+                      {lang === "fr" ? t.nav.french : lang === "en" ? t.nav.english : t.nav.arabic}
+                    </span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Search Button */}
+        <button
+          onClick={() => openSearch()}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 38,
+            height: 38,
+            borderRadius: "10px",
+            color: BODY_TEXT,
+            transition: "all 0.2s ease",
+            marginRight: 4,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = DARK;
+            e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.04)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = BODY_TEXT;
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+          aria-label="Open search"
+        >
+          <Search size={18} />
+        </button>
+
+        {/* Desktop CTA Button (Contact) */}
+        <div className="navbar-links">
+          <NavLink
+            to="/contact"
+            style={({ isActive }: { isActive: boolean }) => ({
+              background: ORANGE,
+              color: "#fff",
+              fontWeight: 600,
+              fontSize: 14,
+              textDecoration: "none",
+              fontFamily: "Outfit, sans-serif",
+              padding: "10px 20px",
+              borderRadius: "10px",
+              display: "inline-flex",
+              alignItems: "center",
+              boxShadow: "0 4px 10px rgba(249, 115, 22, 0.15)",
+              transition: "all 0.2s ease",
+            })}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-1px)";
+              e.currentTarget.style.boxShadow = "0 6px 14px rgba(249, 115, 22, 0.25)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "none";
+              e.currentTarget.style.boxShadow = "0 4px 10px rgba(249, 115, 22, 0.15)";
+            }}
+          >
+            {t.nav.contact}
+          </NavLink>
+        </div>
+
+        {/* Mobile Hamburger Toggle */}
+        <button
+          className="navbar-icon-button"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-expanded={mobileOpen}
+          style={{
+            background: NAVY,
+            border: "none",
+            borderRadius: "10px",
+            width: 38,
+            height: 38,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            marginLeft: 4,
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.02)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "none";
+          }}
+        >
+          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
 
       {/* Mobile Menu */}
@@ -90,15 +355,18 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{
               position: "absolute",
-              top: 72,
+              top: 86,
               left: 0,
               right: 0,
-              background: "#fff",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-              padding: "16px 24px",
+              background: "var(--mobile-menu-bg)",
+              backdropFilter: "blur(16px)",
+              border: `1px solid ${BORDER}`,
+              borderRadius: "16px",
+              boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.08)",
+              padding: "20px 24px",
               display: "flex",
               flexDirection: "column",
               gap: 8,
@@ -115,159 +383,40 @@ export default function Navbar() {
                   fontWeight: isActive ? 600 : 500,
                   fontSize: 15,
                   textDecoration: "none",
-                  fontFamily: "Open Sans, sans-serif",
-                  padding: "10px 0",
-                  borderBottom: "1px solid rgba(0,0,0,0.06)",
+                  fontFamily: "Outfit, sans-serif",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  background: isActive ? "rgba(249, 115, 22, 0.05)" : "transparent",
+                  transition: "all 0.2s ease",
                 })}
               >
                 {link.label}
               </NavLink>
             ))}
+            {/* Contact CTA in Mobile Menu */}
+            <NavLink
+              to="/contact"
+              onClick={closeMobile}
+              style={{
+                background: ORANGE,
+                color: "#fff",
+                fontWeight: 600,
+                fontSize: 15,
+                textDecoration: "none",
+                fontFamily: "Outfit, sans-serif",
+                padding: "12px 16px",
+                borderRadius: "10px",
+                textAlign: "center",
+                marginTop: 8,
+                boxShadow: "0 4px 10px rgba(249, 115, 22, 0.15)",
+                display: "block",
+              }}
+            >
+              {t.nav.contact}
+            </NavLink>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="navbar-actions" style={{ display: "flex", gap: 12, alignItems: "center", position: "relative" }}>
-        {/* Language Selector */}
-        <motion.div
-          style={{ position: "relative" }}
-          onMouseEnter={() => setShowLanguageMenu(true)}
-          onMouseLeave={() => setShowLanguageMenu(false)}
-        >
-          <button
-            onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 36,
-              height: 36,
-              color: DARK,
-              transition: "color 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = ORANGE)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = DARK)}
-            aria-label={t.nav.language}
-            aria-expanded={showLanguageMenu}
-          >
-            <Globe size={18} />
-          </button>
-
-          <AnimatePresence>
-            {showLanguageMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  position: "absolute",
-                  top: "100%",
-                  right: 0,
-                  marginTop: 8,
-                  background: "#fff",
-                  borderRadius: 8,
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-                  overflow: "hidden",
-                  minWidth: 140,
-                  zIndex: 1000,
-                }}
-              >
-                {(["fr", "en"] as Language[]).map((lang) => (
-                  <button
-                    key={lang}
-                    onClick={() => handleLanguageChange(lang)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      border: "none",
-                      background: language === lang ? "rgba(230, 126, 34, 0.1)" : "transparent",
-                      color: language === lang ? ORANGE : DARK,
-                      cursor: "pointer",
-                      fontSize: 14,
-                      fontWeight: language === lang ? 600 : 500,
-                      textAlign: "left",
-                      transition: "background-color 0.15s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (language !== lang) {
-                        (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                          "rgba(0, 0, 0, 0.04)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (language !== lang) {
-                        (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                          "transparent";
-                      }
-                    }}
-                  >
-                    {lang === "fr" ? "🇫🇷 " : "🇬🇧 "}
-                    {lang === "fr" ? t.nav.french : t.nav.english}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* Search Button */}
-        <button
-          onClick={() => openSearch()}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 36,
-            height: 36,
-            color: DARK,
-            transition: "color 0.2s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = ORANGE)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = DARK)}
-          aria-label="Open search"
-        >
-          <Search size={18} />
-        </button>
-
-        <button
-          className="navbar-icon-button"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
-          aria-expanded={mobileOpen}
-          style={{
-            background: NAVY,
-            border: "none",
-            borderRadius: 6,
-            width: 36,
-            height: 36,
-            cursor: "pointer",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
-          }}
-        >
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              style={{
-                width: 14,
-                height: 2,
-                background: "#fff",
-                display: "block",
-              }}
-            />
-          ))}
-        </button>
-      </div>
     </motion.nav>
   );
 }

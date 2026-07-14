@@ -35,7 +35,7 @@ export default function GlobalSearch() {
     { id: "contact", title: t.nav.contact, category: "Pages", to: "/contact" },
   ];
 
-  const searchIndex = getSearchIndex();
+  const searchIndex = React.useMemo(() => getSearchIndex(), [t.nav]);
 
   // Handle opening
   useEffect(() => {
@@ -170,12 +170,13 @@ export default function GlobalSearch() {
         ref={contentRef}
         style={{
           width: "min(600px, 92%)",
-          background: "#fff",
+          background: "var(--surface)",
           borderRadius: "12px",
-          boxShadow: "0 20px 60px rgba(12, 24, 40, 0.24)",
+          boxShadow: "var(--shadow-xl)",
           padding: "16px",
           display: "flex",
           flexDirection: "column",
+          border: "1px solid var(--border)",
         }}
       >
         {/* Search Input */}
@@ -193,15 +194,17 @@ export default function GlobalSearch() {
               fontSize: "15px",
               fontFamily: "inherit",
               borderRadius: "8px",
-              border: "1px solid rgba(0, 0, 0, 0.08)",
+              border: "1px solid var(--border)",
+              background: "var(--background)",
+              color: "var(--text)",
               outline: "none",
-              transition: "border-color 0.2s",
+              transition: "all 0.2s",
             }}
             onFocus={(e) => {
-              (e.target as HTMLInputElement).style.borderColor = "rgba(14, 110, 255, 0.3)";
+              (e.target as HTMLInputElement).style.borderColor = "var(--accent)";
             }}
             onBlur={(e) => {
-              (e.target as HTMLInputElement).style.borderColor = "rgba(0, 0, 0, 0.08)";
+              (e.target as HTMLInputElement).style.borderColor = "var(--border)";
             }}
           />
           <button
@@ -226,7 +229,7 @@ export default function GlobalSearch() {
           style={{
             maxHeight: "360px",
             overflowY: "auto",
-            borderTop: "1px solid rgba(0, 0, 0, 0.06)",
+            borderTop: "1px solid var(--border)",
             paddingTop: "8px",
           }}
         >
@@ -234,7 +237,7 @@ export default function GlobalSearch() {
             <div
               style={{
                 padding: "20px 16px",
-                color: "#999",
+                color: "var(--muted)",
                 fontSize: "14px",
                 textAlign: "center",
               }}
@@ -254,24 +257,24 @@ export default function GlobalSearch() {
                   flexDirection: "column",
                   gap: "4px",
                   cursor: "pointer",
-                  background: i === active ? "rgba(14, 110, 255, 0.08)" : "transparent",
+                  background: i === active ? "var(--hover)" : "transparent",
                   border: "none",
                   borderRadius: "8px",
                   textAlign: "left",
                   transition: "background-color 0.15s",
                 }}
               >
-                <div style={{ fontWeight: 600, fontSize: "15px", color: "#000" }}>
+                <div style={{ fontWeight: 600, fontSize: "15px", color: "var(--text)" }}>
                   {item.title}
                 </div>
                 {item.subtitle && (
-                  <div style={{ fontSize: "13px", color: "#666" }}>{item.subtitle}</div>
+                  <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{item.subtitle}</div>
                 )}
                 {item.category && (
                   <div
                     style={{
                       fontSize: "11px",
-                      color: "#999",
+                      color: "var(--muted)",
                       textTransform: "uppercase",
                       letterSpacing: "0.5px",
                     }}

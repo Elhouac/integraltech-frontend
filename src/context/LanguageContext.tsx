@@ -1,10 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { fr } from "../i18n/fr";
 import { en } from "../i18n/en";
+import { ar } from "../i18n/ar";
 import type { Language } from "../i18n";
 
-// Translations type that accepts both fr and en
-type Translations = typeof fr | typeof en;
+// Translations type that accepts fr, en, and ar
+type Translations = typeof fr | typeof en | typeof ar;
 
 type LanguageContextValue = {
   language: Language;
@@ -18,34 +19,24 @@ const STORAGE_KEY = "integraltech-language";
 const DEFAULT_LANGUAGE: Language = "fr";
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
-  const [mounted, setMounted] = useState(false);
-
-  // Initialize from localStorage
-  useEffect(() => {
+  const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
-    const lang = stored || DEFAULT_LANGUAGE;
-    setLanguageState(lang);
-    setMounted(true);
-  }, []);
+    return stored || DEFAULT_LANGUAGE;
+  });
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem(STORAGE_KEY, lang);
-    // Dispatch custom event for potential external listeners
     window.dispatchEvent(new CustomEvent("language-change", { detail: { language: lang } }));
   }, []);
 
-  const translations: Translations = language === "en" ? en : fr;
+  // Update HTML dir and lang attributes dynamically
+  useEffect(() => {
+    document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = language;
+  }, [language]);
 
-  // Avoid hydration mismatch
-  if (!mounted) {
-    return (
-      <LanguageContext.Provider value={{ language: DEFAULT_LANGUAGE, setLanguage, t: fr }}>
-        {children}
-      </LanguageContext.Provider>
-    );
-  }
+  const translations: Translations = language === "ar" ? ar : language === "en" ? en : fr;
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t: translations }}>

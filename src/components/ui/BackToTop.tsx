@@ -3,8 +3,7 @@ import { gsap } from "gsap";
 import { ChevronUp } from "lucide-react";
 
 const SCROLL_THRESHOLD = 350;
-const DARK = "#2C3E50";
-const ORANGE = "#E67E22";
+import { ORANGE, NAVY } from "../../constants";
 
 export default function BackToTop() {
   const [isVisible, setIsVisible] = useState(false);
@@ -136,7 +135,7 @@ export default function BackToTop() {
         padding: 0,
         border: "none",
         borderRadius: "12px",
-        background: DARK,
+        background: NAVY,
         color: "#fff",
         cursor: "pointer",
         display: "flex",
