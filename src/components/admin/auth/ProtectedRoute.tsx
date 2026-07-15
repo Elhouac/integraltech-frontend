@@ -1,15 +1,24 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import type { UserRole } from "../../../context/AuthContext";
+import { hasPermission } from "../../../utils/permissions";
+import type { Resource, Action } from "../../../utils/permissions";
 import { ACCENT, TEXT_SECONDARY } from "../../../constants";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: UserRole;
+  resource?: Resource;
+  action?: Action;
 }
 
-export default function ProtectedRoute({ children, requiredRole = "reader" }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, hasRole } = useAuth();
+export default function ProtectedRoute({
+  children,
+  requiredRole,
+  resource,
+  action = "view",
+}: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading, hasRole, user } = useAuth();
   const location = useLocation();
 
   // ── Show loading state while restoring session ──
@@ -43,8 +52,20 @@ export default function ProtectedRoute({ children, requiredRole = "reader" }: Pr
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
-  // ── Insufficient role → show 403 ──
-  if (!hasRole(requiredRole)) {
+  // ── Check permissions ──
+  let permitted = true;
+  if (user) {
+    if (resource) {
+      permitted = hasPermission(user.role, resource, action);
+    } else if (requiredRole) {
+      permitted = hasRole(requiredRole);
+    }
+  } else {
+    permitted = false;
+  }
+
+  // ── Insufficient permissions → show 403 ──
+  if (!permitted) {
     return (
       <div
         style={{

@@ -11,6 +11,7 @@ import {
   BarChart3,
   Send,
 } from "lucide-react";
+import type { UserRole } from "../context/AuthContext";
 
 // ──────────────────────────────────────────────
 // All admin mock data centralized here.
@@ -407,3 +408,24 @@ export const MOCK_POSTS: Post[] = [
     tags: ["AWS", "DevOps"]
   }
 ];
+
+// ── System Users ──
+
+export interface SystemUser {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  is_active: boolean;
+  last_login: string | null;
+}
+
+export const MOCK_SYSTEM_USERS: SystemUser[] = [
+  { id: 1, name: "Super Admin", email: "admin@integraltech.ma", role: "super_admin", is_active: true, last_login: "2026-07-15T00:10:00Z" },
+  { id: 2, name: "Éditeur Principal", email: "editor@integraltech.ma", role: "editor", is_active: true, last_login: "2026-07-14T18:30:00Z" },
+  { id: 3, name: "Support Technique", email: "support@integraltech.ma", role: "support", is_active: true, last_login: "2026-07-13T11:20:00Z" },
+  { id: 4, name: "Observateur Public", email: "viewer@integraltech.ma", role: "viewer", is_active: true, last_login: "2026-07-12T09:45:00Z" },
+  { id: 5, name: "Stagiaire IT", email: "intern@integraltech.ma", role: "viewer", is_active: false, last_login: null },
+  { id: 6, name: "Rédacteur Externe", email: "writer@integraltech.ma", role: "editor", is_active: true, last_login: "2026-07-10T14:15:00Z" },
+];
+

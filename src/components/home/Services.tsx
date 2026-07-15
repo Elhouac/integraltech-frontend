@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, Variants } from "framer-motion";
 import { ShieldCheck, Cloud, Server, Zap, BarChart3, Layers } from "lucide-react";
 import { useTranslation } from "../../context/LanguageContext";
 import { ORANGE, NAVY, DARK, BODY_TEXT, BORDER, CARD_BG, LIGHT_GRAY } from "../../constants";
@@ -19,7 +19,7 @@ export default function Services() {
   ];
 
   // Framer Motion Animation Variants
-  const containerVariants = {
+  const containerVariants: Variants = {
     initial: {},
     animate: {
       transition: {
@@ -28,7 +28,7 @@ export default function Services() {
     },
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     initial: { opacity: 0, y: 30 },
     animate: {
       opacity: 1,
@@ -43,7 +43,7 @@ export default function Services() {
     },
   };
 
-  const iconVariants = {
+  const iconVariants: Variants = {
     initial: { scale: 1, color: NAVY, backgroundColor: "rgba(30, 58, 138, 0.05)" },
     hover: {
       scale: 1.08,
@@ -53,13 +53,14 @@ export default function Services() {
     },
   };
 
-  const accentVariants = {
+  const accentVariants: Variants = {
     initial: { scaleX: 0 },
     hover: {
       scaleX: 1,
       transition: { duration: 0.35, ease: "easeOut" },
     },
   };
+
 
   return (
     <section

@@ -10,6 +10,7 @@ export const en = {
     language: "Language",
     french: "Français",
     english: "English",
+    arabic: "العربية",
   },
 
   // Search

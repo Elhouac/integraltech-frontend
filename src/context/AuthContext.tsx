@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 // ── Types ──
 
-export type UserRole = "super_admin" | "admin" | "editor" | "reader";
+export type UserRole = "super_admin" | "admin" | "editor" | "support" | "viewer" | "reader";
 
 export interface AdminUser {
   id: number;
@@ -24,7 +24,9 @@ interface AuthContextType {
 
 // ── Role hierarchy (higher number = more permissions) ──
 const ROLE_LEVELS: Record<UserRole, number> = {
+  viewer: 1,
   reader: 1,
+  support: 2,
   editor: 2,
   admin: 3,
   super_admin: 4,
@@ -41,6 +43,16 @@ const MOCK_USERS: { email: string; password: string; user: AdminUser }[] = [
     email: "editor@integraltech.ma",
     password: "editor123",
     user: { id: 2, name: "Éditeur", email: "editor@integraltech.ma", role: "editor" },
+  },
+  {
+    email: "support@integraltech.ma",
+    password: "support123",
+    user: { id: 3, name: "Support Agent", email: "support@integraltech.ma", role: "support" },
+  },
+  {
+    email: "viewer@integraltech.ma",
+    password: "viewer123",
+    user: { id: 4, name: "Simple Observateur", email: "viewer@integraltech.ma", role: "viewer" },
   },
 ];
 

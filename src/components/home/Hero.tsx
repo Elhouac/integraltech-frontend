@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "../../context/LanguageContext";
 import { ShieldCheck, Database, Cpu, Wifi, Zap, ArrowRight } from "lucide-react";
@@ -8,7 +8,7 @@ export default function Hero() {
   const t = useTranslation();
 
   // Floating animations helper with dynamic coordinates
-  const floatAnim = (duration: number, delay: number) => ({
+  const floatAnim = (duration: number, delay: number): HTMLMotionProps<"div"> => ({
     animate: {
       y: [0, -12, 0],
     },

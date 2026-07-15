@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, Variants } from "framer-motion";
 import { CheckCircle, Zap, ShieldCheck, BarChart3, ArrowRight } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "../../context/LanguageContext";
@@ -22,7 +22,7 @@ export default function About() {
     animate: { transition: { staggerChildren: 0.1 } },
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     initial: { opacity: 0, y: 24, scale: 0.95 },
     animate: {
       opacity: 1,

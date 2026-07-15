@@ -2,13 +2,14 @@ import { type ReactNode, lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
-import HomePage from "./HomePage";
-import AboutPage from "./pages/About";
-import SolutionsPage from "./pages/Solutions";
-import ServicesPage from "./pages/Services";
-import BlogPage from "./pages/Blog";
-import ContactPage from "./pages/Contact";
-import Home from "./pages/Home";
+// ── Lazy-loaded public pages ──
+const HomePage = lazy(() => import("./HomePage"));
+const AboutPage = lazy(() => import("./pages/About"));
+const SolutionsPage = lazy(() => import("./pages/Solutions"));
+const ServicesPage = lazy(() => import("./pages/Services"));
+const BlogPage = lazy(() => import("./pages/Blog"));
+const ContactPage = lazy(() => import("./pages/Contact"));
+const Home = lazy(() => import("./pages/Home"));
 import { SearchProvider } from "./context/SearchContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -31,6 +32,7 @@ const PostsPage = lazy(() => import("./pages/admin/PostsPage"));
 const PostCreatePage = lazy(() => import("./pages/admin/PostCreatePage"));
 const PostEditPage = lazy(() => import("./pages/admin/PostEditPage"));
 const CategoriesPage = lazy(() => import("./pages/admin/CategoriesPage"));
+const UsersPage = lazy(() => import("./pages/admin/UsersPage"));
 
 // ── Suspense fallback for admin chunk loading ──
 function AdminFallback() {
@@ -49,6 +51,32 @@ function AdminFallback() {
           width: 36,
           height: 36,
           border: "3px solid var(--border)",
+          borderTopColor: "var(--accent)",
+          borderRadius: "50%",
+          animation: "admin-spin 0.8s linear infinite",
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Suspense fallback for public route loading ──
+function PublicFallback() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "400px",
+        background: "transparent",
+      }}
+    >
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          border: "2px solid var(--border)",
           borderTopColor: "var(--accent)",
           borderRadius: "50%",
           animation: "admin-spin 0.8s linear infinite",
@@ -84,13 +112,13 @@ export default function App() {
                 <BackToTop />
                 <Routes>
                   {/* ── Public Routes ── */}
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/home" element={<Home />} />
-                  <Route path="/about" element={<AppShell><AboutPage /></AppShell>} />
-                  <Route path="/solutions" element={<AppShell><SolutionsPage /></AppShell>} />
-                  <Route path="/services" element={<AppShell><ServicesPage /></AppShell>} />
-                  <Route path="/blog" element={<AppShell><BlogPage /></AppShell>} />
-                  <Route path="/contact" element={<AppShell><ContactPage /></AppShell>} />
+                  <Route path="/" element={<Suspense fallback={<PublicFallback />}><HomePage /></Suspense>} />
+                  <Route path="/home" element={<Suspense fallback={<PublicFallback />}><Home /></Suspense>} />
+                  <Route path="/about" element={<AppShell><Suspense fallback={<PublicFallback />}><AboutPage /></Suspense></AppShell>} />
+                  <Route path="/solutions" element={<AppShell><Suspense fallback={<PublicFallback />}><SolutionsPage /></Suspense></AppShell>} />
+                  <Route path="/services" element={<AppShell><Suspense fallback={<PublicFallback />}><ServicesPage /></Suspense></AppShell>} />
+                  <Route path="/blog" element={<AppShell><Suspense fallback={<PublicFallback />}><BlogPage /></Suspense></AppShell>} />
+                  <Route path="/contact" element={<AppShell><Suspense fallback={<PublicFallback />}><ContactPage /></Suspense></AppShell>} />
 
                   {/* ── Admin Auth Pages (lazy-loaded, standalone) ── */}
                   <Route path="/admin/login" element={<Suspense fallback={<AdminFallback />}><LoginPage /></Suspense>} />
@@ -109,14 +137,15 @@ export default function App() {
                     }
                   >
                     <Route index element={<Navigate to="dashboard" replace />} />
-                    <Route path="dashboard" element={<Suspense fallback={<AdminFallback />}><DashboardPage /></Suspense>} />
-                    <Route path="leads" element={<Suspense fallback={<AdminFallback />}><LeadsPage /></Suspense>} />
-                    <Route path="leads/:id" element={<Suspense fallback={<AdminFallback />}><LeadDetailPage /></Suspense>} />
-                    <Route path="subscribers" element={<Suspense fallback={<AdminFallback />}><SubscribersPage /></Suspense>} />
-                    <Route path="posts" element={<Suspense fallback={<AdminFallback />}><PostsPage /></Suspense>} />
-                    <Route path="posts/create" element={<Suspense fallback={<AdminFallback />}><PostCreatePage /></Suspense>} />
-                    <Route path="posts/:id/edit" element={<Suspense fallback={<AdminFallback />}><PostEditPage /></Suspense>} />
-                    <Route path="categories" element={<Suspense fallback={<AdminFallback />}><CategoriesPage /></Suspense>} />
+                    <Route path="dashboard" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="dashboard" action="view"><DashboardPage /></ProtectedRoute></Suspense>} />
+                    <Route path="leads" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="leads" action="view"><LeadsPage /></ProtectedRoute></Suspense>} />
+                    <Route path="leads/:id" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="leads" action="view"><LeadDetailPage /></ProtectedRoute></Suspense>} />
+                    <Route path="subscribers" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="subscribers" action="view"><SubscribersPage /></ProtectedRoute></Suspense>} />
+                    <Route path="posts" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="blog" action="view"><PostsPage /></ProtectedRoute></Suspense>} />
+                    <Route path="posts/create" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="blog" action="create"><PostCreatePage /></ProtectedRoute></Suspense>} />
+                    <Route path="posts/:id/edit" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="blog" action="edit"><PostEditPage /></ProtectedRoute></Suspense>} />
+                    <Route path="categories" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="categories" action="view"><CategoriesPage /></ProtectedRoute></Suspense>} />
+                    <Route path="users" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="users" action="view"><UsersPage /></ProtectedRoute></Suspense>} />
                     <Route path="*" element={<div style={{ padding: 40, fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--text)" }}>Page en construction</div>} />
                   </Route>
                 </Routes>

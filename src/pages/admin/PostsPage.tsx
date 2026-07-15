@@ -13,6 +13,7 @@ import ConfirmDialog from "../../components/admin/shared/ConfirmDialog";
 import { MOCK_POSTS, MOCK_CATEGORIES, POST_STATUS_CONFIG } from "../../data/admin-mocks";
 import type { Post, PostStatus } from "../../data/admin-mocks";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
+import { safeSort, getSafeValue } from "../../utils/sort";
 
 const PER_PAGE = 8;
 
@@ -90,20 +91,12 @@ export default function PostsPage() {
       );
     }
 
-    result.sort((a, b) => {
-      let aVal = "";
-      let bVal = "";
+    return safeSort(result, sort.key, sort.direction, (item) => {
       if (sort.key === "title") {
-        aVal = a.title.fr;
-        bVal = b.title.fr;
-      } else {
-        aVal = String((a as Record<string, unknown>)[sort.key] ?? "");
-        bVal = String((b as Record<string, unknown>)[sort.key] ?? "");
+        return item.title.fr;
       }
-      return sort.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      return String(getSafeValue(item, sort.key) ?? "");
     });
-
-    return result;
   }, [posts, search, statusFilter, categoryFilter, sort]);
 
   const paginationMeta: PaginationMeta = {

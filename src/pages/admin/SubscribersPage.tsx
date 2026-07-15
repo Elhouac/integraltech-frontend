@@ -12,6 +12,7 @@ import ConfirmDialog from "../../components/admin/shared/ConfirmDialog";
 import { MOCK_SUBSCRIBERS } from "../../data/admin-mocks";
 import type { Subscriber } from "../../data/admin-mocks";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
+import { safeSort } from "../../utils/sort";
 
 const PER_PAGE = 10;
 
@@ -75,13 +76,7 @@ export default function SubscribersPage() {
       result = result.filter((s) => s.email.toLowerCase().includes(q));
     }
 
-    result.sort((a, b) => {
-      const aVal = String((a as Record<string, unknown>)[sort.key] ?? "");
-      const bVal = String((b as Record<string, unknown>)[sort.key] ?? "");
-      return sort.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-    });
-
-    return result;
+    return safeSort(result, sort.key, sort.direction);
   }, [subscribers, search, statusFilter, sort]);
 
   const paginationMeta: PaginationMeta = { page, perPage: PER_PAGE, total: filtered.length };

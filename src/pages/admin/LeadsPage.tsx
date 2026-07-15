@@ -13,6 +13,7 @@ import LeadExportButton from "../../components/admin/leads/LeadExportButton";
 import { MOCK_LEADS } from "../../data/admin-mocks";
 import type { Lead, LeadStatus } from "../../data/admin-mocks";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
+import { safeSort } from "../../utils/sort";
 
 const PER_PAGE = 8;
 
@@ -66,15 +67,7 @@ export default function LeadsPage() {
       );
     }
 
-    // Sort
-    result.sort((a, b) => {
-      const aVal = String((a as Record<string, unknown>)[sort.key] ?? "");
-      const bVal = String((b as Record<string, unknown>)[sort.key] ?? "");
-      const cmp = aVal.localeCompare(bVal);
-      return sort.direction === "asc" ? cmp : -cmp;
-    });
-
-    return result;
+    return safeSort(result, sort.key, sort.direction);
   }, [search, statusFilter, sort]);
 
   // ── Pagination slice ──

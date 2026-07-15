@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import SidebarLink from "./SidebarLink";
 import { useTheme } from "../../../context/ThemeContext";
+import { useAuth } from "../../../context/AuthContext";
+import { hasPermission } from "../../../utils/permissions";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../../constants";
 
 interface AdminSidebarProps {
@@ -40,8 +42,17 @@ function SectionLabel({ label, collapsed }: { label: string; collapsed: boolean 
 
 export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: AdminSidebarProps) {
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
+  const role = user?.role || "reader";
 
   const sidebarWidth = collapsed ? 72 : 260;
+
+  const showLeads = hasPermission(role, "leads", "view");
+  const showSubscribers = hasPermission(role, "subscribers", "view");
+  const showBlog = hasPermission(role, "blog", "view");
+  const showCategories = hasPermission(role, "categories", "view");
+  const showUsers = hasPermission(role, "users", "view");
+  const showSettings = hasPermission(role, "settings", "view");
 
   const navContent = (
     <div
@@ -139,25 +150,57 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
         }}
       >
         {/* Main */}
-        <SidebarLink to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} collapsed={collapsed} onClick={onCloseMobile} />
+        {hasPermission(role, "dashboard", "view") && (
+          <SidebarLink to="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} collapsed={collapsed} onClick={onCloseMobile} />
+        )}
 
         {/* Section: Gestion */}
-        <SectionLabel label="Gestion" collapsed={collapsed} />
-        <SidebarLink to="/admin/leads" label="Leads" icon={Inbox} badge={3} collapsed={collapsed} onClick={onCloseMobile} />
-        <SidebarLink to="/admin/subscribers" label="Newsletter" icon={Mail} collapsed={collapsed} onClick={onCloseMobile} />
+        {(showLeads || showSubscribers) && (
+          <>
+            <SectionLabel label="Gestion" collapsed={collapsed} />
+            {showLeads && (
+              <SidebarLink to="/admin/leads" label="Leads" icon={Inbox} badge={3} collapsed={collapsed} onClick={onCloseMobile} />
+            )}
+            {showSubscribers && (
+              <SidebarLink to="/admin/subscribers" label="Newsletter" icon={Mail} collapsed={collapsed} onClick={onCloseMobile} />
+            )}
+          </>
+        )}
 
         {/* Section: Contenu */}
-        <SectionLabel label="Contenu" collapsed={collapsed} />
-        <SidebarLink to="/admin/posts" label="Articles" icon={FileText} collapsed={collapsed} onClick={onCloseMobile} />
-        <SidebarLink to="/admin/categories" label="Catégories" icon={FolderOpen} collapsed={collapsed} onClick={onCloseMobile} />
-        <SidebarLink to="/admin/media" label="Médiathèque" icon={Image} collapsed={collapsed} onClick={onCloseMobile} />
-        <SidebarLink to="/admin/services" label="Services" icon={Wrench} collapsed={collapsed} onClick={onCloseMobile} />
-        <SidebarLink to="/admin/solutions" label="Solutions" icon={Lightbulb} collapsed={collapsed} onClick={onCloseMobile} />
+        {(showBlog || showCategories) && (
+          <>
+            <SectionLabel label="Contenu" collapsed={collapsed} />
+            {showBlog && (
+              <SidebarLink to="/admin/posts" label="Articles" icon={FileText} collapsed={collapsed} onClick={onCloseMobile} />
+            )}
+            {showCategories && (
+              <SidebarLink to="/admin/categories" label="Catégories" icon={FolderOpen} collapsed={collapsed} onClick={onCloseMobile} />
+            )}
+            {showBlog && (
+              <SidebarLink to="/admin/media" label="Médiathèque" icon={Image} collapsed={collapsed} onClick={onCloseMobile} />
+            )}
+            {showSettings && (
+              <>
+                <SidebarLink to="/admin/services" label="Services" icon={Wrench} collapsed={collapsed} onClick={onCloseMobile} />
+                <SidebarLink to="/admin/solutions" label="Solutions" icon={Lightbulb} collapsed={collapsed} onClick={onCloseMobile} />
+              </>
+            )}
+          </>
+        )}
 
         {/* Section: Système */}
-        <SectionLabel label="Système" collapsed={collapsed} />
-        <SidebarLink to="/admin/users" label="Utilisateurs" icon={Users} collapsed={collapsed} onClick={onCloseMobile} />
-        <SidebarLink to="/admin/settings/general" label="Paramètres" icon={SettingsIcon} collapsed={collapsed} onClick={onCloseMobile} />
+        {(showUsers || showSettings) && (
+          <>
+            <SectionLabel label="Système" collapsed={collapsed} />
+            {showUsers && (
+              <SidebarLink to="/admin/users" label="Utilisateurs" icon={Users} collapsed={collapsed} onClick={onCloseMobile} />
+            )}
+            {showSettings && (
+              <SidebarLink to="/admin/settings/general" label="Paramètres" icon={SettingsIcon} collapsed={collapsed} onClick={onCloseMobile} />
+            )}
+          </>
+        )}
       </nav>
 
       {/* ── Footer: Theme toggle ── */}

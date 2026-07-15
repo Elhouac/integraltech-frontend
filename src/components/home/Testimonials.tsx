@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, Variants } from "framer-motion";
 import { ORANGE, NAVY, DARK, BODY_TEXT, BORDER, CARD_BG, LIGHT_GRAY } from "../../constants";
 
 export default function Testimonials() {
@@ -24,12 +24,12 @@ export default function Testimonials() {
     },
   ];
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     initial: {},
     animate: { transition: { staggerChildren: 0.12 } },
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     initial: { opacity: 0, y: 30 },
     animate: {
       opacity: 1,

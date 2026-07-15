@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 import MultiLangInput from "../../components/admin/shared/MultiLangInput";
-import { MOCK_CATEGORIES, MOCK_TAGS, POST_STATUS_CONFIG } from "../../data/admin-mocks";
+import { MOCK_CATEGORIES, MOCK_TAGS, POST_STATUS_CONFIG, MOCK_POSTS } from "../../data/admin-mocks";
 import type { Post, PostStatus } from "../../data/admin-mocks";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 
