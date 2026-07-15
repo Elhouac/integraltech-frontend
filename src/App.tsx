@@ -17,6 +17,7 @@ import { PageTransitionProvider } from "./context/PageTransitionContext";
 import { AuthProvider } from "./context/AuthContext";
 import GlobalSearch from "./components/ui/GlobalSearch";
 import BackToTop from "./components/ui/BackToTop";
+import { ErrorBoundary } from "./components/error/ErrorBoundary";
 
 // ── Lazy-loaded admin modules (code-split from public bundle) ──
 const AdminLayout = lazy(() => import("./components/admin/layout/AdminLayout"));
@@ -112,13 +113,13 @@ export default function App() {
                 <BackToTop />
                 <Routes>
                   {/* ── Public Routes ── */}
-                  <Route path="/" element={<Suspense fallback={<PublicFallback />}><HomePage /></Suspense>} />
-                  <Route path="/home" element={<Suspense fallback={<PublicFallback />}><Home /></Suspense>} />
-                  <Route path="/about" element={<AppShell><Suspense fallback={<PublicFallback />}><AboutPage /></Suspense></AppShell>} />
-                  <Route path="/solutions" element={<AppShell><Suspense fallback={<PublicFallback />}><SolutionsPage /></Suspense></AppShell>} />
-                  <Route path="/services" element={<AppShell><Suspense fallback={<PublicFallback />}><ServicesPage /></Suspense></AppShell>} />
-                  <Route path="/blog" element={<AppShell><Suspense fallback={<PublicFallback />}><BlogPage /></Suspense></AppShell>} />
-                  <Route path="/contact" element={<AppShell><Suspense fallback={<PublicFallback />}><ContactPage /></Suspense></AppShell>} />
+                  <Route path="/" element={<ErrorBoundary><Suspense fallback={<PublicFallback />}><HomePage /></Suspense></ErrorBoundary>} />
+                  <Route path="/home" element={<ErrorBoundary><Suspense fallback={<PublicFallback />}><Home /></Suspense></ErrorBoundary>} />
+                  <Route path="/about" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><AboutPage /></Suspense></ErrorBoundary></AppShell>} />
+                  <Route path="/solutions" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><SolutionsPage /></Suspense></ErrorBoundary></AppShell>} />
+                  <Route path="/services" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><ServicesPage /></Suspense></ErrorBoundary></AppShell>} />
+                  <Route path="/blog" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><BlogPage /></Suspense></ErrorBoundary></AppShell>} />
+                  <Route path="/contact" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><ContactPage /></Suspense></ErrorBoundary></AppShell>} />
 
                   {/* ── Admin Auth Pages (lazy-loaded, standalone) ── */}
                   <Route path="/admin/login" element={<Suspense fallback={<AdminFallback />}><LoginPage /></Suspense>} />
@@ -129,11 +130,13 @@ export default function App() {
                   <Route
                     path="/admin"
                     element={
-                      <Suspense fallback={<AdminFallback />}>
-                        <ProtectedRoute>
-                          <AdminLayout />
-                        </ProtectedRoute>
-                      </Suspense>
+                      <ErrorBoundary>
+                        <Suspense fallback={<AdminFallback />}>
+                          <ProtectedRoute>
+                            <AdminLayout />
+                          </ProtectedRoute>
+                        </Suspense>
+                      </ErrorBoundary>
                     }
                   >
                     <Route index element={<Navigate to="dashboard" replace />} />
