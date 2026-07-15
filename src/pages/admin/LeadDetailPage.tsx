@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Mail, Phone, Calendar, User, Tag } from "lucide-react";
 import LeadStatusBadge from "../../components/admin/leads/LeadStatusBadge";
 import LeadNotes from "../../components/admin/leads/LeadNotes";
-import { MOCK_LEADS, MOCK_LEAD_NOTES, LEAD_STATUS_CONFIG } from "../../data/admin-mocks";
-import type { LeadStatus, LeadNote } from "../../data/admin-mocks";
+import { adminService } from "../../services/adminService";
+import type { LeadStatus, LeadNote, Lead } from "../../types/admin";
+import { LEAD_STATUS_CONFIG } from "../../data/admin-mocks";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 
 function formatDate(iso: string): string {
@@ -22,12 +23,60 @@ export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const lead = useMemo(() => MOCK_LEADS.find((l) => l.id === Number(id)), [id]);
+  const [lead, setLead] = useState<Lead | null>(null);
+  const [status, setStatus] = useState<LeadStatus>("new");
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [status, setStatus] = useState<LeadStatus>(lead?.status ?? "new");
-  const [notes, setNotes] = useState<LeadNote[]>(
-    MOCK_LEAD_NOTES.filter((n) => n.lead_id === Number(id))
-  );
+  useEffect(() => {
+    let active = true;
+    async function loadLeadData() {
+      try {
+        const leadId = Number(id);
+        const [leadRes, notesRes] = await Promise.all([
+          adminService.getLeadById(leadId),
+          adminService.getLeadNotes(leadId),
+        ]);
+        if (active) {
+          if (leadRes) {
+            setLead(leadRes);
+            setStatus(leadRes.status);
+            setNotes(notesRes);
+            if (!leadRes.is_read) {
+              await adminService.markLeadAsRead(leadId);
+            }
+          }
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadLeadData();
+    return () => { active = false; };
+  }, [id]);
+
+  const handleStatusChange = async (newStatus: LeadStatus) => {
+    try {
+      setStatus(newStatus);
+      await adminService.updateLeadStatus(Number(id), newStatus);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAddNote = async (content: string) => {
+    try {
+      const newNote = await adminService.addLeadNote(Number(id), "Super Admin", content);
+      setNotes((prev) => [...prev, newNote]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  if (isLoading) {
+    return <div style={{ padding: 40, color: TEXT_SECONDARY }}>Chargement du lead...</div>;
+  }
 
   if (!lead) {
     return (
@@ -58,17 +107,6 @@ export default function LeadDetailPage() {
       </div>
     );
   }
-
-  const handleAddNote = (content: string) => {
-    const newNote: LeadNote = {
-      id: Date.now(),
-      lead_id: lead.id,
-      author: "Super Admin",
-      content,
-      created_at: new Date().toISOString(),
-    };
-    setNotes((prev) => [...prev, newNote]);
-  };
 
   const infoItems = [
     { icon: Mail, label: "Email", value: lead.email },
@@ -129,7 +167,7 @@ export default function LeadDetailPage() {
             <LeadStatusBadge status={status} />
             <select
               value={status}
-              onChange={(e) => setStatus(e.target.value as LeadStatus)}
+              onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
               aria-label="Changer le statut"
               style={{
                 padding: "6px 28px 6px 10px",

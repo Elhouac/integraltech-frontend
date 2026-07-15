@@ -1,7 +1,7 @@
 import SearchInput from "../shared/SearchInput";
 import { BORDER, SURFACE, TEXT, ACCENT } from "../../../constants";
 import { LEAD_STATUS_CONFIG } from "../../../data/admin-mocks";
-import type { LeadStatus } from "../../../data/admin-mocks";
+import type { LeadStatus } from "../../../types/admin";
 
 interface LeadFiltersProps {
   search: string;

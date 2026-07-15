@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Plus, Edit2, Trash2, Shield, User, UserX, UserCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -11,8 +11,8 @@ import SearchInput from "../../components/admin/shared/SearchInput";
 import StatusBadge from "../../components/admin/shared/StatusBadge";
 import EmptyState from "../../components/admin/shared/EmptyState";
 import ConfirmDialog from "../../components/admin/shared/ConfirmDialog";
-import { MOCK_SYSTEM_USERS } from "../../data/admin-mocks";
-import type { SystemUser } from "../../data/admin-mocks";
+import { adminService } from "../../services/adminService";
+import type { SystemUser } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY, OVERLAY } from "../../constants";
 import { safeSort } from "../../utils/sort";
 
@@ -45,7 +45,22 @@ function formatLastLogin(iso: string | null): string {
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<SystemUser[]>(MOCK_SYSTEM_USERS);
+  const [users, setUsers] = useState<SystemUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await adminService.getSystemUsers();
+      setUsers(res);
+      setIsLoading(false);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -99,67 +114,52 @@ export default function UsersPage() {
     setModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
 
-    if (editingUser) {
-      // In-place edit for persistence
-      const index = MOCK_SYSTEM_USERS.findIndex((u) => u.id === editingUser.id);
-      if (index !== -1) {
-        // Enforce safety: do not allow self deactivation
-        const finalActiveStatus = editingUser.id === currentUser?.id ? true : isActive;
-        MOCK_SYSTEM_USERS[index] = {
-          ...MOCK_SYSTEM_USERS[index],
-          name: name.trim(),
-          email: email.trim(),
-          role,
-          is_active: finalActiveStatus,
-        };
-      }
-      setUsers([...MOCK_SYSTEM_USERS]);
-    } else {
-      // In-place create
-      const newUser: SystemUser = {
-        id: Date.now(),
+    try {
+      const finalActiveStatus = editingUser && editingUser.id === currentUser?.id ? true : isActive;
+      const userPayload = {
+        id: editingUser?.id,
         name: name.trim(),
         email: email.trim(),
         role,
-        is_active: isActive,
-        last_login: null,
+        is_active: finalActiveStatus,
       };
-      MOCK_SYSTEM_USERS.push(newUser);
-      setUsers([...MOCK_SYSTEM_USERS]);
+      await adminService.saveSystemUser(userPayload);
+      await fetchUsers();
+    } catch (err) {
+      console.error(err);
     }
 
     setModalOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteDialog.userId !== null) {
-      // Safeguard check
       if (deleteDialog.userId === currentUser?.id) {
         setDeleteDialog({ open: false, userId: null });
         return;
       }
-      const index = MOCK_SYSTEM_USERS.findIndex((u) => u.id === deleteDialog.userId);
-      if (index !== -1) {
-        MOCK_SYSTEM_USERS.splice(index, 1);
+      try {
+        await adminService.deleteSystemUser(deleteDialog.userId);
+        await fetchUsers();
+      } catch (err) {
+        console.error(err);
       }
-      setUsers([...MOCK_SYSTEM_USERS]);
     }
     setDeleteDialog({ open: false, userId: null });
   };
 
-  const toggleUserStatus = (u: SystemUser) => {
-    // Safeguard check
+  const toggleUserStatus = async (u: SystemUser) => {
     if (u.id === currentUser?.id) return;
-
-    const index = MOCK_SYSTEM_USERS.findIndex((usr) => usr.id === u.id);
-    if (index !== -1) {
-      MOCK_SYSTEM_USERS[index].is_active = !MOCK_SYSTEM_USERS[index].is_active;
+    try {
+      await adminService.toggleSystemUserStatus(u.id);
+      await fetchUsers();
+    } catch (err) {
+      console.error(err);
     }
-    setUsers([...MOCK_SYSTEM_USERS]);
   };
 
   const handleSearchChange = (val: string) => { setSearch(val); setPage(1); };

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, Plus, Trash2, Edit } from "lucide-react";
 import { motion } from "framer-motion";
@@ -10,8 +10,9 @@ import SearchInput from "../../components/admin/shared/SearchInput";
 import StatusBadge from "../../components/admin/shared/StatusBadge";
 import EmptyState from "../../components/admin/shared/EmptyState";
 import ConfirmDialog from "../../components/admin/shared/ConfirmDialog";
-import { MOCK_POSTS, MOCK_CATEGORIES, POST_STATUS_CONFIG } from "../../data/admin-mocks";
-import type { Post, PostStatus } from "../../data/admin-mocks";
+import { MOCK_CATEGORIES, POST_STATUS_CONFIG } from "../../data/admin-mocks";
+import { adminService } from "../../services/adminService";
+import type { Post, PostStatus } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 import { safeSort, getSafeValue } from "../../utils/sort";
 
@@ -28,7 +29,22 @@ function formatDate(iso: string | null): string {
 
 export default function PostsPage() {
   const navigate = useNavigate();
-  const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchPosts = useCallback(async () => {
+    try {
+      const res = await adminService.getPosts();
+      setPosts(res);
+      setIsLoading(false);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -54,13 +70,14 @@ export default function PostsPage() {
     setPage(1);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteDialog.postId !== null) {
-      const index = MOCK_POSTS.findIndex((p) => p.id === deleteDialog.postId);
-      if (index !== -1) {
-        MOCK_POSTS.splice(index, 1);
+      try {
+        await adminService.deletePost(deleteDialog.postId);
+        await fetchPosts();
+      } catch (err) {
+        console.error(err);
       }
-      setPosts([...MOCK_POSTS]);
     }
     setDeleteDialog({ open: false, postId: null });
   };

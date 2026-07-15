@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Send, User } from "lucide-react";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../../constants";
-import type { LeadNote } from "../../../data/admin-mocks";
+import type { LeadNote } from "../../../types/admin";
 
 interface LeadNotesProps {
   notes: LeadNote[];

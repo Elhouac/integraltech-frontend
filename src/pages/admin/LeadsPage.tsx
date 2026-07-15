@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Inbox, Circle } from "lucide-react";
@@ -10,8 +10,8 @@ import EmptyState from "../../components/admin/shared/EmptyState";
 import LeadFilters from "../../components/admin/leads/LeadFilters";
 import LeadStatusBadge from "../../components/admin/leads/LeadStatusBadge";
 import LeadExportButton from "../../components/admin/leads/LeadExportButton";
-import { MOCK_LEADS } from "../../data/admin-mocks";
-import type { Lead, LeadStatus } from "../../data/admin-mocks";
+import { adminService } from "../../services/adminService";
+import type { Lead, LeadStatus } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 import { safeSort } from "../../utils/sort";
 
@@ -27,6 +27,26 @@ function formatDate(iso: string): string {
 
 export default function LeadsPage() {
   const navigate = useNavigate();
+
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchLeads() {
+      try {
+        const res = await adminService.getLeads();
+        if (active) {
+          setLeads(res);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchLeads();
+    return () => { active = false; };
+  }, []);
 
   // ── Filters ──
   const [search, setSearch] = useState("");
@@ -49,7 +69,7 @@ export default function LeadsPage() {
 
   // ── Filtered & sorted data ──
   const filteredLeads = useMemo(() => {
-    let result = [...MOCK_LEADS];
+    let result = [...leads];
 
     // Status filter
     if (statusFilter !== "all") {
@@ -68,7 +88,7 @@ export default function LeadsPage() {
     }
 
     return safeSort(result, sort.key, sort.direction);
-  }, [search, statusFilter, sort]);
+  }, [leads, search, statusFilter, sort]);
 
   // ── Pagination slice ──
   const paginationMeta: PaginationMeta = {
@@ -133,7 +153,7 @@ export default function LeadsPage() {
     },
   ];
 
-  const unreadCount = MOCK_LEADS.filter((l) => !l.is_read).length;
+  const unreadCount = leads.filter((l) => !l.is_read).length;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>

@@ -1,5 +1,5 @@
 import KpiCard from "./KpiCard";
-import type { KpiData } from "../../../data/admin-mocks";
+import type { KpiData } from "../../../types/admin";
 
 interface KpiGridProps {
   data: KpiData[];

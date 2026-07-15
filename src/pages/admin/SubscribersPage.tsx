@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, UserX, UserCheck, Trash2, Download } from "lucide-react";
 import DataTable from "../../components/admin/shared/DataTable";
@@ -9,8 +9,8 @@ import SearchInput from "../../components/admin/shared/SearchInput";
 import StatusBadge from "../../components/admin/shared/StatusBadge";
 import EmptyState from "../../components/admin/shared/EmptyState";
 import ConfirmDialog from "../../components/admin/shared/ConfirmDialog";
-import { MOCK_SUBSCRIBERS } from "../../data/admin-mocks";
-import type { Subscriber } from "../../data/admin-mocks";
+import { adminService } from "../../services/adminService";
+import type { Subscriber } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 import { safeSort } from "../../utils/sort";
 
@@ -35,8 +35,22 @@ function escapeCsv(val: unknown): string {
 }
 
 export default function SubscribersPage() {
-  // ── Data state (mock — replace with API) ──
-  const [subscribers, setSubscribers] = useState<Subscriber[]>(MOCK_SUBSCRIBERS);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchSubscribers = useCallback(async () => {
+    try {
+      const res = await adminService.getSubscribers();
+      setSubscribers(res);
+      setIsLoading(false);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSubscribers();
+  }, [fetchSubscribers]);
 
   // ── Filters ──
   const [search, setSearch] = useState("");
@@ -116,19 +130,22 @@ export default function SubscribersPage() {
   };
 
   // ── Bulk actions ──
-  const executeBulkAction = useCallback(() => {
-    const ids = selected;
-    if (confirmDialog.action === "delete") {
-      setSubscribers((prev) => prev.filter((s) => !ids.has(s.id)));
-    } else {
-      const active = confirmDialog.action === "activate";
-      setSubscribers((prev) =>
-        prev.map((s) => (ids.has(s.id) ? { ...s, is_active: active } : s))
-      );
+  const executeBulkAction = useCallback(async () => {
+    const ids = Array.from(selected);
+    try {
+      if (confirmDialog.action === "delete") {
+        await adminService.deleteSubscribers(ids);
+      } else {
+        const active = confirmDialog.action === "activate";
+        await adminService.updateSubscriberStatus(ids, active);
+      }
+      await fetchSubscribers();
+    } catch (err) {
+      console.error(err);
     }
     setSelected(new Set());
     setConfirmDialog({ open: false, action: "delete" });
-  }, [selected, confirmDialog.action]);
+  }, [selected, confirmDialog.action, fetchSubscribers]);
 
   // ── CSV Export ──
   const handleExport = () => {

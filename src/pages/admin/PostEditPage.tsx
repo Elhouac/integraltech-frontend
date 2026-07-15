@@ -1,35 +1,69 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, X } from "lucide-react";
 import MultiLangInput from "../../components/admin/shared/MultiLangInput";
-import { MOCK_POSTS, MOCK_CATEGORIES, POST_STATUS_CONFIG } from "../../data/admin-mocks";
-import type { Post, PostStatus } from "../../data/admin-mocks";
+import { MOCK_CATEGORIES, POST_STATUS_CONFIG } from "../../data/admin-mocks";
+import { adminService } from "../../services/adminService";
+import type { Post, PostStatus } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 
 export default function PostEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const post = useMemo(() => MOCK_POSTS.find((p) => p.id === Number(id)), [id]);
+  const [post, setPost] = useState<Post | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Multilingual values
-  const [title, setTitle] = useState(post?.title ?? { fr: "", en: "", ar: "" });
-  const [excerpt, setExcerpt] = useState(post?.excerpt ?? { fr: "", en: "", ar: "" });
-  const [content, setContent] = useState(post?.content ?? { fr: "", en: "", ar: "" });
+  const [title, setTitle] = useState({ fr: "", en: "", ar: "" });
+  const [excerpt, setExcerpt] = useState({ fr: "", en: "", ar: "" });
+  const [content, setContent] = useState({ fr: "", en: "", ar: "" });
 
   // Metadata
-  const [categoryId, setCategoryId] = useState<number>(post?.category_id ?? 1);
-  const [status, setStatus] = useState<PostStatus>(post?.status ?? "draft");
-  const [publishedAt, setPublishedAt] = useState(
-    post?.published_at ? post.published_at.slice(0, 16) : ""
-  );
-  const [coverImage, setCoverImage] = useState(post?.cover_image ?? "");
-  const [seoTitle, setSeoTitle] = useState(post?.seo_title ?? "");
-  const [seoDescription, setSeoDescription] = useState(post?.seo_description ?? "");
+  const [categoryId, setCategoryId] = useState<number>(1);
+  const [status, setStatus] = useState<PostStatus>("draft");
+  const [publishedAt, setPublishedAt] = useState("");
+  const [coverImage, setCoverImage] = useState("");
+  const [seoTitle, setSeoTitle] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
 
   // Tags
-  const [tags, setTags] = useState<string[]>(post?.tags ?? []);
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    async function loadPost() {
+      try {
+        const posts = await adminService.getPosts();
+        const res = posts.find((p) => p.id === Number(id));
+        if (active) {
+          if (res) {
+            setPost(res);
+            setTitle(res.title);
+            setExcerpt(res.excerpt);
+            setContent(res.content);
+            setCategoryId(res.category_id ?? 1);
+            setStatus(res.status);
+            setPublishedAt(res.published_at ? res.published_at.slice(0, 16) : "");
+            setCoverImage(res.cover_image ?? "");
+            setSeoTitle(res.seo_title ?? "");
+            setSeoDescription(res.seo_description ?? "");
+            setTags(res.tags);
+          }
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadPost();
+    return () => { active = false; };
+  }, [id]);
+
+  if (isLoading) {
+    return <div style={{ padding: 40, color: TEXT_SECONDARY }}>Chargement de l'article...</div>;
+  }
 
   if (!post) {
     return (
@@ -76,18 +110,18 @@ export default function PostEditPage() {
     setTags(tags.filter((t) => t !== tag));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.fr.trim()) return;
 
-    const index = MOCK_POSTS.findIndex((p) => p.id === post.id);
-    if (index !== -1) {
-      MOCK_POSTS[index] = {
-        ...post,
+    try {
+      const updatedPostData = {
+        id: post.id,
         title,
         excerpt,
         content,
         category_id: categoryId,
+        author: post.author,
         cover_image: coverImage || null,
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
@@ -95,10 +129,13 @@ export default function PostEditPage() {
         published_at: status === "published" ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString()) : null,
         tags,
       };
-    }
 
-    console.log("Saving updated post:", MOCK_POSTS[index]);
-    navigate("/admin/posts");
+      await adminService.savePost(updatedPostData);
+      console.log("Saving updated post:", updatedPostData);
+      navigate("/admin/posts");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (

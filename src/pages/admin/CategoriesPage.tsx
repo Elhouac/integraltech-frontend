@@ -1,16 +1,32 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Plus, Edit2, Trash2, Folder } from "lucide-react";
 import { motion } from "framer-motion";
 import DataTable from "../../components/admin/shared/DataTable";
 import type { Column } from "../../components/admin/shared/DataTable";
 import EmptyState from "../../components/admin/shared/EmptyState";
 import ConfirmDialog from "../../components/admin/shared/ConfirmDialog";
-import { MOCK_CATEGORIES } from "../../data/admin-mocks";
-import type { Category } from "../../data/admin-mocks";
+import { adminService } from "../../services/adminService";
+import type { Category } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY, OVERLAY } from "../../constants";
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await adminService.getCategories();
+      setCategories(res);
+      setIsLoading(false);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
@@ -47,46 +63,36 @@ export default function CategoriesPage() {
     setModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nameFr.trim()) return;
 
     const newSlug = slug.trim() || nameFr.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
-    if (editingCategory) {
-      // Edit in-place for persistence
-      const index = MOCK_CATEGORIES.findIndex((c) => c.id === editingCategory.id);
-      if (index !== -1) {
-        MOCK_CATEGORIES[index] = {
-          ...MOCK_CATEGORIES[index],
-          name: { fr: nameFr, en: nameEn, ar: nameAr },
-          slug: newSlug,
-          order,
-        };
-      }
-      setCategories([...MOCK_CATEGORIES]);
-    } else {
-      // Create in-place
-      const newCat: Category = {
-        id: Date.now(),
+    try {
+      const catPayload = {
+        id: editingCategory?.id,
         name: { fr: nameFr, en: nameEn, ar: nameAr },
         slug: newSlug,
         order,
       };
-      MOCK_CATEGORIES.push(newCat);
-      setCategories([...MOCK_CATEGORIES]);
+      await adminService.saveCategory(catPayload);
+      await fetchCategories();
+    } catch (err) {
+      console.error(err);
     }
 
     setModalOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteDialog.categoryId !== null) {
-      const index = MOCK_CATEGORIES.findIndex((c) => c.id === deleteDialog.categoryId);
-      if (index !== -1) {
-        MOCK_CATEGORIES.splice(index, 1);
+      try {
+        await adminService.deleteCategory(deleteDialog.categoryId);
+        await fetchCategories();
+      } catch (err) {
+        console.error(err);
       }
-      setCategories([...MOCK_CATEGORIES]);
     }
     setDeleteDialog({ open: false, categoryId: null });
   };

@@ -1,4 +1,3 @@
-import type { LucideIcon } from "lucide-react";
 import {
   Users,
   Inbox,
@@ -11,26 +10,24 @@ import {
   BarChart3,
   Send,
 } from "lucide-react";
-import type { UserRole } from "../context/AuthContext";
+import type {
+  KpiData,
+  ActivityData,
+  QuickActionData,
+  LeadStatus,
+  Lead,
+  LeadNote,
+  Subscriber,
+  PostStatus,
+  Category,
+  Post,
+  SystemUser,
+} from "../types/admin";
 
 // ──────────────────────────────────────────────
 // All admin mock data centralized here.
-// Replace with API responses in Phase 2.
+// Replaced by adminService layer in Phase 4.
 // ──────────────────────────────────────────────
-
-// ── KPI Cards ──
-
-export interface KpiData {
-  icon: LucideIcon;
-  iconColor: string;
-  iconBg: string;
-  label: string;
-  value: string | number;
-  trend?: {
-    value: string;
-    direction: "up" | "down" | "neutral";
-  };
-}
 
 export const MOCK_KPI_DATA: KpiData[] = [
   {
@@ -66,18 +63,6 @@ export const MOCK_KPI_DATA: KpiData[] = [
     trend: { value: "-2.1% vs mois dernier", direction: "down" },
   },
 ];
-
-// ── Recent Activity ──
-
-export interface ActivityData {
-  id: number;
-  icon: LucideIcon;
-  iconColor: string;
-  iconBg: string;
-  title: string;
-  description: string;
-  time: string;
-}
 
 export const MOCK_ACTIVITIES: ActivityData[] = [
   {
@@ -126,17 +111,6 @@ export const MOCK_ACTIVITIES: ActivityData[] = [
     time: "Hier, 09:15",
   },
 ];
-
-// ── Quick Actions ──
-
-export interface QuickActionData {
-  icon: LucideIcon;
-  label: string;
-  description: string;
-  to: string;
-  color: string;
-  bg: string;
-}
 
 export const MOCK_QUICK_ACTIONS: QuickActionData[] = [
   {
@@ -189,36 +163,13 @@ export const MOCK_QUICK_ACTIONS: QuickActionData[] = [
   },
 ];
 
-// ── Leads ──
-
-export type LeadStatus = "new" | "in_progress" | "resolved" | "archived";
-
-export interface Lead {
-  id: number;
-  name: string;
-  email: string;
-  phone: string | null;
-  subject: string;
-  message: string;
-  status: LeadStatus;
-  is_read: boolean;
-  created_at: string;
-}
-
-export interface LeadNote {
-  id: number;
-  lead_id: number;
-  author: string;
-  content: string;
-  created_at: string;
-}
-
 export const LEAD_STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string }> = {
   new: { label: "Nouveau", color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
   in_progress: { label: "En cours", color: "#F97316", bg: "rgba(249,115,22,0.1)" },
   resolved: { label: "Résolu", color: "#22C55E", bg: "rgba(34,197,94,0.1)" },
   archived: { label: "Archivé", color: "#64748B", bg: "rgba(100,116,139,0.1)" },
 };
+
 
 export const MOCK_LEADS: Lead[] = [
   { id: 1, name: "Ahmed Benali", email: "ahmed@company.ma", phone: "+212 6 12 34 56 78", subject: "Demande de devis ERP", message: "Nous cherchons à implémenter un ERP pour notre entreprise de 50 employés. Pouvez-vous nous envoyer une proposition ?", status: "new", is_read: false, created_at: "2026-07-14T10:30:00Z" },
@@ -248,13 +199,6 @@ export const MOCK_LEAD_NOTES: LeadNote[] = [
 
 // ── Newsletter Subscribers ──
 
-export interface Subscriber {
-  id: number;
-  email: string;
-  is_active: boolean;
-  subscribed_at: string;
-}
-
 export const MOCK_SUBSCRIBERS: Subscriber[] = [
   { id: 1, email: "ahmed.b@company.ma", is_active: true, subscribed_at: "2026-07-14T09:00:00Z" },
   { id: 2, email: "fatima.zahra@gmail.com", is_active: true, subscribed_at: "2026-07-13T14:20:00Z" },
@@ -277,32 +221,6 @@ export const MOCK_SUBSCRIBERS: Subscriber[] = [
 ];
 
 // ── Blog CMS (Categories, Tags, Posts) ──
-
-export type PostStatus = "draft" | "published" | "archived";
-
-export interface Category {
-  id: number;
-  name: { fr: string; en: string; ar: string };
-  slug: string;
-  order: number;
-}
-
-export interface Post {
-  id: number;
-  slug: string;
-  title: { fr: string; en: string; ar: string };
-  content: { fr: string; en: string; ar: string };
-  excerpt: { fr: string; en: string; ar: string };
-  category_id: number | null;
-  author: string;
-  cover_image: string | null;
-  seo_title: string | null;
-  seo_description: string | null;
-  status: PostStatus;
-  published_at: string | null;
-  created_at: string;
-  tags: string[];
-}
 
 export const POST_STATUS_CONFIG: Record<PostStatus, { label: string; color: string; bg: string }> = {
   draft: { label: "Brouillon", color: "#64748B", bg: "rgba(100,116,139,0.1)" },
@@ -410,15 +328,6 @@ export const MOCK_POSTS: Post[] = [
 ];
 
 // ── System Users ──
-
-export interface SystemUser {
-  id: number;
-  name: string;
-  email: string;
-  role: UserRole;
-  is_active: boolean;
-  last_login: string | null;
-}
 
 export const MOCK_SYSTEM_USERS: SystemUser[] = [
   { id: 1, name: "Super Admin", email: "admin@integraltech.ma", role: "super_admin", is_active: true, last_login: "2026-07-15T00:10:00Z" },

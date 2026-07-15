@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 import MultiLangInput from "../../components/admin/shared/MultiLangInput";
-import { MOCK_CATEGORIES, MOCK_TAGS, POST_STATUS_CONFIG, MOCK_POSTS } from "../../data/admin-mocks";
-import type { Post, PostStatus } from "../../data/admin-mocks";
+import { MOCK_CATEGORIES, MOCK_TAGS, POST_STATUS_CONFIG } from "../../data/admin-mocks";
+import { adminService } from "../../services/adminService";
+import type { Post, PostStatus } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 
 export default function PostCreatePage() {
@@ -42,13 +43,11 @@ export default function PostCreatePage() {
     setTags(tags.filter((t) => t !== tag));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.fr.trim()) return;
 
-    const newPost: Post = {
-      id: Date.now(),
-      slug: title.fr.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    const newPostData = {
       title,
       excerpt,
       content,
@@ -59,13 +58,16 @@ export default function PostCreatePage() {
       seo_description: seoDescription || null,
       status,
       published_at: status === "published" ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString()) : null,
-      created_at: new Date().toISOString(),
       tags,
     };
 
-    MOCK_POSTS.push(newPost);
-    console.log("Saving new post:", newPost);
-    navigate("/admin/posts");
+    try {
+      await adminService.savePost(newPostData);
+      console.log("Saving new post:", newPostData);
+      navigate("/admin/posts");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (

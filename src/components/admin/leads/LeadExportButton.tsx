@@ -1,6 +1,6 @@
 import { Download } from "lucide-react";
 import { BORDER, SURFACE, TEXT } from "../../../constants";
-import type { Lead } from "../../../data/admin-mocks";
+import type { Lead } from "../../../types/admin";
 
 interface LeadExportButtonProps {
   leads: Lead[];
