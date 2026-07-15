@@ -1,0 +1,15 @@
+{
+  "short_name": "IntegralTech",
+  "name": "IntegralTech - Transformation Numérique & Solutions IT",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f2744",
+  "theme_color": "#0f2744",
+  "display": "standalone"
+}

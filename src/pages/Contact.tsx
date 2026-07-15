@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { MapPin, Phone, Mail, Clock, ChevronDown, Facebook, Linkedin, Instagram, Twitter, Youtube, ArrowRight } from "lucide-react";
+import SEO from "../components/seo/SEO";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
 
@@ -257,6 +258,11 @@ export default function ContactPage() {
 
   return (
     <div id="contact">
+      <SEO
+        title="Contactez-nous | Support & Audit Gratuit"
+        description="Contactez nos consultants IT à Casablanca. Planifiez un audit gratuit ou demandez des informations complémentaires sur nos solutions et services."
+        path="/contact"
+      />
       {/* Hero */}
       <div ref={heroRef} style={{
         background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 50%, #1a2a5e 100%)`,

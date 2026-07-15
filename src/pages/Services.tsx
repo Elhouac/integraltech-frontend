@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link } from "react-router-dom";
+import SEO from "../components/seo/SEO";
 import {
   ShieldCheck, Cloud, Layers, Wrench, BarChart3, Handshake,
   Network, Globe, Settings, Headphones, Lock, Database,
@@ -262,6 +263,11 @@ export default function ServicesPage() {
 
   return (
     <div id="services">
+      <SEO
+        title="Nos Services & Expertises IT"
+        description="IntegralTech vous propose des services IT à valeur ajoutée : infogérance, audits de sécurité, migration Cloud, intégration ERP et support technique 24/7."
+        path="/services"
+      />
       {/* Hero */}
       <div
         ref={heroRef}

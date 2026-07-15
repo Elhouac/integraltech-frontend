@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link } from "react-router-dom";
+import SEO from "../components/seo/SEO";
 import {
   Trophy, Lightbulb, ShieldCheck, TrendingUp,
   Users, Clock, Award, Globe,
@@ -617,6 +618,11 @@ export default function AboutPage() {
 
   return (
     <div id="about">
+      <SEO
+        title="À Propos de Nous"
+        description="Découvrez l'histoire, les valeurs, les certifications et les engagements d'IntegralTech, leader en solutions IT et innovation au Maroc."
+        path="/about"
+      />
       <AboutHero />
       <AboutHistory />
       <AboutStats />

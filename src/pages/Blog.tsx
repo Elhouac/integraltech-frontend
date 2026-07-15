@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, useMemo } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link } from "react-router-dom";
+import SEO from "../components/seo/SEO";
 import { Search, Calendar, Tag, ChevronLeft, ChevronRight, Mail, ArrowRight } from "lucide-react";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
@@ -271,6 +272,11 @@ export default function BlogPage() {
 
   return (
     <div id="blog">
+      <SEO
+        title="Blog & Actualités Technologiques"
+        description="Retrouvez nos guides d'experts, livres blancs et avis d'experts sur la cybersécurité, le Cloud computing, le FinOps, la gouvernance des données et la transformation digitale au Maroc."
+        path="/blog"
+      />
       {/* Hero */}
       <div ref={heroRef} style={{
         background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 50%, #1a2a5e 100%)`,

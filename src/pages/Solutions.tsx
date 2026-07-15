@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link } from "react-router-dom";
+import SEO from "../components/seo/SEO";
 import { ShieldCheck, Cloud, Server, Layers, Zap, BarChart3, ArrowRight } from "lucide-react";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
@@ -222,6 +223,11 @@ export default function SolutionsPage() {
 
   return (
     <div id="solutions">
+      <SEO
+        title="Nos Solutions IT & Digitalisation"
+        description="Explorez nos expertises : cybersécurité avancée, architecture Cloud moderne, déploiement d'ERP sur mesure, infrastructure IT robuste et conseil stratégique."
+        path="/solutions"
+      />
       {/* ── Hero ── */}
       <div
         ref={heroRef}

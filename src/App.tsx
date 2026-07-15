@@ -10,6 +10,7 @@ const ServicesPage = lazy(() => import("./pages/Services"));
 const BlogPage = lazy(() => import("./pages/Blog"));
 const ContactPage = lazy(() => import("./pages/Contact"));
 const Home = lazy(() => import("./pages/Home"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 import { SearchProvider } from "./context/SearchContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -151,6 +152,7 @@ export default function App() {
                     <Route path="users" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="users" action="view"><UsersPage /></ProtectedRoute></Suspense>} />
                     <Route path="*" element={<div style={{ padding: 40, fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--text)" }}>Page en construction</div>} />
                   </Route>
+                  <Route path="*" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><NotFoundPage /></Suspense></ErrorBoundary></AppShell>} />
                 </Routes>
               </PageTransitionProvider>
             </SearchProvider>
