@@ -1,18 +1,18 @@
 import { useRef } from "react";
 import { motion, useInView, type Variants } from "framer-motion";
-import { servicesData } from "../../data/homeData";
+import { trustData } from "../../data/homeData";
 import SectionHeader from "../ui/SectionHeader";
-import ServiceCard from "../ui/ServiceCard";
+import TrustCard from "../ui/TrustCard";
 import { useTranslation } from "../../context/LanguageContext";
 
 // i18n lookup (fully replaced in Batch 6)
 
 const containerVariants: Variants = {
   initial: {},
-  animate: { transition: { staggerChildren: 0.06 } },
+  animate: { transition: { staggerChildren: 0.08 } },
 };
 
-export default function Services() {
+export default function WhyChooseUs() {
   const t = useTranslation();
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -20,7 +20,7 @@ export default function Services() {
   return (
     <section
       ref={ref}
-      className="services-section"
+      className="why-choose-us-section"
       style={{
         padding: "100px 0",
         background: "var(--background)",
@@ -28,19 +28,18 @@ export default function Services() {
         overflow: "hidden",
       }}
     >
-      {/* Background glow */}
+      {/* Subtle background glow */}
       <div
         style={{
           position: "absolute",
-          top: "30%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 500,
-          height: 500,
+          top: "50%",
+          right: "10%",
+          transform: "translateY(-50%)",
+          width: 400,
+          height: 400,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(30, 58, 138, 0.03) 0%, transparent 70%)",
-          filter: "blur(40px)",
-          zIndex: 0,
+          background: "radial-gradient(circle, rgba(249, 115, 22, 0.04) 0%, transparent 70%)",
+          filter: "blur(60px)",
           pointerEvents: "none",
         }}
       />
@@ -55,30 +54,28 @@ export default function Services() {
         }}
       >
         <SectionHeader
-          badge={t.homeServices.badge}
-          title={t.homeServices.title}
-          subtitle={t.homeServices.description}
+          badge={t.whyChooseUs.badge}
+          title={t.whyChooseUs.title}
+          subtitle={t.whyChooseUs.subtitle}
         />
 
         <motion.div
-          className="services-home-grid"
+          className="trust-grid"
           variants={containerVariants}
           initial="initial"
           animate={inView ? "animate" : "initial"}
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(3, 1fr)",
             gap: 24,
           }}
         >
-          {servicesData.map((s) => (
-            <ServiceCard
-              key={s.titleKey}
-              icon={s.icon}
-              title={t.services[s.titleKey as keyof typeof t.services] ?? s.titleKey}
-              description={t.services[s.descKey as keyof typeof t.services] ?? s.descKey}
-              href={s.href}
-              ctaLabel={t.homeServices.learnMore}
+          {trustData.map((item) => (
+            <TrustCard
+              key={item.titleKey}
+              icon={item.icon}
+              title={t.whyChooseUs[item.titleKey as keyof typeof t.whyChooseUs] ?? item.titleKey}
+              description={t.whyChooseUs[item.descKey as keyof typeof t.whyChooseUs] ?? item.descKey}
             />
           ))}
         </motion.div>

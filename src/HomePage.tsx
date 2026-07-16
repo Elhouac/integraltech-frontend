@@ -1,37 +1,46 @@
 import Navbar from "./components/layout/Navbar";
+import Footer from "./components/layout/Footer";
 import Hero from "./components/home/Hero";
-import StatsBar from "./components/home/StatsBar";
+import TrustedBy from "./components/home/TrustedBy";
 import Services from "./components/home/Services";
+import HomeSolutions from "./components/home/HomeSolutions";
+import WhyChooseUs from "./components/home/WhyChooseUs";
+import StatsBar from "./components/home/StatsBar";
 import About from "./components/home/About";
 import Testimonials from "./components/home/Testimonials";
-import TrustedBy from "./components/home/TrustedBy";
 import CTA from "./components/home/CTA";
 import Newsletter from "./components/home/Newsletter";
-import Footer from "./components/layout/Footer";
-import { useTranslation } from "./context/LanguageContext";
+import { useTranslation, useLanguage } from "./context/LanguageContext";
 import SEO from "./components/seo/SEO";
 
 function HomePage() {
   const t = useTranslation();
+  const { language } = useLanguage();
 
   return (
-    <div style={{ fontFamily: "Open Sans, sans-serif", minHeight: "100vh" }}>
+    <div style={{ fontFamily: "var(--font-sans)", minHeight: "100vh" }}>
       <SEO
-        title="Solutions IT & Transformation Numérique au Maroc"
-        description="IntegralTech accompagne les entreprises marocaines avec des solutions IT innovantes, cybersécurité, cloud, ERP, BI et conseil."
+        title={language === "en" ? "IT Solutions & Digital Transformation in Morocco" : "Solutions IT & Transformation Numérique au Maroc"}
+        description={t.hero.subtitle}
         path="/"
       />
       <a className="skip-link" href="#main-content">{t.a11y.skipToContent}</a>
       <Navbar />
       <main id="main-content">
         <Hero />
-        <StatsBar />
-        <Services />
-        <About />
         <Testimonials />
         <TrustedBy />
-        <CTA />
-        <Newsletter />
+        <Services />
+        <HomeSolutions />
+        <WhyChooseUs />
+        <StatsBar />
+        <About />
+        <section className="cta-newsletter-section">
+          <div className="cta-newsletter-grid">
+            <CTA />
+            <Newsletter />
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

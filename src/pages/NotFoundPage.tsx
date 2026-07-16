@@ -2,8 +2,11 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { AlertCircle, Home, ArrowLeft } from "lucide-react";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../constants";
+import { useTranslation } from "../context/LanguageContext";
 
 export default function NotFoundPage() {
+  const t = useTranslation();
+
   return (
     <div
       style={{
@@ -56,7 +59,7 @@ export default function NotFoundPage() {
             margin: "0 0 12px 0",
           }}
         >
-          Page Introuvable
+          {t.notFound.title}
         </h1>
 
         <p
@@ -67,7 +70,7 @@ export default function NotFoundPage() {
             margin: "0 0 32px 0",
           }}
         >
-          Désolé, la page que vous recherchez n'existe pas, a été déplacée ou est temporairement indisponible.
+          {t.notFound.desc}
         </p>
 
         <div
@@ -96,7 +99,7 @@ export default function NotFoundPage() {
             }}
           >
             <Home size={16} />
-            Retour à l'accueil
+            {t.notFound.homeBtn}
           </Link>
 
           <button
@@ -118,7 +121,7 @@ export default function NotFoundPage() {
             }}
           >
             <ArrowLeft size={16} />
-            Page précédente
+            {t.notFound.backBtn}
           </button>
         </div>
       </motion.div>

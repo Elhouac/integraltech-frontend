@@ -6,28 +6,31 @@ import SEO from "../components/seo/SEO";
 import { Search, Calendar, Tag, ChevronLeft, ChevronRight, Mail, ArrowRight } from "lucide-react";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
+import { useTranslation } from "../context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// ─── STATIC DATA ──────────────────────────────────────────────────────────────
-const CATEGORIES = ["Tous", "Cybersécurité", "Cloud", "ERP", "Transformation digitale", "Actualités"];
+interface ArticleItem {
+  id: number;
+  categoryKey: string;
+  category: string;
+  date: string;
+  title: string;
+  summary: string;
+  readTime: string;
+  color: string;
+}
 
-const ARTICLES = [
-  { id: 1, category: "Cybersécurité", date: "15 Juin 2026", title: "Les 10 meilleures pratiques pour sécuriser votre réseau d'entreprise", summary: "Découvrez les stratégies essentielles pour protéger votre infrastructure contre les cybermenaces modernes, des ransomwares aux attaques par phishing sophistiquées.", readTime: "5 min", color: ORANGE },
-  { id: 2, category: "Cloud", date: "8 Juin 2026", title: "Migration vers Azure : retour d'expérience d'un client industriel marocain", summary: "Comment une entreprise manufacturière a réduit ses coûts IT de 35% en migrant vers Microsoft Azure avec l'accompagnement d'IntegralTech.", readTime: "7 min", color: "#29B6F6" },
-  { id: 3, category: "ERP", date: "1 Juin 2026", title: "Microsoft Dynamics 365 vs SAP : quel ERP choisir pour une PME marocaine ?", summary: "Une comparaison détaillée des deux solutions ERP leaders du marché, avec les critères de choix adaptés au contexte économique marocain.", readTime: "8 min", color: "#CE93D8" },
-  { id: 4, category: "Transformation digitale", date: "20 Mai 2026", title: "Intelligence Artificielle en entreprise : où en sont les PME africaines ?", summary: "Panorama de l'adoption de l'IA dans les entreprises africaines : opportunités, freins et feuille de route pour une transformation réussie.", readTime: "6 min", color: "#66BB6A" },
-  { id: 5, category: "Actualités", date: "12 Mai 2026", title: "IntegralTech obtient la certification Microsoft Gold Partner pour la 4ème année consécutive", summary: "Cette distinction récompense notre expertise technique et notre engagement envers l'excellence dans la mise en œuvre des solutions Microsoft.", readTime: "3 min", color: "#FF7043" },
-  { id: 6, category: "Cybersécurité", date: "5 Mai 2026", title: "RGPD et entreprises marocaines : comment se mettre en conformité en 2026 ?", summary: "Avec l'entrée en vigueur de la loi 09-08 au Maroc, la conformité des données devient cruciale. Voici une checklist pratique pour votre organisation.", readTime: "9 min", color: ORANGE },
-  { id: 7, category: "Cloud", date: "28 Avril 2026", title: "Comment optimiser vos coûts cloud avec FinOps : guide complet", summary: "Le FinOps permet aux entreprises de réduire leurs dépenses cloud de 20 à 30% sans compromis sur les performances. Voici comment l'adopter.", readTime: "10 min", color: "#29B6F6" },
-  { id: 8, category: "Transformation digitale", date: "15 Avril 2026", title: "RPA : automatisez vos tâches répétitives et libérez vos équipes", summary: "La robotisation des processus métiers (RPA) transforme la productivité des entreprises. Découvrez 5 cas d'usage concrets implementés pour nos clients.", readTime: "5 min", color: "#66BB6A" },
-  { id: 9, category: "ERP", date: "5 Avril 2026", title: "Les erreurs à éviter lors d'un projet ERP : témoignages de DSI marocains", summary: "Des directeurs des systèmes d'information partagent les pièges classiques des projets ERP et comment les éviter avec une bonne méthodologie de conduite du changement.", readTime: "7 min", color: "#CE93D8" },
-];
+interface CategoryItem {
+  label: string;
+  key: string;
+}
 
 const ARTICLES_PER_PAGE = 6;
 
 // ─── ARTICLE CARD ─────────────────────────────────────────────────────────────
-function ArticleCard({ article, index }: { article: (typeof ARTICLES)[0]; index: number }) {
+function ArticleCard({ article, index }: { article: ArticleItem; index: number }) {
+  const t = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -63,8 +66,8 @@ function ArticleCard({ article, index }: { article: (typeof ARTICLES)[0]; index:
       {/* Cover */}
       <div style={{
         height: 180, background: `linear-gradient(135deg, ${NAVY} 0%, ${article.color}44 100%)`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: 24, position: "relative",
+        display: "flex", alignItems: "center", justifyItems: "center",
+        justifyContent: "center", padding: 24, position: "relative",
       }}>
         <div style={{
           position: "absolute", top: 16, left: 16,
@@ -92,7 +95,7 @@ function ArticleCard({ article, index }: { article: (typeof ARTICLES)[0]; index:
             <Calendar size={12} />{article.date}
           </span>
           <span style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 12, opacity: 0.7 }}>
-            {article.readTime} de lecture
+            {article.readTime} {t.blogPage.readTime}
           </span>
         </div>
         <h3 style={{
@@ -115,7 +118,7 @@ function ArticleCard({ article, index }: { article: (typeof ARTICLES)[0]; index:
             fontSize: 13, textDecoration: "none", transition: "gap 0.2s",
           }}
         >
-          Lire l'article
+          {t.blogPage.readArticle}
           <ArrowRight size={14} />
         </Link>
       </div>
@@ -124,7 +127,15 @@ function ArticleCard({ article, index }: { article: (typeof ARTICLES)[0]; index:
 }
 
 // ─── NEWSLETTER SIDEBAR ────────────────────────────────────────────────────────
-function Sidebar({ selected, onSelect }: { selected: string; onSelect: (c: string) => void }) {
+interface SidebarProps {
+  selected: string;
+  onSelect: (c: string) => void;
+  categoriesList: CategoryItem[];
+  recentArticles: ArticleItem[];
+}
+
+function Sidebar({ selected, onSelect, categoriesList, recentArticles }: SidebarProps) {
+  const t = useTranslation();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
 
@@ -140,16 +151,16 @@ function Sidebar({ selected, onSelect }: { selected: string; onSelect: (c: strin
         background: CARD_BG, borderRadius: 16, padding: "24px 20px",
         border: `1px solid ${BORDER}`,
       }}>
-        <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK, marginBottom: 16, margin: "0 0 16px" }}>Catégories</h3>
+        <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK, marginBottom: 16, margin: "0 0 16px" }}>{t.blogPage.sidebar.categories}</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {CATEGORIES.map((cat) => (
+          {categoriesList.map((cat) => (
             <button
-              key={cat}
-              onClick={() => onSelect(cat)}
+              key={cat.key}
+              onClick={() => onSelect(cat.key)}
               style={{
-                background: selected === cat ? ORANGE : "transparent",
-                color: selected === cat ? "#fff" : DARK,
-                border: `1px solid ${selected === cat ? ORANGE : BORDER}`,
+                background: selected === cat.key ? ORANGE : "transparent",
+                color: selected === cat.key ? "#fff" : DARK,
+                border: `1px solid ${selected === cat.key ? ORANGE : BORDER}`,
                 borderRadius: 10,
                 padding: "9px 14px",
                 fontFamily: "Open Sans, sans-serif",
@@ -160,7 +171,7 @@ function Sidebar({ selected, onSelect }: { selected: string; onSelect: (c: strin
                 transition: "all 0.2s",
               }}
             >
-              {cat}
+              {cat.label}
             </button>
           ))}
         </div>
@@ -172,19 +183,19 @@ function Sidebar({ selected, onSelect }: { selected: string; onSelect: (c: strin
         borderRadius: 16, padding: "28px 20px",
       }}>
         <Mail size={24} color={ORANGE} style={{ marginBottom: 14 }} />
-        <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: "#fff", marginBottom: 10, margin: "0 0 10px" }}>Newsletter</h3>
+        <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: "#fff", marginBottom: 10, margin: "0 0 10px" }}>{t.blogPage.sidebar.newsletter}</h3>
         <p style={{ fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.6)", fontSize: 13, lineHeight: 1.6, margin: "0 0 16px" }}>
-          Recevez nos derniers articles et actualités IT directement dans votre boîte mail.
+          {t.blogPage.sidebar.newsletterDesc}
         </p>
         {sent ? (
-          <p style={{ color: "#22C55E", fontFamily: "Open Sans, sans-serif", fontSize: 13, fontWeight: 700, margin: 0 }}>✓ Inscription confirmée !</p>
+          <p style={{ color: "#22C55E", fontFamily: "Open Sans, sans-serif", fontSize: 13, fontWeight: 700, margin: 0 }}>{t.blogPage.sidebar.subscribed}</p>
         ) : (
           <form onSubmit={handleSub}>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="votre@email.com"
+              placeholder={t.blogPage.sidebar.emailPlaceholder}
               required
               style={{
                 width: "100%", padding: "10px 14px", borderRadius: 10,
@@ -204,7 +215,7 @@ function Sidebar({ selected, onSelect }: { selected: string; onSelect: (c: strin
               onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(249,115,22,0.3)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; }}
             >
-              S'abonner
+              {t.blogPage.sidebar.subscribe}
             </button>
           </form>
         )}
@@ -215,8 +226,8 @@ function Sidebar({ selected, onSelect }: { selected: string; onSelect: (c: strin
         background: CARD_BG, borderRadius: 16, padding: "24px 20px",
         border: `1px solid ${BORDER}`,
       }}>
-        <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK, marginBottom: 16, margin: "0 0 16px" }}>Articles récents</h3>
-        {ARTICLES.slice(0, 4).map((a) => (
+        <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK, marginBottom: 16, margin: "0 0 16px" }}>{t.blogPage.sidebar.recentArticles}</h3>
+        {recentArticles.map((a) => (
           <div key={a.id} style={{ borderBottom: `1px solid ${BORDER}`, paddingBottom: 12, marginBottom: 12 }}>
             <span style={{
               display: "inline-block", background: `${a.color}15`, color: a.color,
@@ -235,11 +246,33 @@ function Sidebar({ selected, onSelect }: { selected: string; onSelect: (c: strin
 
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function BlogPage() {
+  const t = useTranslation();
   usePageTransitionEffect();
   const [category, setCategory] = useState("Tous");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const heroRef = useRef<HTMLDivElement>(null);
+
+  const categoriesList: CategoryItem[] = [
+    { label: t.blogPage.categories.all, key: "Tous" },
+    { label: t.blogPage.categories.cybersecurity, key: "Cybersécurité" },
+    { label: t.blogPage.categories.cloud, key: "Cloud" },
+    { label: t.blogPage.categories.erp, key: "ERP" },
+    { label: t.blogPage.categories.digitalTransform, key: "Transformation digitale" },
+    { label: t.blogPage.categories.news, key: "Actualités" }
+  ];
+
+  const articlesList: ArticleItem[] = [
+    { id: 1, categoryKey: "Cybersécurité", category: t.blogPage.categories.cybersecurity, date: t.blogPage.art1Date, title: t.blogPage.art1Title, summary: t.blogPage.art1Summary, readTime: `5 ${t.blogPage.readTimeShort}`, color: ORANGE },
+    { id: 2, categoryKey: "Cloud", category: t.blogPage.categories.cloud, date: t.blogPage.art2Date, title: t.blogPage.art2Title, summary: t.blogPage.art2Summary, readTime: `7 ${t.blogPage.readTimeShort}`, color: "#29B6F6" },
+    { id: 3, categoryKey: "ERP", category: t.blogPage.categories.erp, date: t.blogPage.art3Date, title: t.blogPage.art3Title, summary: t.blogPage.art3Summary, readTime: `8 ${t.blogPage.readTimeShort}`, color: "#CE93D8" },
+    { id: 4, categoryKey: "Transformation digitale", category: t.blogPage.categories.digitalTransform, date: t.blogPage.art4Date, title: t.blogPage.art4Title, summary: t.blogPage.art4Summary, readTime: `6 ${t.blogPage.readTimeShort}`, color: "#66BB6A" },
+    { id: 5, categoryKey: "Actualités", category: t.blogPage.categories.news, date: t.blogPage.art5Date, title: t.blogPage.art5Title, summary: t.blogPage.art5Summary, readTime: `3 ${t.blogPage.readTimeShort}`, color: "#FF7043" },
+    { id: 6, categoryKey: "Cybersécurité", category: t.blogPage.categories.cybersecurity, date: t.blogPage.art6Date, title: t.blogPage.art6Title, summary: t.blogPage.art6Summary, readTime: `9 ${t.blogPage.readTimeShort}`, color: ORANGE },
+    { id: 7, categoryKey: "Cloud", category: t.blogPage.categories.cloud, date: t.blogPage.art7Date, title: t.blogPage.art7Title, summary: t.blogPage.art7Summary, readTime: `10 ${t.blogPage.readTimeShort}`, color: "#29B6F6" },
+    { id: 8, categoryKey: "Transformation digitale", category: t.blogPage.categories.digitalTransform, date: t.blogPage.art8Date, title: t.blogPage.art8Title, summary: t.blogPage.art8Summary, readTime: `5 ${t.blogPage.readTimeShort}`, color: "#66BB6A" },
+    { id: 9, categoryKey: "ERP", category: t.blogPage.categories.erp, date: t.blogPage.art9Date, title: t.blogPage.art9Title, summary: t.blogPage.art9Summary, readTime: `7 ${t.blogPage.readTimeShort}`, color: "#CE93D8" },
+  ];
 
   useLayoutEffect(() => {
     const el = heroRef.current;
@@ -257,12 +290,12 @@ export default function BlogPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    return ARTICLES.filter((a) => {
-      const matchCat = category === "Tous" || a.category === category;
+    return articlesList.filter((a) => {
+      const matchCat = category === "Tous" || a.categoryKey === category;
       const matchSearch = !search.trim() || a.title.toLowerCase().includes(search.toLowerCase()) || a.summary.toLowerCase().includes(search.toLowerCase());
       return matchCat && matchSearch;
     });
-  }, [category, search]);
+  }, [category, search, articlesList]);
 
   const totalPages = Math.ceil(filtered.length / ARTICLES_PER_PAGE);
   const paginated = filtered.slice((page - 1) * ARTICLES_PER_PAGE, page * ARTICLES_PER_PAGE);
@@ -270,11 +303,13 @@ export default function BlogPage() {
   const handleCatChange = (cat: string) => { setCategory(cat); setPage(1); };
   const handleSearch = (q: string) => { setSearch(q); setPage(1); };
 
+  const recentArticles = useMemo(() => articlesList.slice(0, 4), [articlesList]);
+
   return (
     <div id="blog">
       <SEO
-        title="Blog & Actualités Technologiques"
-        description="Retrouvez nos guides d'experts, livres blancs et avis d'experts sur la cybersécurité, le Cloud computing, le FinOps, la gouvernance des données et la transformation digitale au Maroc."
+        title={t.blogPage.seoTitle}
+        description={t.blogPage.seoDesc}
         path="/blog"
       />
       {/* Hero */}
@@ -297,27 +332,27 @@ export default function BlogPage() {
             color: ORANGE, fontWeight: 600, fontSize: 12, fontFamily: "Outfit, sans-serif",
             textTransform: "uppercase", letterSpacing: "1px", marginBottom: 24,
           }}>
-            BLOG & ACTUALITÉS
+            {t.blogPage.badge}
           </div>
           <h1 data-hero style={{
             fontFamily: "Outfit, sans-serif", fontWeight: 800,
             fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1.15,
             maxWidth: 720, margin: "0 auto 20px", letterSpacing: "-0.5px",
           }}>
-            Actualités Et Conseils IT
+            {t.blogPage.title}
           </h1>
           <p data-hero style={{
             fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.7)",
             fontSize: 17, lineHeight: 1.8, maxWidth: 600, margin: "0 auto 40px",
           }}>
-            Découvrez nos articles, guides pratiques et retours d'expérience autour de la cybersécurité, le cloud et la transformation digitale.
+            {t.blogPage.desc}
           </p>
           {/* Search bar */}
           <div data-hero style={{ maxWidth: 480, margin: "0 auto", position: "relative" }}>
             <Search size={18} color="rgba(255,255,255,0.4)" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
             <input
               type="search"
-              placeholder="Rechercher un article..."
+              placeholder={t.blogPage.searchPlaceholder}
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               style={{
@@ -340,20 +375,20 @@ export default function BlogPage() {
         gap: 8, overflowX: "auto",
       }} className="blog-catbar">
         <div style={{ width: "90%", maxWidth: 1200, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-          {CATEGORIES.map((cat) => (
+          {categoriesList.map((cat) => (
             <button
-              key={cat}
-              onClick={() => handleCatChange(cat)}
+              key={cat.key}
+              onClick={() => handleCatChange(cat.key)}
               style={{
-                background: category === cat ? ORANGE : "rgba(255,255,255,0.06)",
-                color: "#fff", border: `1px solid ${category === cat ? ORANGE : "rgba(255,255,255,0.1)"}`,
+                background: category === cat.key ? ORANGE : "rgba(255,255,255,0.06)",
+                color: "#fff", border: `1px solid ${category === cat.key ? ORANGE : "rgba(255,255,255,0.1)"}`,
                 borderRadius: 10, padding: "8px 18px",
                 fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 13,
                 cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
                 transition: "all 0.2s",
               }}
             >
-              {cat}
+              {cat.label}
             </button>
           ))}
         </div>
@@ -369,8 +404,8 @@ export default function BlogPage() {
           <div style={{ flex: 1, minWidth: 0 }}>
             {paginated.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 0" }}>
-                <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 20, color: DARK, margin: "0 0 8px" }}>Aucun article trouvé.</p>
-                <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 14, margin: 0 }}>Essayez d'autres mots-clés ou catégories.</p>
+                <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 20, color: DARK, margin: "0 0 8px" }}>{t.blogPage.noArticles}</p>
+                <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 14, margin: 0 }}>{t.blogPage.tryOtherKeywords}</p>
               </div>
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }} className="blog-grid">
@@ -430,7 +465,12 @@ export default function BlogPage() {
           </div>
 
           {/* Sidebar */}
-          <Sidebar selected={category} onSelect={handleCatChange} />
+          <Sidebar
+            selected={category}
+            onSelect={handleCatChange}
+            categoriesList={categoriesList}
+            recentArticles={recentArticles}
+          />
         </div>
       </div>
     </div>

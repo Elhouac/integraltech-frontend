@@ -1,42 +1,29 @@
 import { useRef } from "react";
-import { motion, useInView, Variants } from "framer-motion";
-import { ORANGE, NAVY, DARK, BODY_TEXT, BORDER, CARD_BG, LIGHT_GRAY } from "../../constants";
+import { motion, useInView, type Variants } from "framer-motion";
+import { testimonialsData } from "../../data/homeData";
+import SectionHeader from "../ui/SectionHeader";
+import { useTranslation } from "../../context/LanguageContext";
+
+const containerVariants: Variants = {
+  initial: {},
+  animate: { transition: { staggerChildren: 0.12 } },
+};
+
+const cardVariants: Variants = {
+  initial: { opacity: 0, y: 30 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
+
+// i18n lookup (fully replaced in Batch 6)
 
 export default function Testimonials() {
+  const t = useTranslation();
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
-
-  const testimonials = [
-    {
-      name: "Ahmed Benali",
-      role: "Directeur IT, CMA CGM Maroc",
-      text: "IntegralTech a transformé notre infrastructure IT. Leur expertise en cybersécurité nous a permis de sécuriser nos données critiques.",
-    },
-    {
-      name: "Fatima Zahra",
-      role: "DG, Cabinet Conseil",
-      text: "Un partenaire de confiance pour notre migration cloud. L'équipe est réactive et compétente, toujours disponible.",
-    },
-    {
-      name: "Karim Mansouri",
-      role: "CEO, StartupMA",
-      text: "Leur solution ERP a optimisé nos processus de 40%. Un retour sur investissement rapide et mesurable.",
-    },
-  ];
-
-  const containerVariants: Variants = {
-    initial: {},
-    animate: { transition: { staggerChildren: 0.12 } },
-  };
-
-  const cardVariants: Variants = {
-    initial: { opacity: 0, y: 30 },
-    animate: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
-    },
-  };
 
   return (
     <section
@@ -44,48 +31,18 @@ export default function Testimonials() {
       className="testimonials-section"
       style={{
         padding: "100px 0",
-        background: LIGHT_GRAY,
+        background: "var(--background)",
         position: "relative",
         overflow: "hidden",
       }}
     >
-      <div style={{ width: "90%", maxWidth: 1400, margin: "0 auto" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 64 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5 }}
-            style={{
-              color: ORANGE,
-              fontWeight: 700,
-              fontSize: 13,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              marginBottom: 12,
-              fontFamily: "Outfit, sans-serif",
-            }}
-          >
-            TÉMOIGNAGES
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            style={{
-              fontFamily: "Outfit, sans-serif",
-              fontWeight: 800,
-              fontSize: "clamp(28px, 4vw, 40px)",
-              color: DARK,
-              margin: 0,
-              letterSpacing: "-0.5px",
-            }}
-          >
-            Ce Que Disent Nos Clients
-          </motion.h2>
-        </div>
+      <div style={{ width: "90%", maxWidth: 1320, margin: "0 auto" }}>
+        <SectionHeader
+          badge={t.testimonials.badge}
+          title={t.testimonials.title}
+          subtitle={t.testimonials.subtitle}
+        />
 
-        {/* Cards Grid */}
         <motion.div
           className="testimonials-grid"
           variants={containerVariants}
@@ -93,56 +50,59 @@ export default function Testimonials() {
           animate={inView ? "animate" : "initial"}
           style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }}
         >
-          {testimonials.map((t, i) => (
+          {testimonialsData.map((tItem, i) => (
             <motion.div
               key={i}
               variants={cardVariants}
-              whileHover={{
-                y: -6,
-                boxShadow:
-                  "0 20px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.04)",
-                transition: { duration: 0.25 },
-              }}
               style={{
-                background: CARD_BG,
-                borderRadius: "16px",
+                background: "var(--card)",
+                borderRadius: 16,
                 padding: "36px 32px",
-                border: `1px solid ${BORDER}`,
+                border: "1px solid var(--border)",
                 boxShadow: "var(--shadow-sm)",
                 cursor: "default",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
+                transition: "transform 0.3s ease, box-shadow 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.transform = "translateY(-6px)";
+                el.style.boxShadow = "var(--shadow-lg)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.transform = "none";
+                el.style.boxShadow = "var(--shadow-sm)";
               }}
             >
-              {/* Quote icon */}
+              {/* Quote block */}
               <div>
+                {/* Stars */}
                 <div
                   style={{
-                    fontSize: 48,
-                    lineHeight: 1,
-                    color: ORANGE,
-                    fontFamily: "Georgia, serif",
+                    display: "flex",
+                    gap: 2,
                     marginBottom: 16,
-                    opacity: 0.6,
+                    color: "var(--accent)",
+                    fontSize: 16,
                   }}
                 >
-                  "
+                  {"★★★★★"}
                 </div>
 
-                {/* Quote text */}
                 <p
                   style={{
-                    fontFamily: "Open Sans, sans-serif",
-                    color: BODY_TEXT,
+                    fontFamily: "var(--font-sans)",
+                    color: "var(--text-secondary)",
                     fontSize: 15,
                     lineHeight: 1.8,
-                    marginBottom: 28,
                     fontStyle: "italic",
                     margin: "0 0 28px",
                   }}
                 >
-                  {t.text}
+                  "{t.testimonials[tItem.textKey as keyof typeof t.testimonials] ?? tItem.textKey}"
                 </p>
               </div>
 
@@ -152,7 +112,7 @@ export default function Testimonials() {
                   display: "flex",
                   alignItems: "center",
                   gap: 14,
-                  borderTop: `1px solid ${BORDER}`,
+                  borderTop: "1px solid var(--border)",
                   paddingTop: 20,
                 }}
               >
@@ -160,40 +120,40 @@ export default function Testimonials() {
                   style={{
                     width: 44,
                     height: 44,
-                    borderRadius: "12px",
-                    background: `linear-gradient(135deg, ${NAVY}, ${ORANGE})`,
+                    borderRadius: 12,
+                    background: "linear-gradient(135deg, var(--primary), var(--accent))",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     color: "#fff",
                     fontWeight: 700,
                     fontSize: 16,
-                    fontFamily: "Outfit, sans-serif",
+                    fontFamily: "var(--font-display)",
                     flexShrink: 0,
                   }}
                 >
-                  {t.name[0]}
+                  {tItem.name[0]}
                 </div>
                 <div>
                   <div
                     style={{
-                      fontFamily: "Outfit, sans-serif",
+                      fontFamily: "var(--font-display)",
                       fontWeight: 700,
                       fontSize: 15,
-                      color: DARK,
+                      color: "var(--text)",
                     }}
                   >
-                    {t.name}
+                    {tItem.name}
                   </div>
                   <div
                     style={{
-                      fontFamily: "Open Sans, sans-serif",
+                      fontFamily: "var(--font-sans)",
                       fontSize: 13,
-                      color: BODY_TEXT,
+                      color: "var(--text-secondary)",
                       marginTop: 2,
                     }}
                   >
-                    {t.role}
+                    {tItem.role}
                   </div>
                 </div>
               </div>

@@ -35,7 +35,7 @@ export default function SEO({
       "telephone": "+212-5XX-XXXXXX",
       "contactType": "customer service",
       "areaServed": "MA",
-      "availableLanguage": ["French", "Arabic", "English"]
+      "availableLanguage": ["French", "English"]
     }
   };
 

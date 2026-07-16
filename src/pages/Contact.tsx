@@ -5,6 +5,7 @@ import { MapPin, Phone, Mail, Clock, ChevronDown, Facebook, Linkedin, Instagram,
 import SEO from "../components/seo/SEO";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
+import { useTranslation } from "../context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -14,16 +15,13 @@ interface FormData {
 }
 interface FormErrors { name?: string; email?: string; phone?: string; subject?: string; message?: string; }
 
-const FAQ_ITEMS = [
-  { q: "Quel est votre délai de réponse moyen ?", a: "Notre équipe s'engage à répondre à toutes les demandes dans un délai de 24 heures ouvrées. Pour les urgences techniques, notre support est disponible 24/7." },
-  { q: "Proposez-vous des audits IT gratuits ?", a: "Oui, nous offrons un premier audit de votre infrastructure IT sans engagement. Cet audit nous permet de comprendre vos besoins et de vous proposer des solutions adaptées." },
-  { q: "Intervenez-vous dans toutes les régions du Maroc ?", a: "Nous intervenons sur tout le territoire marocain depuis notre siège à Casablanca. Nous disposons également de partenaires locaux dans les principales villes du royaume." },
-  { q: "Quels secteurs d'activité accompagnez-vous ?", a: "IntegralTech intervient dans tous les secteurs : industrie, finance, santé, distribution, services publics, PME et grandes entreprises." },
-  { q: "Proposez-vous des contrats de maintenance annuels ?", a: "Oui, nous proposons des contrats de support et maintenance adaptés à vos besoins : basique, standard ou premium, avec différents niveaux de réactivité et de couverture." },
-];
-
 // ─── FAQ ITEM ──────────────────────────────────────────────────────────────────
-function FaqItem({ item, index }: { item: (typeof FAQ_ITEMS)[0]; index: number }) {
+interface FaqItemData {
+  q: string;
+  a: string;
+}
+
+function FaqItem({ item, index }: { item: FaqItemData; index: number }) {
   const [open, setOpen] = useState(false);
   const answerRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +65,7 @@ function FaqItem({ item, index }: { item: (typeof FAQ_ITEMS)[0]; index: number }
 
 // ─── CONTACT FORM ──────────────────────────────────────────────────────────────
 function ContactFormFull() {
+  const t = useTranslation();
   const [form, setForm] = useState<FormData>({ name: "", email: "", phone: "", subject: "", message: "" });
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
@@ -74,11 +73,11 @@ function ContactFormFull() {
 
   const validate = (): boolean => {
     const e: FormErrors = {};
-    if (!form.name.trim()) e.name = "Le nom est obligatoire.";
-    if (!form.email.trim()) e.email = "L'email est obligatoire.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Adresse email invalide.";
-    if (!form.subject.trim()) e.subject = "Le sujet est obligatoire.";
-    if (!form.message.trim() || form.message.length < 20) e.message = "Le message doit contenir au moins 20 caractères.";
+    if (!form.name.trim()) e.name = t.contact.form.nameRequired;
+    if (!form.email.trim()) e.email = t.contact.form.emailRequired;
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t.contact.form.emailInvalid;
+    if (!form.subject.trim()) e.subject = t.contact.form.subjectRequired;
+    if (!form.message.trim() || form.message.length < 20) e.message = t.contact.form.messageRequired;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -132,16 +131,16 @@ function ContactFormFull() {
   return (
     <form ref={formRef} onSubmit={handleSubmit} aria-label="Formulaire de contact" noValidate style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="contact-form-row">
-        {field("name", "Nom complet", "text", true)}
-        {field("email", "Adresse email", "email", true)}
+        {field("name", t.contact.form.name, "text", true)}
+        {field("email", t.contact.form.email, "email", true)}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="contact-form-row">
-        {field("phone", "Téléphone", "tel")}
-        {field("subject", "Sujet", "text", true)}
+        {field("phone", t.contact.formPhone, "tel")}
+        {field("subject", t.contact.form.subject, "text", true)}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <label htmlFor="message" style={{ fontFamily: "Open Sans, sans-serif", fontWeight: 600, fontSize: 13, color: DARK }}>
-          Message <span style={{ color: ORANGE }}>*</span>
+          {t.contact.form.message} <span style={{ color: ORANGE }}>*</span>
         </label>
         <textarea
           id="message"
@@ -172,7 +171,7 @@ function ContactFormFull() {
           borderRadius: 12, padding: "16px 20px",
           fontFamily: "Open Sans, sans-serif", color: "#22C55E", fontSize: 14, fontWeight: 600,
         }}>
-          ✓ Votre message a été envoyé avec succès ! Nous vous répondrons sous 24h ouvrées.
+          {t.contact.formSuccess}
         </div>
       )}
       {status === "error" && (
@@ -181,7 +180,7 @@ function ContactFormFull() {
           borderRadius: 12, padding: "16px 20px",
           fontFamily: "Open Sans, sans-serif", color: "#EF4444", fontSize: 14,
         }}>
-          Une erreur est survenue. Veuillez réessayer ou nous contacter par téléphone.
+          {t.contact.formError}
         </div>
       )}
 
@@ -204,7 +203,7 @@ function ContactFormFull() {
           e.currentTarget.style.boxShadow = "0 4px 14px rgba(249,115,22,0.2)";
         }}
       >
-        Envoyer le message
+        {t.contact.form.submit}
         <ArrowRight size={16} />
       </button>
     </form>
@@ -213,9 +212,24 @@ function ContactFormFull() {
 
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function ContactPage() {
+  const t = useTranslation();
   usePageTransitionEffect();
   const heroRef = useRef<HTMLDivElement>(null);
   const infoRef = useRef<HTMLDivElement>(null);
+
+  const FAQ_ITEMS: FaqItemData[] = [
+    { q: t.contact.faqQ1, a: t.contact.faqA1 },
+    { q: t.contact.faqQ2, a: t.contact.faqA2 },
+    { q: t.contact.faqQ3, a: t.contact.faqA3 },
+    { q: t.contact.faqQ4, a: t.contact.faqA4 },
+    { q: t.contact.faqQ5, a: t.contact.faqA5 },
+  ];
+
+  const hoursList = [
+    { jours: t.contact.hoursMonFri, heure: "08h30 – 18h00" },
+    { jours: t.contact.hoursSat, heure: "09h00 – 13h00" },
+    { jours: t.contact.hoursSupport, heure: t.contact.hoursSupportValue },
+  ];
 
   useLayoutEffect(() => {
     const el = heroRef.current;
@@ -259,8 +273,8 @@ export default function ContactPage() {
   return (
     <div id="contact">
       <SEO
-        title="Contactez-nous | Support & Audit Gratuit"
-        description="Contactez nos consultants IT à Casablanca. Planifiez un audit gratuit ou demandez des informations complémentaires sur nos solutions et services."
+        title={t.contact.seoTitle}
+        description={t.contact.seoDesc}
         path="/contact"
       />
       {/* Hero */}
@@ -283,20 +297,20 @@ export default function ContactPage() {
             color: ORANGE, fontWeight: 600, fontSize: 12, fontFamily: "Outfit, sans-serif",
             textTransform: "uppercase", letterSpacing: "1px", marginBottom: 24,
           }}>
-            CONTACTEZ-NOUS
+            {t.contact.badge}
           </div>
           <h1 data-hero style={{
             fontFamily: "Outfit, sans-serif", fontWeight: 800,
             fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1.15,
             maxWidth: 640, margin: "0 auto 20px", letterSpacing: "-0.5px",
           }}>
-            Prêt À Échanger ?
+            {t.contact.heroTitle}
           </h1>
           <p data-hero style={{
             fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.7)",
             fontSize: 17, lineHeight: 1.8, maxWidth: 580, margin: "0 auto",
           }}>
-            Contactez-nous pour organiser un audit gratuit de votre infrastructure IT et découvrir les solutions adaptées à votre entreprise.
+            {t.contact.heroDesc}
           </p>
         </div>
       </div>
@@ -317,13 +331,13 @@ export default function ContactPage() {
               fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 24,
               color: DARK, margin: "0 0 8px",
             }}>
-              Envoyez-nous un message
+              {t.contact.formTitle}
             </h2>
             <p style={{
               fontFamily: "Open Sans, sans-serif", color: BODY_TEXT,
               fontSize: 14, margin: "0 0 28px",
             }}>
-              Décrivez votre besoin et nous reviendrons vers vous sous 24h ouvrées.
+              {t.contact.formDesc}
             </p>
             <ContactFormFull />
           </div>
@@ -339,7 +353,7 @@ export default function ContactPage() {
                 fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 17,
                 color: DARK, margin: "0 0 20px",
               }}>
-                Nos coordonnées
+                {t.contact.infoTitle}
               </h3>
               {[
                 { Icon: MapPin, text: "Av Allal Elfassi Centre Itrane, 3ème Étage N° 33 - Marrakech" },
@@ -366,13 +380,9 @@ export default function ContactPage() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
                 <Clock size={18} color={ORANGE} />
-                <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 17, color: DARK, margin: 0 }}>Horaires d'ouverture</h3>
+                <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 17, color: DARK, margin: 0 }}>{t.contact.hoursTitle}</h3>
               </div>
-              {[
-                { jours: "Lundi – Vendredi", heure: "08h30 – 18h00" },
-                { jours: "Samedi", heure: "09h00 – 13h00" },
-                { jours: "Support urgent", heure: "24h/24 – 7j/7" },
-              ].map((h, i) => (
+              {hoursList.map((h, i) => (
                 <div key={i} style={{
                   display: "flex", justifyContent: "space-between",
                   paddingBottom: 12, marginBottom: 12,
@@ -408,7 +418,7 @@ export default function ContactPage() {
                   display: "flex", alignItems: "center", gap: 4,
                 }}
               >
-                Voir sur Google Maps
+                {t.contact.googleMaps}
                 <ArrowRight size={12} />
               </a>
             </div>
@@ -418,7 +428,7 @@ export default function ContactPage() {
               background: CARD_BG, borderRadius: 18, padding: "24px 24px",
               border: `1px solid ${BORDER}`,
             }}>
-              <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK, margin: "0 0 16px" }}>Suivez-nous</h3>
+              <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK, margin: "0 0 16px" }}>{t.contact.followUs}</h3>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {socials.map((s) => (
                   <a
@@ -463,14 +473,14 @@ export default function ContactPage() {
               color: ORANGE, fontWeight: 700, fontSize: 12, letterSpacing: 2,
               textTransform: "uppercase", marginBottom: 14, fontFamily: "Outfit, sans-serif",
             }}>
-              FAQ
+              {t.contact.faqBadge}
             </div>
             <h2 style={{
               fontFamily: "Outfit, sans-serif", fontWeight: 800,
               fontSize: "clamp(28px, 4vw, 36px)", color: DARK,
               margin: 0, letterSpacing: "-0.5px",
             }}>
-              Questions fréquentes
+              {t.contact.faqTitle}
             </h2>
           </div>
           {FAQ_ITEMS.map((item, i) => (

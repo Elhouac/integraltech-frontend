@@ -25,16 +25,35 @@ export const fr = {
   hero: {
     badge: "INTEGRAL PROGRESS TECHNOLOGY",
     title: "Votre Partenaire\nTechnologique",
-    subtitle: "IntegralTech Vous Accompagne Avec Des Outils Adaptés À Votre Croissance Et À Votre Sécurité Informatique.",
+    subtitle: "IntegralTech accompagne les entreprises dans leur transformation numérique avec des solutions IT innovantes, sécurisées et adaptées à vos enjeux métiers.",
     cta: "Démarrer",
+    titlePart1: "Votre partenaire IT",
+    titlePart2: "pour une croissance",
+    titlePart3: "sécurisée et performante",
+    ctaQuote: "Demander un devis",
+    ctaServices: "Découvrir nos services",
+    floatingCloud: "Cloud & Infra",
+    floatingCloudDesc: "SLA 99.99% Garanti",
+    floatingCyber: "Cybersécurité",
+    floatingCyberDesc: "Protection active 24/7",
+    floatingAI: "Intelligence Artificielle",
+    floatingAIDesc: "Business Intelligence",
+    floatingSupervision: "Supervision IT",
+    floatingSupervisionDesc: "Alertes temps réel",
+    reactiveSupport: "Support réactif",
+    secureSolutions: "Solutions sécurisées",
+    itExpertise: "Expertise IT",
+    tailoredSupport: "Accompagnement sur mesure",
   },
 
   // Stats Bar
   stats: {
+    projects: "Projets livrés",
     experience: "Années d'expérience",
-    clients: "Clients satisfaits",
-    experts: "Experts certifiés",
     support: "Support technique",
+    satisfaction: "Clients satisfaits",
+    experts: "Experts certifiés",
+    clients: "Clients satisfaits",
   },
 
   // Home Services Section
@@ -57,8 +76,74 @@ export const fr = {
     consultingDesc: "Nos experts vous accompagnent dans la définition et l'exécution de votre stratégie IT.",
   },
 
+  // Services mapping for Services section titles & descriptions
+  services: {
+    webDev: "Développement Web",
+    webDevDesc: "Conception et développement de sites web, applications web et plateformes digitales sur mesure.",
+    mobileApps: "Applications Mobile",
+    mobileAppsDesc: "Développement d'applications iOS, Android et cross-platform pour vos besoins métiers.",
+    cloudInfra: "Cloud & Infrastructure",
+    cloudInfraDesc: "Migration cloud, hébergement sécurisé et infogérance de vos infrastructures IT.",
+    cybersecurity: "Cybersécurité",
+    cybersecurityDesc: "Audit de sécurité, protection des données et conformité réglementaire pour votre entreprise.",
+    maintenanceIT: "Maintenance IT",
+    maintenanceITDesc: "Supervision proactive, maintenance préventive et corrective de vos systèmes informatiques.",
+    techSupport: "Support Technique",
+    techSupportDesc: "Assistance technique réactive 24/7 pour assurer la continuité de votre activité.",
+    digitalTransform: "Transformation Digitale",
+    digitalTransformDesc: "Accompagnement dans la modernisation et l'automatisation de vos processus métiers.",
+    itConsulting: "Conseil IT",
+    itConsultingDesc: "Expertise stratégique pour optimiser votre infrastructure et aligner l'IT sur vos objectifs.",
+  },
+
+  // Home Solutions Section
+  homeSolutions: {
+    badge: "NOS SOLUTIONS",
+    title: "Des Solutions IT Sur Mesure",
+    subtitle: "Cybersécurité, Cloud, ERP, Infrastructure — IntegralTech couvre l'intégralité de vos besoins technologiques.",
+    enterprise: "Solutions Entreprise",
+    enterpriseDesc: "ERP, CRM et outils métiers intégrés pour optimiser vos opérations.",
+    cloud: "Solutions Cloud",
+    cloudDesc: "Infrastructures cloud publiques, privées et hybrides pour plus d'agilité.",
+    security: "Solutions Sécurité",
+    securityDesc: "SOC, SIEM et protection avancée contre les cybermenaces modernes.",
+    ecommerce: "Solutions E-commerce",
+    ecommerceDesc: "Boutiques en ligne performantes et expérience client optimisée.",
+    network: "Solutions Réseau",
+    networkDesc: "Architecture réseau LAN/WAN, connectivité et supervision avancée.",
+    saas: "Solutions SaaS",
+    saasDesc: "Applications cloud à la demande, évolutives et accessibles partout.",
+    management: "Solutions Gestion",
+    managementDesc: "Business Intelligence, reporting et outils de pilotage décisionnel.",
+    custom: "Solutions Sur Mesure",
+    customDesc: "Développement spécifique adapté à vos processus et contraintes métiers.",
+  },
+
+  // Home Trust / Why Choose Us Section
+  whyChooseUs: {
+    badge: "POURQUOI NOUS CHOISIR",
+    title: "Votre Partenaire Digital De Confiance",
+    subtitle: "IntegralTech se distingue par son approche humaine, son expertise technique et son engagement envers la réussite de ses clients.",
+    expertise: "Expertise technique",
+    expertiseDesc: "Plus de 10 ans d'expérience et des certifications internationales reconnues dans le secteur IT.",
+    integratedSecurity: "Sécurité intégrée",
+    integratedSecurityDesc: "La sécurité est au cœur de chaque solution que nous déployons, de la conception à la maintenance.",
+    humanSupport: "Support humain",
+    humanSupportDesc: "Une équipe dédiée et réactive, disponible 24/7 pour répondre à vos besoins.",
+    scalable: "Solutions évolutives",
+    scalableDesc: "Nos solutions grandissent avec votre entreprise, sans interruption ni refonte coûteuse.",
+    strategic: "Accompagnement stratégique",
+    strategicDesc: "Nous vous guidons dans vos décisions IT avec une vision long terme alignée sur vos objectifs.",
+    transparency: "Transparence et proximité",
+    transparencyDesc: "Communication claire, reporting régulier et relation de confiance durable avec nos clients.",
+  },
+
   // Home About Section
   homeAbout: {
+    badge: "À PROPOS DE NOUS",
+    title: "Votre Partenaire Digital De Confiance",
+    desc1: "Depuis plus de 10 ans, IntegralTech accompagne les entreprises marocaines dans leur transformation numérique.",
+    desc2: "Nous croyons en un partenariat durable, fondé sur la confiance, l'expertise et l'innovation continue.",
     excellence: "Excellence",
     excellenceDesc: "Certifications internationales et standards de qualité élevés",
     innovation: "Innovation",
@@ -67,6 +152,35 @@ export const fr = {
     securityDesc: "Protection maximale de vos données et systèmes",
     growth: "Croissance",
     growthDesc: "Solutions évolutives qui grandissent avec votre entreprise",
+  },
+
+  // Home Testimonials Section
+  testimonials: {
+    badge: "TÉMOIGNAGES",
+    title: "Ce Que Disent Nos Clients",
+    subtitle: "Découvrez les retours d'expérience de nos clients et partenaires.",
+    testimonial1: "IntegralTech a transformé notre infrastructure IT. Leur expertise en cybersécurité nous a permis de sécuriser nos données critiques.",
+    testimonial2: "Un partenaire de confiance pour notre migration cloud. L'équipe est réactive et compétente, toujours disponible.",
+    testimonial3: "Leur solution ERP a optimisé nos processus de 40%. Un retour sur investissement rapide et mesurable.",
+  },
+
+  // Client Sectors
+  sectors: {
+    telecom: "Télécoms",
+    finance: "Finance",
+    industry: "Industrie",
+    publicServices: "Services publics",
+    food: "Agroalimentaire",
+    energy: "Énergie",
+    mining: "Mines",
+    transport: "Transport",
+  },
+
+  // Trusted By
+  trustedBy: {
+    badge: "ILS NOUS FONT CONFIANCE",
+    title: "Plus de 500 entreprises nous font confiance",
+    ariaLabel: "Ils nous font confiance",
   },
 
   // Newsletter
@@ -88,8 +202,8 @@ export const fr = {
   // CTA (Call To Action)
   cta: {
     title: "Prêt À Transformer Votre Entreprise ?",
-    description: "Contactez-nous dès aujourd'hui pour un audit gratuit de votre infrastructure IT.",
-    button: "CONTACTEZ NOUS",
+    description: "Contactez-nous dès aujourd'hui pour un audit gratuit de votre infrastructure IT et découvrez comment nous pouvons accélérer votre croissance.",
+    button: "Contactez-nous",
     homeTitle: "Commencez Votre Transformation Digitale",
     homeDesc: "Découvrez comment IntegralTech peut accompagner votre entreprise.",
   },
@@ -103,14 +217,82 @@ export const fr = {
     contact: "Contact",
     followUs: "Nous Suivre",
     allRights: "Tous droits réservés",
+    desc: "Votre partenaire technologique de confiance au Maroc depuis plus de 10 ans.",
+    services: "Services",
+    privacy: "Confidentialité",
+    terms: "CGU",
+    cookies: "Cookies",
+    careers: "Carrières",
   },
 
   // About Page
   about: {
+    seoTitle: "À Propos de Nous",
+    seoDesc: "Découvrez l'histoire, les valeurs, les certifications et les engagements d'IntegralTech, leader en solutions IT et innovation au Maroc.",
     badge: "À PROPOS DE NOUS",
     title: "Votre Partenaire Digital De Confiance",
+    heroDesc: "Depuis plus de 10 ans, IntegralTech accompagne les entreprises marocaines dans leur transformation numérique avec expertise, fiabilité et innovation.",
+    contactBtn: "Nous contacter",
+    historyBadge: "NOTRE HISTOIRE",
+    historyTitle: "Plus de 10 ans d'innovation au service des entreprises",
+    historyP1: "Fondée en 2014 à Casablanca, Integral Progress Technology est née d'une vision claire : démocratiser l'accès aux technologies IT de pointe pour les entreprises marocaines, quelle que soit leur taille.",
+    historyP2: "Au fil des années, nous avons bâti une équipe d'experts certifiés et développé des partenariats stratégiques avec les leaders mondiaux de la technologie.",
+    historyP3: "Aujourd'hui, plus de 500 entreprises nous font confiance pour sécuriser, optimiser et moderniser leur système d'information.",
+    timeline: {
+      foundingTitle: "Fondation",
+      foundingDesc: "Création d'IntegralTech à Casablanca avec une équipe de 5 experts.",
+      expansionTitle: "Expansion",
+      expansionDesc: "Ouverture de nouvelles agences et obtention des premières certifications internationales.",
+      leadershipTitle: "Leadership",
+      leadershipDesc: "Devenu l'un des principaux partenaires IT du Maroc avec +200 clients.",
+      innovationTitle: "Innovation",
+      innovationDesc: "Lancement de notre pôle IA et cloud avec +500 clients satisfaits.",
+    },
+    missionVision: {
+      badge: "NOS FONDEMENTS",
+      title: "Mission & Vision",
+      missionLabel: "Notre Mission",
+      missionTitle: "Accélérer votre transformation digitale",
+      missionDesc: "Notre mission est d'accompagner chaque entreprise marocaine dans sa transformation numérique en lui fournissant des solutions IT sur mesure, fiables et sécurisées. Nous agissons comme un véritable partenaire technologique, engagé dans la réussite de nos clients sur le long terme.",
+      visionLabel: "Notre Vision",
+      visionTitle: "Être le leader IT de référence en Afrique",
+      visionDesc: "Nous aspirons à devenir la référence incontournable de l'intégration de solutions IT en Afrique du Nord. En alliant expertise humaine et technologies d'avant-garde, nous construisons une économie numérique mais aussi compétitive, résiliente et innovante pour les entreprises africaines.",
+    },
+    values: {
+      badge: "NOS VALEURS",
+      title: "Ce qui nous guide au quotidien",
+      excellence: "Excellence",
+      excellenceDesc: "Certifications internationales et standards de qualité élevés.",
+      innovation: "Innovation",
+      innovationDesc: "Technologies de pointe et veille technologique permanente.",
+      security: "Sécurité",
+      securityDesc: "Protection maximale de vos données et systèmes d'information.",
+      growth: "Croissance",
+      growthDesc: "Solutions évolutives qui grandissent avec votre entreprise.",
+    },
+    certifications: {
+      badge: "CERTIFICATIONS & PARTENAIRES",
+      title: "Des partenariats stratégiques",
+      desc: "Nous collaborons avec les leaders mondiaux de la technologie pour vous offrir les meilleures solutions du marché.",
+      isoCertified: "ISO 27001 Certifié",
+    },
+    technologies: {
+      badge: "NOS TECHNOLOGIES",
+      title: "Des outils à la pointe",
+      ai: "Intelligence Artificielle",
+      cloud: "Cloud & Big Data",
+      infra: "Infrastructure IT",
+      cyber: "Cybersécurité",
+    },
+    cta: {
+      badge: "PRÊT À COMMENCER ?",
+      title: "Travaillons ensemble",
+      desc: "Contactez notre équipe pour un audit gratuit de votre infrastructure IT et découvrez comment IntegralTech peut transformer votre entreprise.",
+      btn: "Demander un audit gratuit",
+    },
+    // Old fields preserved for compatibility
     description: "IntegralTech est une société de conseil et d'intégration informatique spécialisée dans la transformation digitale des entreprises.",
-    historyTitle: "Notre Histoire",
+    historyTitleOld: "Notre Histoire",
     historyContent: "Depuis plus de 10 ans, IntegralTech accompagne les entreprises dans leur transformation digitale. Nos équipes d'experts mettent leur expérience et leur passion au service de votre réussite.",
     missionTitle: "Notre Mission",
     missionContent: "Accompagner les entreprises dans leur transformation digitale en offrant des solutions IT innovantes et sécurisées.",
@@ -138,7 +320,7 @@ export const fr = {
     description: "Cybersécurité, Cloud, ERP, Infrastructure, Transformation digitale et Conseil — IntegralTech couvre l'intégralité de vos besoins technologiques.",
     ctaTitle: "Besoin d'une solution spécifique ?",
     ctaDesc: "Nos experts analysent votre contexte et vous proposent une approche personnalisée.",
-    // Solutions details
+    // Old fields preserved for compatibility
     cybersecurityBadge: "CYBERSÉCURITÉ",
     cybersecurityTitle: "Protégez votre entreprise contre les cybermenaces",
     cybersecurityDesc: "Dans un monde où les cyberattaques sont en constante augmentation, IntegralTech vous offre une protection complète de votre système d'information. Notre approche multicouche couvre l'audit de sécurité, la détection d'intrusions, la formation de vos équipes et la réponse aux incidents.",
@@ -147,20 +329,134 @@ export const fr = {
     cloudDesc: "Notre expertise cloud vous accompagne de la stratégie à la mise en production. Que vous optiez pour un cloud public, privé ou hybride, nos équipes certifiées orchestrent votre migration avec un impact minimal sur votre activité.",
   },
 
+  // Solutions Page details
+  solutionsPage: {
+    seoTitle: "Nos Solutions IT & Digitalisation",
+    seoDesc: "Explorez nos expertises : cybersécurité avancée, architecture Cloud moderne, déploiement d'ERP sur mesure, infrastructure IT robuste et conseil stratégique.",
+    badge: "NOS SOLUTIONS",
+    title: "Des solutions IT sur mesure pour votre entreprise",
+    desc: "Cybersécurité, Cloud, ERP, Infrastructure, Transformation digitale et Conseil — IntegralTech couvre l'intégralité de vos besoins technologiques.",
+    demoBtn: "Demander une démo",
+    ctaTitle: "Besoin d'une solution spécifique ?",
+    ctaDesc: "Nos experts analysent votre contexte et vous proposent une approche personnalisée.",
+    ctaBtn: "Contacter un expert",
+    
+    // 6 solutions details
+    cybersecurityBadge: "CYBERSÉCURITÉ",
+    cybersecurityTitle: "Protégez votre entreprise contre les cybermenaces",
+    cybersecurityDesc: "Dans un monde où les cyberattaques sont en constante augmentation, IntegralTech vous offre une protection complète de votre système d'information. Notre approche multicouche couvre l'audit de sécurité, la détection d'intrusions, la formation de vos équipes et la réponse aux incidents.",
+    cybersecurityPoints: ["Audit et diagnostic de sécurité", "SOC managé 24/7", "Formation et sensibilisation", "Gestion des identités et accès (IAM)", "Protection des données (DLP)"],
+    
+    cloudBadge: "CLOUD",
+    cloudTitle: "Migrez vers le cloud en toute confiance",
+    cloudDesc: "Notre expertise cloud vous accompagne de la stratégie à la mise en production. Que vous optiez pour un cloud public, privé ou hybride, nos équipes certifiées (AWS, Azure, Google Cloud) orchestrent votre migration avec un impact minimal sur votre activité.",
+    cloudPoints: ["Audit et stratégie cloud", "Migration applicative", "Optimisation des coûts cloud", "Cloud hybride et multi-cloud", "Infogérance et monitoring"],
+    
+    infraBadge: "INFRASTRUCTURE IT",
+    infraTitle: "Une infrastructure robuste et évolutive",
+    infraDesc: "Nous concevons, déployons et maintenons des infrastructures IT performantes adaptées à votre croissance. De la virtualisation à l'hyperconvergence, en passant par le réseau et le stockage, nos solutions garantissent disponibilité et performance.",
+    infraPoints: ["Virtualisation et hyperconvergence", "Réseau LAN/WAN et Wi-Fi", "Stockage SAN/NAS", "Datacenter et colocation", "Monitoring et supervision proactifs"],
+    
+    erpBadge: "ERP",
+    erpTitle: "Optimisez vos processus métiers avec un ERP sur mesure",
+    erpDesc: "L'implémentation d'un ERP est un projet stratégique. IntegralTech vous accompagne dans le choix, le paramétrage et le déploiement de votre solution ERP (Microsoft Dynamics, SAP, Odoo) pour digitaliser et optimiser l'ensemble de vos processus opérationnels.",
+    erpPoints: ["Analyse des besoins et cadrage", "Déploiement ERP (Microsoft Dynamics, Odoo, SAP)", "Migration des données", "Formation des utilisateurs", "Support et maintenance évolutive"],
+    
+    transformBadge: "TRANSFORMATION DIGITALE",
+    transformTitle: "Accélérez votre transformation numérique",
+    transformDesc: "La transformation digitale est plus qu'un projet technologique, c'est une évolution culturelle et organisationnelle. Nous vous guidons à travers cette mutation en alignant technologie, processus et humain pour créer un avantage compétitif durable.",
+    transformPoints: ["Diagnostic de maturité digitale", "Définition de la feuille de route", "Automatisation des processus (RPA)", "Innovation et veille technologique", "Accompagnement au changement"],
+    
+    consultingBadge: "CONSEIL & AUDIT",
+    consultingTitle: "Un conseil stratégique pour vos décisions IT",
+    consultingDesc: "Nos consultants seniors vous apportent un regard objectif et expert sur votre système d'information. Nous réalisons des audits techniques, définissons des stratégies IT et vous accompagnons dans la gouvernance et la conduite du changement.",
+    consultingPoints: ["Audit complet du SI", "Schéma directeur informatique", "Gouvernance IT (COBIT, ITIL)", "Gestion de projets IT complexes", "Optimisation des dépenses IT (FinOps)"]
+  },
+
   // Services Page
   servicesPage: {
+    seoTitle: "Nos Services & Expertises IT",
+    seoDesc: "IntegralTech vous propose des services IT à valeur ajoutée : infogérance, audits de sécurité, migration Cloud, intégration ERP et support technique 24/7.",
     badge: "NOS SERVICES",
     title: "Support, Conseil Et Maintenance",
     description: "Nous accompagnons vos équipes avec une gamme complète de services IT — de l'assistance quotidienne aux projets de transformation stratégique.",
     clickMore: "Cliquez sur \"En savoir plus\" pour découvrir le détail de chaque service.",
     ctaTitle: "Un service sur mesure pour votre entreprise",
-    // Services details
+    gridTitle: "Une offre complète pour votre activité",
+    gridDesc: "Cliquez sur \"En savoir plus\" pour découvrir le détail de chaque service.",
+    reduce: "Réduire",
+    learnMore: "En savoir plus",
+    request: "Demander",
+    ctaDesc: "Nos experts sont disponibles pour analyser vos besoins et vous proposer un contrat de service adapté.",
+    ctaBtn: "Nous contacter",
+    auditBtn: "Demander un audit",
+
+    // 12 services details
+    cybersecurityTitle: "Cybersécurité",
+    cybersecuritySub: "Protection & Conformité",
+    cybersecurityDesc: "Protégez votre organisation avec une approche holistique de la sécurité : audit, SOC managé, gestion des vulnérabilités et réponse aux incidents. Nous assurons la conformité RGPD et ISO 27001 de vos systèmes.",
+    cybersecurityFeatures: ["SOC managé 24/7", "Tests d'intrusion (pentest)", "Gestion des identités (IAM)", "Conformité RGPD / ISO 27001"],
+
+    cloudTitle: "Cloud & Infrastructure",
+    cloudSub: "Agilité & Scalabilité",
+    cloudDesc: "De la migration cloud à l'infogérance multi-cloud, nos équipes certifiées AWS, Azure et Google Cloud conçoivent et opèrent votre infrastructure avec un niveau de service garanti (SLA 99,9%).",
+    cloudFeatures: ["Migration vers le cloud", "Cloud hybride et multi-cloud", "Optimisation des coûts (FinOps)", "Monitoring et MCO proactif"],
+
+    erpTitle: "Solutions ERP",
+    erpSub: "Efficacité opérationnelle",
+    erpDesc: "Implémentation, personnalisation et support de solutions ERP (Microsoft Dynamics 365, SAP, Odoo). Nous digitalisons vos processus RH, Finance, Supply Chain et CRM pour une performance maximale.",
+    erpFeatures: ["Déploiement Microsoft Dynamics / SAP / Odoo", "Migration et intégration de données", "Formation des utilisateurs", "Support et évolution"],
+
+    supportTitle: "Support & Maintenance",
+    supportSub: "Réactivité & Disponibilité",
+    supportDesc: "Notre équipe de techniciens certifiés assure la disponibilité et les performances de votre parc informatique 24h/24, 7j/7. Contrats de support niveau 1, 2 et 3 adaptés à vos besoins.",
+    supportFeatures: ["Helpdesk N1/N2/N3", "Maintenance préventive et curative", "Gestion du parc informatique (ITSM)", "Astreinte et intervention sur site"],
+
+    biTitle: "Business Intelligence",
+    biSub: "Données & Analytics",
+    biDesc: "Transformez vos données en avantages concurrentiels. Nos experts BI conçoivent des entrepôts de données, des tableaux de bord interactifs et des modèles analytiques avancés pour guider vos décisions.",
+    biFeatures: ["Datawarehouse et lac de données", "Tableaux de bord Power BI / Qlik", "Analytics avancé et reporting", "KPIs et pilotage de la performance"],
+
+    conseilTitle: "Conseil & Audit",
+    conseilSub: "Stratégie & Gouvernance",
+    conseilDesc: "Nos consultants seniors vous accompagnent dans la définition et l'exécution de votre stratégie IT : schéma directeur, gouvernance, gestion de projet et conduite du changement.",
+    conseilFeatures: ["Audit complet du Système d'Information", "Schéma directeur informatique", "AMOA et gestion de projets", "Accompagnement au changement"],
+
+    networkTitle: "Réseau & Télécommunications",
+    networkSub: "Connectivité & Performance",
+    networkDesc: "Nous concevons et déployons des architectures réseau LAN, WAN, Wi-Fi et SD-WAN adaptées à vos sites et à vos exigences de performance, de redondance et de sécurité.",
+    networkFeatures: ["Architecture réseau LAN/WAN", "Wi-Fi entreprise haute densité", "SD-WAN et MPLS", "VOIP et téléphonie IP"],
+
+    lockTitle: "Sécurité Physique & IoT",
+    lockSub: "Contrôle & Surveillance",
+    lockDesc: "Au-delà du numérique, nous sécurisons également vos locaux avec des solutions de vidéosurveillance IP, contrôle d'accès biométrique et systèmes d'alarme intégrés.",
+    lockFeatures: ["Vidéosurveillance IP (CCTV)", "Contrôle d'accès biométrique", "Intégration IoT industriel", "Systèmes d'alarme et intrusion"],
+
+    workplaceTitle: "Digital Workplace",
+    workplaceSub: "Mobilité & Collaboration",
+    workplaceDesc: "Créez un environnement de travail numérique fluide et sécurisé avec nos solutions Microsoft 365, outils collaboratifs et gestion de la mobilité d'entreprise (MDM).",
+    workplaceFeatures: ["Déploiement Microsoft 365 / Google Workspace", "Gestion des appareils mobiles (MDM)", "Solutions de visioconférence", "Intranet et portails collaboratifs"],
+
+    dataTitle: "Gestion des Données",
+    dataSub: "Sécurité & Conformité",
+    dataDesc: "Nous vous aidons à maîtriser votre patrimoine data : stratégie de sauvegarde, plan de reprise d'activité (PRA/PCA), protection contre les ransomwares et gouvernance des données.",
+    dataFeatures: ["Stratégie de sauvegarde et restauration", "Plan de reprise d'activité (PRA/PCA)", "Protection contre les ransomwares", "Gouvernance et qualité des données"],
+
+    integrationTitle: "Intégration & Interopérabilité",
+    integrationSub: "API & Middleware",
+    integrationDesc: "Nous interconnectons vos applications métier (ERP, CRM, e-commerce) et créez des flux automatisés pour éliminer les silos d'information et améliorer votre productivité.",
+    integrationFeatures: ["Intégration API et services web", "Middleware et ESB", "Automatisation des processus (RPA)", "Développement d'applications sur mesure"],
+
+    trainingTitle: "Formation & Montée en compétences",
+    trainingSub: "Excellence & Capital humain",
+    trainingDesc: "Renforcez les compétences IT de vos équipes avec nos programmes de formation personnalisés, dispensés par des formateurs certifiés dans nos centres ou dans vos locaux.",
+    trainingFeatures: ["Formations certifiantes (Microsoft, Cisco, etc.)", "Ateliers pratiques sur site", "E-learning et blended learning", "Coaching technique individualisé"],
+    
+    // Old fields preserved for compatibility
     cybersecurity: "Cybersécurité",
     cybersecuritySubtitle: "Protection & Conformité",
-    cybersecurityDesc: "Protégez votre organisation avec une approche holistique de la sécurité : audit, SOC managé, gestion des vulnérabilités et réponse aux incidents. Nous assurons la conformité RGPD et ISO 27001 de vos systèmes.",
     cloud: "Cloud & Infrastructure",
     cloudSubtitle: "Agilité & Scalabilité",
-    cloudDesc: "De la migration cloud à l'infogérance multi-cloud, nos équipes certifiées AWS, Azure et Google Cloud conçoivent et opèrent votre infrastructure avec un niveau de service garanti (SLA 99,9%).",
   },
 
   // Blog Page
@@ -176,11 +472,118 @@ export const fr = {
     noResults: "Aucun article trouvé.",
   },
 
+  // Blog Page Details
+  blogPage: {
+    seoTitle: "Blog & Actualités Technologiques",
+    seoDesc: "Retrouvez nos guides d'experts, livres blancs et avis d'experts sur la cybersécurité, le Cloud computing, le FinOps, la gouvernance des données et la transformation digitale au Maroc.",
+    badge: "BLOG & ACTUALITÉS",
+    title: "Actualités Et Conseils IT",
+    desc: "Découvrez nos articles, guides pratiques et retours d'expérience autour de la cybersécurité, le cloud et la transformation digitale.",
+    searchPlaceholder: "Rechercher un article...",
+    noArticles: "Aucun article trouvé.",
+    tryOtherKeywords: "Essayez d'autres mots-clés ou catégories.",
+    categories: {
+      all: "Tous",
+      cybersecurity: "Cybersécurité",
+      cloud: "Cloud",
+      erp: "ERP",
+      digitalTransform: "Transformation digitale",
+      news: "Actualités"
+    },
+    readTime: "de lecture",
+    readTimeShort: "min",
+    readArticle: "Lire l'article",
+    sidebar: {
+      categories: "Catégories",
+      newsletter: "Newsletter",
+      newsletterDesc: "Recevez nos derniers articles et actualités IT directement dans votre boîte mail.",
+      subscribed: "✓ Inscription confirmée !",
+      emailPlaceholder: "votre@email.com",
+      subscribe: "S'abonner",
+      recentArticles: "Articles récents"
+    },
+    // The articles
+    art1Title: "Les 10 meilleures pratiques pour sécuriser votre réseau d'entreprise",
+    art1Summary: "Découvrez les stratégies essentielles pour protéger votre infrastructure contre les cybermenaces modernes, des ransomwares aux attaques par phishing sophistiquées.",
+    art1Date: "15 Juin 2026",
+    art1ReadTime: "5 min",
+
+    art2Title: "Migration vers Azure : retour d'expérience d'un client industriel marocain",
+    art2Summary: "Comment une entreprise manufacturière a réduit ses coûts IT de 35% en migrant vers Microsoft Azure avec l'accompagnement d'IntegralTech.",
+    art2Date: "8 Juin 2026",
+    art2ReadTime: "7 min",
+
+    art3Title: "Microsoft Dynamics 365 vs SAP : quel ERP choisir pour une PME marocaine ?",
+    art3Summary: "Une comparaison détaillée des deux solutions ERP leaders du marché, avec les critères de choix adaptés au contexte économique marocain.",
+    art3Date: "1 Juin 2026",
+    art3ReadTime: "8 min",
+
+    art4Title: "Intelligence Artificielle en entreprise : où en sont les PME africaines ?",
+    art4Summary: "Panorama de l'adoption de l'IA dans les entreprises africaines : opportunités, freins et feuille de route pour une transformation réussie.",
+    art4Date: "20 Mai 2026",
+    art4ReadTime: "6 min",
+
+    art5Title: "IntegralTech obtient la certification Microsoft Gold Partner pour la 4ème année consécutive",
+    art5Summary: "Cette distinction récompense notre expertise technique et notre engagement envers l'excellence dans la mise en œuvre des solutions Microsoft.",
+    art5Date: "12 Mai 2026",
+    art5ReadTime: "3 min",
+
+    art6Title: "RGPD et entreprises marocaines : comment se mettre en conformité en 2026 ?",
+    art6Summary: "Avec l'entrée en vigueur de la loi 09-08 au Maroc, la conformité des données devient cruciale. Voici une checklist pratique pour votre organisation.",
+    art6Date: "5 Mai 2026",
+    art6ReadTime: "9 min",
+
+    art7Title: "Comment optimiser vos coûts cloud avec FinOps : guide complet",
+    art7Summary: "Le FinOps permet aux entreprises de réduire leurs dépenses cloud de 20 à 30% sans compromis sur les performances. Voici comment l'adopter.",
+    art7Date: "28 Avril 2026",
+    art7ReadTime: "10 min",
+
+    art8Title: "RPA : automatisez vos tâches répétitives et libérez vos équipes",
+    art8Summary: "La robotisation des processus métiers (RPA) transforme la productivité des entreprises. Découvrez 5 cas d'usage concrets implementés pour nos clients.",
+    art8Date: "15 Avril 2026",
+    art8ReadTime: "5 min",
+
+    art9Title: "Les erreurs à éviter lors d'un projet ERP : témoignages de DSI marocains",
+    art9Summary: "Des directeurs des systèmes d'information partagent les pièges classiques des projets ERP et comment les éviter avec une bonne méthodologie de conduite du changement.",
+    art9Date: "5 Avril 2026",
+    art9ReadTime: "7 min",
+  },
+
   // Contact Page
   contact: {
     badge: "NOUS CONTACTER",
     title: "Entrez en Contact Avec Nos Experts",
     description: "Avez-vous une question ou un projet en tête ? Notre équipe est prête à vous aider.",
+    seoTitle: "Contactez-nous | Support & Audit Gratuit",
+    seoDesc: "Contactez nos consultants IT à Casablanca. Planifiez un audit gratuit ou demandez des informations complémentaires sur nos solutions et services.",
+    heroTitle: "Prêt À Échanger ?",
+    heroDesc: "Contactez-nous pour organiser un audit gratuit de votre infrastructure IT et découvrir les solutions adaptées à votre entreprise.",
+    formTitle: "Envoyez-nous un message",
+    formDesc: "Décrivez votre besoin et nous reviendrons vers vous sous 24h ouvrées.",
+    formPhone: "Téléphone",
+    formSuccess: "✓ Votre message a été envoyé avec succès ! Nous vous répondrons sous 24h ouvrées.",
+    formError: "Une erreur est survenue. Veuillez réessayer ou nous contacter par téléphone.",
+    infoTitle: "Nos coordonnées",
+    hoursTitle: "Horaires d'ouverture",
+    hoursMonFri: "Lundi – Vendredi",
+    hoursSat: "Samedi",
+    hoursSupport: "Support urgent",
+    hoursSupportValue: "24h/24 – 7j/7",
+    googleMaps: "Voir sur Google Maps",
+    followUs: "Suivez-nous",
+    faqBadge: "FAQ",
+    faqTitle: "Questions fréquentes",
+    // FAQs
+    faqQ1: "Quel est votre délai de réponse moyen ?",
+    faqA1: "Notre équipe s'engage à répondre à toutes les demandes dans un délai de 24 heures ouvrées. Pour les urgences techniques, notre support est disponible 24/7.",
+    faqQ2: "Proposez-vous des audits IT gratuits ?",
+    faqA2: "Oui, nous offrons un premier audit de votre infrastructure IT sans engagement. Cet audit nous permet de comprendre vos besoins et de vous proposer des solutions adaptées.",
+    faqQ3: "Intervenez-vous dans toutes les régions du Maroc ?",
+    faqA3: "Nous intervenons sur tout le territoire marocain depuis notre siège à Casablanca. Nous disposons également de partenaires locaux dans les principales villes du royaume.",
+    faqQ4: "Quels secteurs d'activité accompagnez-vous ?",
+    faqA4: "IntegralTech intervient dans tous les secteurs : industrie, finance, santé, distribution, services publics, PME et grandes entreprises.",
+    faqQ5: "Proposez-vous des contrats de maintenance annuels ?",
+    faqA5: "Oui, nous proposons des contrats de support et maintenance adaptés à vos besoins : basique, standard ou premium, avec différents niveaux de réactivité et de couverture.",
     form: {
       name: "Nom complet",
       namePlaceholder: "Votre nom",
@@ -190,15 +593,17 @@ export const fr = {
       subjectPlaceholder: "Décrivez votre demande",
       message: "Message",
       messagePlaceholder: "Votre message...",
-      submit: "Envoyer",
+      submit: "Envoyer le message",
       submitting: "Envoi en cours...",
       successTitle: "Message envoyé!",
       successMessage: "Merci pour votre message. Nous vous recontacterons bientôt.",
       errorTitle: "Erreur",
       errorMessage: "Une erreur est survenue. Veuillez réessayer.",
-      nameRequired: "Le nom est obligatoire",
-      emailRequired: "L'email est obligatoire",
-      messageRequired: "Le message est obligatoire",
+      nameRequired: "Le nom est obligatoire.",
+      emailRequired: "L'email est obligatoire.",
+      emailInvalid: "Adresse email invalide.",
+      subjectRequired: "Le sujet est obligatoire.",
+      messageRequired: "Le message doit contenir au moins 20 caractères.",
     },
     info: {
       title: "Nos Coordonnées",
@@ -209,6 +614,14 @@ export const fr = {
       hoursContent: "Lundi - Vendredi: 9h - 18h",
       followUs: "Nous Suivre",
     },
+  },
+
+  // NotFound Page
+  notFound: {
+    title: "Page Introuvable",
+    desc: "Désolé, la page que vous recherchez n'existe pas, a été déplacée ou est temporairement indisponible.",
+    homeBtn: "Retour à l'accueil",
+    backBtn: "Page précédente",
   },
 
   // Common
@@ -222,6 +635,7 @@ export const fr = {
     loading: "Chargement...",
     error: "Une erreur est survenue",
     notFound: "Non trouvé",
+    viewAll: "Voir tout",
   },
 
   // Accessibility
@@ -230,5 +644,43 @@ export const fr = {
     menuOpen: "Ouvrir le menu",
     menuClose: "Fermer le menu",
   },
-} as const;
 
+  // Mega Menu Dropdowns
+  megaMenu: {
+    // Services
+    webDev: "Développement Web",
+    webDevShort: "Création de sites web modernes, rapides et adaptés à votre activité.",
+    mobileApps: "Applications Mobile",
+    mobileAppsShort: "Applications mobiles performantes pour iOS et Android.",
+    cloudInfra: "Cloud & Infrastructure",
+    cloudInfraShort: "Solutions cloud sécurisées, évolutives et adaptées à votre croissance.",
+    cybersecurity: "Cybersécurité",
+    cybersecurityShort: "Protection de vos systèmes, données et accès contre les menaces.",
+    maintenanceIT: "Maintenance IT",
+    maintenanceITShort: "Suivi, optimisation et maintenance de votre environnement informatique.",
+    techSupport: "Support Technique",
+    techSupportShort: "Assistance réactive pour résoudre vos problèmes informatiques.",
+    digitalTransform: "Transformation Digitale",
+    digitalTransformShort: "Digitalisation de vos processus pour gagner en efficacité.",
+    itConsulting: "Conseil IT",
+    itConsultingShort: "Accompagnement stratégique pour choisir les bonnes solutions technologiques.",
+
+    // Solutions
+    enterprise: "Solutions Entreprise",
+    enterpriseShort: "Outils digitaux pour améliorer la gestion et la productivité.",
+    cloud: "Solutions Cloud",
+    cloudShort: "Hébergement, migration et gestion cloud pour vos projets.",
+    security: "Solutions Sécurité",
+    securityShort: "Solutions de protection, sauvegarde et contrôle des accès.",
+    ecommerce: "Solutions E-commerce",
+    ecommerceShort: "Plateformes de vente en ligne modernes et faciles à gérer.",
+    network: "Solutions Réseau",
+    networkShort: "Installation, configuration et optimisation de votre réseau.",
+    saas: "Solutions SaaS",
+    saasShort: "Applications web sur mesure accessibles partout.",
+    management: "Solutions Gestion",
+    managementShort: "Outils pour gérer clients, stocks, équipes et opérations.",
+    custom: "Solutions Sur Mesure",
+    customShort: "Développement de solutions adaptées exactement à vos besoins.",
+  },
+} as const;

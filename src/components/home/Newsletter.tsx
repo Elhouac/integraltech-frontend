@@ -52,14 +52,22 @@ export default function Newsletter() {
       className="newsletter-section"
       style={{
         background: CARD_BG,
-        padding: "96px 0",
+        padding: "64px 32px",
         position: "relative",
         overflow: "hidden",
+        borderRadius: "var(--radius-xl)",
+        boxShadow: "var(--shadow-xl)",
+        border: `1px solid ${BORDER}`,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       <div
+        className="newsletter-content"
         style={{
-          width: "90%",
+          width: "100%",
           maxWidth: 680,
           margin: "0 auto",
           textAlign: "center",
@@ -161,6 +169,7 @@ export default function Newsletter() {
           </div>
         ) : (
           <form
+            className="newsletter-form"
             data-nl
             onSubmit={handleSubmit}
             noValidate
@@ -176,7 +185,7 @@ export default function Newsletter() {
               }}
               className="newsletter-form-row"
             >
-              <div style={{ flex: 1, minWidth: 200 }}>
+              <div className="newsletter-input-wrap" style={{ flex: 1, minWidth: 200 }}>
                 <input
                   type="email"
                   value={email}
@@ -224,6 +233,7 @@ export default function Newsletter() {
                 )}
               </div>
               <button
+                className="newsletter-submit"
                 type="submit"
                 style={{
                   display: "flex",

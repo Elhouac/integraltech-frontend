@@ -53,11 +53,9 @@ export default function Navbar() {
         WebkitBackdropFilter: isScrolled ? "blur(12px)" : "none",
         border: isScrolled ? "1px solid var(--glass-border)" : "1px solid transparent",
         boxShadow: isScrolled ? "var(--shadow-md)" : "none",
-        padding: "0 24px 0 32px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        height: 76,
         position: "sticky",
         top: 20,
         width: "90%",
@@ -74,7 +72,11 @@ export default function Navbar() {
         <img
           src="/logo.png"
           alt="Integral Progress Technology"
-          style={{ height: 48, objectFit: "contain" }}
+          style={{
+            objectFit: "contain",
+            filter: theme === "dark" ? "brightness(0) invert(1)" : "none",
+            transition: "filter 0.3s ease",
+          }}
         />
       </div>
 
@@ -130,6 +132,7 @@ export default function Navbar() {
       <div className="navbar-actions" style={{ display: "flex", gap: 8, alignItems: "center" }}>
         {/* Theme Toggle */}
         <button
+          className="navbar-utility-button"
           onClick={toggleTheme}
           style={{
             background: "none",
@@ -146,7 +149,7 @@ export default function Navbar() {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = DARK;
-            e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.04)";
+            e.currentTarget.style.backgroundColor = theme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.color = BODY_TEXT;
@@ -164,6 +167,7 @@ export default function Navbar() {
           onMouseLeave={() => setShowLanguageMenu(false)}
         >
           <button
+            className="navbar-utility-button"
             onClick={() => setShowLanguageMenu(!showLanguageMenu)}
             style={{
               background: "none",
@@ -180,7 +184,7 @@ export default function Navbar() {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = DARK;
-              e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.04)";
+              e.currentTarget.style.backgroundColor = theme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = BODY_TEXT;
@@ -257,6 +261,7 @@ export default function Navbar() {
 
         {/* Search Button */}
         <button
+          className="navbar-utility-button"
           onClick={() => openSearch()}
           style={{
             background: "none",
@@ -274,7 +279,7 @@ export default function Navbar() {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = DARK;
-            e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.04)";
+            e.currentTarget.style.backgroundColor = theme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.color = BODY_TEXT;
@@ -329,7 +334,6 @@ export default function Navbar() {
             width: 38,
             height: 38,
             cursor: "pointer",
-            display: "flex",
             alignItems: "center",
             justifyContent: "center",
             color: "#fff",
@@ -358,16 +362,16 @@ export default function Navbar() {
             transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{
               position: "absolute",
-              top: 86,
               left: 0,
               right: 0,
               background: "var(--mobile-menu-bg)",
               backdropFilter: "blur(16px)",
               border: `1px solid ${BORDER}`,
               borderRadius: "16px",
-              boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.08)",
+              boxShadow: theme === "dark"
+                ? "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 4px 10px -4px rgba(0, 0, 0, 0.4)"
+                : "0 10px 25px -5px rgba(15, 23, 42, 0.08)",
               padding: "20px 24px",
-              display: "flex",
               flexDirection: "column",
               gap: 8,
               zIndex: 100,

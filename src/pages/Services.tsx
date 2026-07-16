@@ -10,109 +10,21 @@ import {
 } from "lucide-react";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
+import { useTranslation } from "../context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const services = [
-  {
-    id: "cybersecurite",
-    Icon: ShieldCheck,
-    title: "Cybersécurité",
-    subtitle: "Protection & Conformité",
-    desc: "Protégez votre organisation avec une approche holistique de la sécurité : audit, SOC managé, gestion des vulnérabilités et réponse aux incidents. Nous assurons la conformité RGPD et ISO 27001 de vos systèmes.",
-    features: ["SOC managé 24/7", "Tests d'intrusion (pentest)", "Gestion des identités (IAM)", "Conformité RGPD / ISO 27001"],
-  },
-  {
-    id: "cloud",
-    Icon: Cloud,
-    title: "Cloud & Infrastructure",
-    subtitle: "Agilité & Scalabilité",
-    desc: "De la migration cloud à l'infogérance multi-cloud, nos équipes certifiées AWS, Azure et Google Cloud conçoivent et opèrent votre infrastructure avec un niveau de service garanti (SLA 99,9%).",
-    features: ["Migration vers le cloud", "Cloud hybride et multi-cloud", "Optimisation des coûts (FinOps)", "Monitoring et MCO proactif"],
-  },
-  {
-    id: "erp",
-    Icon: Layers,
-    title: "Solutions ERP",
-    subtitle: "Efficacité opérationnelle",
-    desc: "Implémentation, personnalisation et support de solutions ERP (Microsoft Dynamics 365, SAP, Odoo). Nous digitalisons vos processus RH, Finance, Supply Chain et CRM pour une performance maximale.",
-    features: ["Déploiement Microsoft Dynamics / SAP / Odoo", "Migration et intégration de données", "Formation des utilisateurs", "Support et évolution"],
-  },
-  {
-    id: "support",
-    Icon: Headphones,
-    title: "Support & Maintenance",
-    subtitle: "Réactivité & Disponibilité",
-    desc: "Notre équipe de techniciens certifiés assure la disponibilité et les performances de votre parc informatique 24h/24, 7j/7. Contrats de support niveau 1, 2 et 3 adaptés à vos besoins.",
-    features: ["Helpdesk N1/N2/N3", "Maintenance préventive et curative", "Gestion du parc informatique (ITSM)", "Astreinte et intervention sur site"],
-  },
-  {
-    id: "bi",
-    Icon: BarChart3,
-    title: "Business Intelligence",
-    subtitle: "Données & Analytics",
-    desc: "Transformez vos données en avantages concurrentiels. Nos experts BI conçoivent des entrepôts de données, des tableaux de bord interactifs et des modèles analytiques avancés pour guider vos décisions.",
-    features: ["Datawarehouse et lac de données", "Tableaux de bord Power BI / Qlik", "Analytics avancé et reporting", "KPIs et pilotage de la performance"],
-  },
-  {
-    id: "conseil",
-    Icon: Handshake,
-    title: "Conseil & Audit",
-    subtitle: "Stratégie & Gouvernance",
-    desc: "Nos consultants seniors vous accompagnent dans la définition et l'exécution de votre stratégie IT : schéma directeur, gouvernance, gestion de projet et conduite du changement.",
-    features: ["Audit complet du Système d'Information", "Schéma directeur informatique", "AMOA et gestion de projets", "Accompagnement au changement"],
-  },
-  {
-    id: "reseau",
-    Icon: Network,
-    title: "Réseau & Télécommunications",
-    subtitle: "Connectivité & Performance",
-    desc: "Nous concevons et déployons des architectures réseau LAN, WAN, Wi-Fi et SD-WAN adaptées à vos sites et à vos exigences de performance, de redondance et de sécurité.",
-    features: ["Architecture réseau LAN/WAN", "Wi-Fi entreprise haute densité", "SD-WAN et MPLS", "VOIP et téléphonie IP"],
-  },
-  {
-    id: "securite-physique",
-    Icon: Lock,
-    title: "Sécurité Physique & IoT",
-    subtitle: "Contrôle & Surveillance",
-    desc: "Au-delà du numérique, nous sécurisons également vos locaux avec des solutions de vidéosurveillance IP, contrôle d'accès biométrique et systèmes d'alarme intégrés.",
-    features: ["Vidéosurveillance IP (CCTV)", "Contrôle d'accès biométrique", "Intégration IoT industriel", "Systèmes d'alarme et intrusion"],
-  },
-  {
-    id: "digital-workplace",
-    Icon: Globe,
-    title: "Digital Workplace",
-    subtitle: "Mobilité & Collaboration",
-    desc: "Créez un environnement de travail numérique fluide et sécurisé avec nos solutions Microsoft 365, outils collaboratifs et gestion de la mobilité d'entreprise (MDM).",
-    features: ["Déploiement Microsoft 365 / Google Workspace", "Gestion des appareils mobiles (MDM)", "Solutions de visioconférence", "Intranet et portails collaboratifs"],
-  },
-  {
-    id: "data",
-    Icon: Database,
-    title: "Gestion des Données",
-    subtitle: "Sécurité & Conformité",
-    desc: "Nous vous aidons à maîtriser votre patrimoine data : stratégie de sauvegarde, plan de reprise d'activité (PRA/PCA), protection contre les ransomwares et gouvernance des données.",
-    features: ["Stratégie de sauvegarde et restauration", "Plan de reprise d'activité (PRA/PCA)", "Protection contre les ransomwares", "Gouvernance et qualité des données"],
-  },
-  {
-    id: "integration",
-    Icon: Settings,
-    title: "Intégration & Interopérabilité",
-    subtitle: "API & Middleware",
-    desc: "Nous interconnectons vos applications métier (ERP, CRM, e-commerce) et créez des flux automatisés pour éliminer les silos d'information et améliorer votre productivité.",
-    features: ["Intégration API et services web", "Middleware et ESB", "Automatisation des processus (RPA)", "Développement d'applications sur mesure"],
-  },
-  {
-    id: "formation",
-    Icon: Wrench,
-    title: "Formation & Montée en compétences",
-    subtitle: "Excellence & Capital humain",
-    desc: "Renforcez les compétences IT de vos équipes avec nos programmes de formation personnalisés, dispensés par des formateurs certifiés dans nos centres ou dans vos locaux.",
-    features: ["Formations certifiantes (Microsoft, Cisco, etc.)", "Ateliers pratiques sur site", "E-learning et blended learning", "Coaching technique individualisé"],
-  },
-];
+interface ServiceItem {
+  id: string;
+  Icon: any;
+  title: string;
+  subtitle: string;
+  desc: string;
+  features: readonly string[];
+}
 
-function ServiceCard({ s, index }: { s: (typeof services)[0]; index: number }) {
+function ServiceCard({ s, index }: { s: ServiceItem; index: number }) {
+  const t = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
 
@@ -216,7 +128,7 @@ function ServiceCard({ s, index }: { s: (typeof services)[0]; index: number }) {
             e.currentTarget.style.background = "none";
           }}
         >
-          {expanded ? "Réduire" : "En savoir plus"}
+          {expanded ? t.servicesPage.reduce : t.servicesPage.learnMore}
         </button>
         <Link
           to="/contact"
@@ -234,7 +146,7 @@ function ServiceCard({ s, index }: { s: (typeof services)[0]; index: number }) {
             e.currentTarget.style.boxShadow = "none";
           }}
         >
-          Demander
+          {t.servicesPage.request}
           <ArrowRight size={14} />
         </Link>
       </div>
@@ -243,8 +155,108 @@ function ServiceCard({ s, index }: { s: (typeof services)[0]; index: number }) {
 }
 
 export default function ServicesPage() {
+  const t = useTranslation();
   usePageTransitionEffect();
   const heroRef = useRef<HTMLDivElement>(null);
+
+  const services: ServiceItem[] = [
+    {
+      id: "cybersecurite",
+      Icon: ShieldCheck,
+      title: t.servicesPage.cybersecurityTitle,
+      subtitle: t.servicesPage.cybersecuritySub,
+      desc: t.servicesPage.cybersecurityDesc,
+      features: t.servicesPage.cybersecurityFeatures,
+    },
+    {
+      id: "cloud",
+      Icon: Cloud,
+      title: t.servicesPage.cloudTitle,
+      subtitle: t.servicesPage.cloudSub,
+      desc: t.servicesPage.cloudDesc,
+      features: t.servicesPage.cloudFeatures,
+    },
+    {
+      id: "erp",
+      Icon: Layers,
+      title: t.servicesPage.erpTitle,
+      subtitle: t.servicesPage.erpSub,
+      desc: t.servicesPage.erpDesc,
+      features: t.servicesPage.erpFeatures,
+    },
+    {
+      id: "support",
+      Icon: Headphones,
+      title: t.servicesPage.supportTitle,
+      subtitle: t.servicesPage.supportSub,
+      desc: t.servicesPage.supportDesc,
+      features: t.servicesPage.supportFeatures,
+    },
+    {
+      id: "bi",
+      Icon: BarChart3,
+      title: t.servicesPage.biTitle,
+      subtitle: t.servicesPage.biSub,
+      desc: t.servicesPage.biDesc,
+      features: t.servicesPage.biFeatures,
+    },
+    {
+      id: "conseil",
+      Icon: Handshake,
+      title: t.servicesPage.conseilTitle,
+      subtitle: t.servicesPage.conseilSub,
+      desc: t.servicesPage.conseilDesc,
+      features: t.servicesPage.conseilFeatures,
+    },
+    {
+      id: "reseau",
+      Icon: Network,
+      title: t.servicesPage.networkTitle,
+      subtitle: t.servicesPage.networkSub,
+      desc: t.servicesPage.networkDesc,
+      features: t.servicesPage.networkFeatures,
+    },
+    {
+      id: "securite-physique",
+      Icon: Lock,
+      title: t.servicesPage.lockTitle,
+      subtitle: t.servicesPage.lockSub,
+      desc: t.servicesPage.lockDesc,
+      features: t.servicesPage.lockFeatures,
+    },
+    {
+      id: "digital-workplace",
+      Icon: Globe,
+      title: t.servicesPage.workplaceTitle,
+      subtitle: t.servicesPage.workplaceSub,
+      desc: t.servicesPage.workplaceDesc,
+      features: t.servicesPage.workplaceFeatures,
+    },
+    {
+      id: "data",
+      Icon: Database,
+      title: t.servicesPage.dataTitle,
+      subtitle: t.servicesPage.dataSub,
+      desc: t.servicesPage.dataDesc,
+      features: t.servicesPage.dataFeatures,
+    },
+    {
+      id: "integration",
+      Icon: Settings,
+      title: t.servicesPage.integrationTitle,
+      subtitle: t.servicesPage.integrationSub,
+      desc: t.servicesPage.integrationDesc,
+      features: t.servicesPage.integrationFeatures,
+    },
+    {
+      id: "formation",
+      Icon: Wrench,
+      title: t.servicesPage.trainingTitle,
+      subtitle: t.servicesPage.trainingSub,
+      desc: t.servicesPage.trainingDesc,
+      features: t.servicesPage.trainingFeatures,
+    },
+  ];
 
   useLayoutEffect(() => {
     const el = heroRef.current;
@@ -264,8 +276,8 @@ export default function ServicesPage() {
   return (
     <div id="services">
       <SEO
-        title="Nos Services & Expertises IT"
-        description="IntegralTech vous propose des services IT à valeur ajoutée : infogérance, audits de sécurité, migration Cloud, intégration ERP et support technique 24/7."
+        title={t.servicesPage.seoTitle}
+        description={t.servicesPage.seoDesc}
         path="/services"
       />
       {/* Hero */}
@@ -292,20 +304,20 @@ export default function ServicesPage() {
             color: ORANGE, fontWeight: 600, fontSize: 12, fontFamily: "Outfit, sans-serif",
             textTransform: "uppercase", letterSpacing: "1px", marginBottom: 24,
           }}>
-            NOS SERVICES
+            {t.servicesPage.badge}
           </div>
           <h1 data-hero style={{
             fontFamily: "Outfit, sans-serif", fontWeight: 800,
             fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1.15,
             maxWidth: 720, margin: "0 auto 20px", letterSpacing: "-0.5px",
           }}>
-            Support, Conseil Et Maintenance
+            {t.servicesPage.title}
           </h1>
           <p data-hero style={{
             fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.7)",
             fontSize: 17, lineHeight: 1.8, maxWidth: 640, margin: "0 auto 40px",
           }}>
-            Nous accompagnons vos équipes avec une gamme complète de services IT — de l'assistance quotidienne aux projets de transformation stratégique.
+            {t.servicesPage.description}
           </p>
           <Link
             data-hero
@@ -327,7 +339,7 @@ export default function ServicesPage() {
               e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.3)";
             }}
           >
-            Demander un audit
+            {t.servicesPage.auditBtn}
             <ArrowRight size={16} />
           </Link>
         </div>
@@ -342,10 +354,10 @@ export default function ServicesPage() {
               fontSize: "clamp(28px, 4vw, 36px)", color: DARK,
               margin: "0 0 14px", letterSpacing: "-0.5px",
             }}>
-              Une offre complète pour votre activité
+              {t.servicesPage.gridTitle}
             </h2>
             <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 16, maxWidth: 580, margin: "0 auto", lineHeight: 1.7 }}>
-              Cliquez sur "En savoir plus" pour découvrir le détail de chaque service.
+              {t.servicesPage.gridDesc}
             </p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }} className="services-page-grid">
@@ -373,13 +385,13 @@ export default function ServicesPage() {
             fontSize: "clamp(28px, 4vw, 38px)", color: "#fff",
             margin: "0 0 18px", letterSpacing: "-0.5px",
           }}>
-            Un service sur mesure pour votre entreprise
+            {t.servicesPage.ctaTitle}
           </h2>
           <p style={{
             fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.65)",
             fontSize: 16, lineHeight: 1.7, margin: "0 auto 40px", maxWidth: 560,
           }}>
-            Nos experts sont disponibles pour analyser vos besoins et vous proposer un contrat de service adapté.
+            {t.servicesPage.ctaDesc}
           </p>
           <Link
             to="/contact"
@@ -400,7 +412,7 @@ export default function ServicesPage() {
               e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.3)";
             }}
           >
-            Nous contacter
+            {t.servicesPage.ctaBtn}
             <ArrowRight size={16} />
           </Link>
         </div>

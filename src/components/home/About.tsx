@@ -79,7 +79,7 @@ export default function About() {
               marginBottom: 20,
             }}
           >
-            À PROPOS DE NOUS
+            {t.homeAbout.badge}
           </div>
 
           <h2
@@ -94,7 +94,7 @@ export default function About() {
               margin: "0 0 20px",
             }}
           >
-            Votre Partenaire Digital De Confiance
+            {t.homeAbout.title}
           </h2>
 
           <p
@@ -106,8 +106,7 @@ export default function About() {
               marginBottom: 16,
             }}
           >
-            Depuis plus de 10 ans, IntegralTech accompagne les entreprises marocaines dans leur
-            transformation numérique.
+            {t.homeAbout.desc1}
           </p>
           <p
             style={{
@@ -118,8 +117,7 @@ export default function About() {
               marginBottom: 36,
             }}
           >
-            Nous croyons en un partenariat durable, fondé sur la confiance, l'expertise et
-            l'innovation continue.
+            {t.homeAbout.desc2}
           </p>
 
           <NavLink

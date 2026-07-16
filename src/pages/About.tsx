@@ -11,39 +11,9 @@ import {
 } from "lucide-react";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
+import { useTranslation } from "../context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
-
-// ─── DATA ────────────────────────────────────────────────────────────────────
-const values = [
-  { Icon: Trophy,       title: "Excellence",  desc: "Certifications internationales et standards de qualité élevés.", color: ORANGE },
-  { Icon: Lightbulb,   title: "Innovation",  desc: "Technologies de pointe et veille technologique permanente.", color: NAVY },
-  { Icon: ShieldCheck, title: "Sécurité",    desc: "Protection maximale de vos données et systèmes d'information.", color: "#22C55E" },
-  { Icon: TrendingUp,  title: "Croissance",  desc: "Solutions évolutives qui grandissent avec votre entreprise.", color: "#8B5CF6" },
-];
-
-const stats = [
-  { value: "500+", label: "Clients satisfaits", Icon: Users },
-  { value: "10+",  label: "Années d'expérience", Icon: Clock },
-  { value: "50+",  label: "Experts certifiés",   Icon: Award },
-  { value: "24/7", label: "Support technique",   Icon: Globe },
-];
-
-const certifications = [
-  "Microsoft Gold Partner",
-  "Cisco Certified Partner",
-  "ISO 27001 Certifié",
-  "Oracle Partner Network",
-  "AWS Consulting Partner",
-  "VMware Partner",
-];
-
-const technologies = [
-  { Icon: Cpu,      label: "Intelligence Artificielle" },
-  { Icon: Database, label: "Cloud & Big Data" },
-  { Icon: Wifi,     label: "Infrastructure IT" },
-  { Icon: ShieldCheck, label: "Cybersécurité" },
-];
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function useGsapReveal(ref: React.RefObject<HTMLElement | null>, start = "top 80%") {
@@ -70,6 +40,7 @@ function useGsapReveal(ref: React.RefObject<HTMLElement | null>, start = "top 80
 
 // ─── SECTION HERO ─────────────────────────────────────────────────────────────
 function AboutHero() {
+  const t = useTranslation();
   const ref = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
@@ -117,7 +88,7 @@ function AboutHero() {
           color: ORANGE, fontWeight: 600, fontSize: 12, fontFamily: "Outfit, sans-serif",
           textTransform: "uppercase", letterSpacing: "1px", marginBottom: 24,
         }}>
-          À PROPOS DE NOUS
+          {t.about.badge}
         </div>
 
         <h1 data-hero style={{
@@ -126,14 +97,14 @@ function AboutHero() {
           marginBottom: 20, maxWidth: 720, margin: "0 auto 20px",
           letterSpacing: "-0.5px",
         }}>
-          Votre Partenaire Digital De Confiance
+          {t.about.title}
         </h1>
 
         <p data-hero style={{
           fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.7)",
           fontSize: 17, lineHeight: 1.8, maxWidth: 640, margin: "0 auto 40px",
         }}>
-          Depuis plus de 10 ans, IntegralTech accompagne les entreprises marocaines dans leur transformation numérique avec expertise, fiabilité et innovation.
+          {t.about.heroDesc}
         </p>
 
         <Link
@@ -156,7 +127,7 @@ function AboutHero() {
             e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.3)";
           }}
         >
-          Nous contacter
+          {t.about.contactBtn}
           <ArrowRight size={16} />
         </Link>
       </div>
@@ -166,14 +137,15 @@ function AboutHero() {
 
 // ─── SECTION HISTOIRE ─────────────────────────────────────────────────────────
 function AboutHistory() {
+  const t = useTranslation();
   const ref = useRef<HTMLElement>(null);
   useGsapReveal(ref);
 
   const timeline = [
-    { year: "2014", title: "Fondation", desc: "Création d'IntegralTech à Casablanca avec une équipe de 5 experts." },
-    { year: "2017", title: "Expansion", desc: "Ouverture de nouvelles agences et obtention des premières certifications internationales." },
-    { year: "2020", title: "Leadership", desc: "Devenu l'un des principaux partenaires IT du Maroc avec +200 clients." },
-    { year: "2024", title: "Innovation", desc: "Lancement de notre pôle IA et cloud avec +500 clients satisfaits." },
+    { year: "2014", title: t.about.timeline.foundingTitle, desc: t.about.timeline.foundingDesc },
+    { year: "2017", title: t.about.timeline.expansionTitle, desc: t.about.timeline.expansionDesc },
+    { year: "2020", title: t.about.timeline.leadershipTitle, desc: t.about.timeline.leadershipDesc },
+    { year: "2024", title: t.about.timeline.innovationTitle, desc: t.about.timeline.innovationDesc },
   ];
 
   return (
@@ -187,23 +159,23 @@ function AboutHistory() {
             color: ORANGE, fontWeight: 600, fontSize: 12, fontFamily: "Outfit, sans-serif",
             textTransform: "uppercase", letterSpacing: "1px", marginBottom: 16,
           }}>
-            NOTRE HISTOIRE
+            {t.about.historyBadge}
           </div>
           <h2 data-reveal style={{
             fontFamily: "Outfit, sans-serif", fontWeight: 800,
             fontSize: "clamp(26px, 3.5vw, 38px)", color: DARK,
             marginBottom: 24, lineHeight: 1.2, letterSpacing: "-0.5px", margin: "0 0 24px",
           }}>
-            Plus de 10 ans d'innovation au service des entreprises
+            {t.about.historyTitle}
           </h2>
           <p data-reveal style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 16, lineHeight: 1.8, marginBottom: 16 }}>
-            Fondée en 2014 à Casablanca, <strong style={{ color: DARK }}>Integral Progress Technology</strong> est née d'une vision claire : démocratiser l'accès aux technologies IT de pointe pour les entreprises marocaines, quelle que soit leur taille.
+            {t.about.historyP1}
           </p>
           <p data-reveal style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 16, lineHeight: 1.8, marginBottom: 16 }}>
-            Au fil des années, nous avons bâti une équipe d'experts certifiés et développé des partenariats stratégiques avec les leaders mondiaux de la technologie.
+            {t.about.historyP2}
           </p>
           <p data-reveal style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 16, lineHeight: 1.8 }}>
-            Aujourd'hui, plus de 500 entreprises nous font confiance pour sécuriser, optimiser et moderniser leur système d'information.
+            {t.about.historyP3}
           </p>
         </div>
 
@@ -242,7 +214,15 @@ function AboutHistory() {
 
 // ─── SECTION STATS ─────────────────────────────────────────────────────────────
 function AboutStats() {
+  const t = useTranslation();
   const ref = useRef<HTMLElement>(null);
+
+  const stats = [
+    { value: "500+", label: t.stats.satisfaction, Icon: Users },
+    { value: "10+",  label: t.stats.experience, Icon: Clock },
+    { value: "50+",  label: t.stats.experts,   Icon: Award },
+    { value: "24/7", label: t.stats.support,   Icon: Globe },
+  ];
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -293,8 +273,22 @@ function AboutStats() {
 
 // ─── SECTION MISSION / VISION ─────────────────────────────────────────────────
 function AboutMissionVision() {
+  const t = useTranslation();
   const ref = useRef<HTMLElement>(null);
   useGsapReveal(ref);
+
+  const mvItems = [
+    {
+      label: t.about.missionVision.missionLabel, color: ORANGE,
+      title: t.about.missionVision.missionTitle,
+      desc: t.about.missionVision.missionDesc,
+    },
+    {
+      label: t.about.missionVision.visionLabel, color: NAVY,
+      title: t.about.missionVision.visionTitle,
+      desc: t.about.missionVision.visionDesc,
+    },
+  ];
 
   return (
     <section ref={ref} style={{ background: LIGHT_GRAY, padding: "100px 0" }} className="about-mv-section">
@@ -307,29 +301,18 @@ function AboutMissionVision() {
             color: NAVY, fontWeight: 600, fontSize: 12, fontFamily: "Outfit, sans-serif",
             textTransform: "uppercase", letterSpacing: "1px", marginBottom: 16,
           }}>
-            NOS FONDEMENTS
+            {t.about.missionVision.badge}
           </div>
           <h2 style={{
             fontFamily: "Outfit, sans-serif", fontWeight: 800,
             fontSize: "clamp(28px, 4vw, 38px)", color: DARK,
             margin: 0, letterSpacing: "-0.5px",
           }}>
-            Mission & Vision
+            {t.about.missionVision.title}
           </h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }} className="about-mv-grid">
-          {[
-            {
-              label: "Notre Mission", color: ORANGE,
-              title: "Accélérer votre transformation digitale",
-              desc: "Notre mission est d'accompagner chaque entreprise marocaine dans sa transformation numérique en lui fournissant des solutions IT sur mesure, fiables et sécurisées. Nous agissons comme un véritable partenaire technologique, engagé dans la réussite de nos clients sur le long terme.",
-            },
-            {
-              label: "Notre Vision", color: NAVY,
-              title: "Être le leader IT de référence en Afrique",
-              desc: "Nous aspirons à devenir la référence incontournable de l'intégration de solutions IT en Afrique du Nord. En alliant expertise humaine et technologies d'avant-garde, nous construisons une économie numérique plus compétitive, résiliente et innovante pour les entreprises africaines.",
-            },
-          ].map((item) => (
+          {mvItems.map((item) => (
             <div
               key={item.label}
               data-reveal
@@ -373,8 +356,16 @@ function AboutMissionVision() {
 
 // ─── SECTION VALEURS ─────────────────────────────────────────────────────────
 function AboutValues() {
+  const t = useTranslation();
   const ref = useRef<HTMLElement>(null);
   useGsapReveal(ref);
+
+  const values = [
+    { Icon: Trophy,       title: t.about.values.excellence,  desc: t.about.values.excellenceDesc, color: ORANGE },
+    { Icon: Lightbulb,   title: t.about.values.innovation,  desc: t.about.values.innovationDesc, color: NAVY },
+    { Icon: ShieldCheck, title: t.about.values.security,    desc: t.about.values.securityDesc, color: "#22C55E" },
+    { Icon: TrendingUp,  title: t.about.values.growth,      desc: t.about.values.growthDesc, color: "#8B5CF6" },
+  ];
 
   return (
     <section ref={ref} style={{ background: CARD_BG, padding: "100px 0" }} className="about-values-section">
@@ -384,14 +375,14 @@ function AboutValues() {
             color: ORANGE, fontWeight: 700, fontSize: 12, letterSpacing: 2,
             textTransform: "uppercase", marginBottom: 14, fontFamily: "Outfit, sans-serif",
           }}>
-            NOS VALEURS
+            {t.about.values.badge}
           </div>
           <h2 style={{
             fontFamily: "Outfit, sans-serif", fontWeight: 800,
             fontSize: "clamp(28px, 4vw, 38px)", color: DARK,
             margin: 0, letterSpacing: "-0.5px",
           }}>
-            Ce qui nous guide au quotidien
+            {t.about.values.title}
           </h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }} className="about-values-grid">
@@ -435,8 +426,18 @@ function AboutValues() {
 
 // ─── SECTION CERTIFICATIONS ───────────────────────────────────────────────────
 function AboutCertifications() {
+  const t = useTranslation();
   const ref = useRef<HTMLElement>(null);
   useGsapReveal(ref);
+
+  const certifications = [
+    "Microsoft Gold Partner",
+    "Cisco Certified Partner",
+    t.about.certifications.isoCertified,
+    "Oracle Partner Network",
+    "AWS Consulting Partner",
+    "VMware Partner",
+  ];
 
   return (
     <section ref={ref} style={{ background: LIGHT_GRAY, padding: "100px 0" }} className="about-cert-section">
@@ -446,17 +447,17 @@ function AboutCertifications() {
             color: ORANGE, fontWeight: 700, fontSize: 12, letterSpacing: 2,
             textTransform: "uppercase", marginBottom: 14, fontFamily: "Outfit, sans-serif",
           }}>
-            CERTIFICATIONS & PARTENAIRES
+            {t.about.certifications.badge}
           </div>
           <h2 style={{
             fontFamily: "Outfit, sans-serif", fontWeight: 800,
             fontSize: "clamp(28px, 4vw, 38px)", color: DARK,
             margin: "0 0 16px", letterSpacing: "-0.5px",
           }}>
-            Des partenariats stratégiques
+            {t.about.certifications.title}
           </h2>
           <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 16, maxWidth: 560, margin: "0 auto", lineHeight: 1.7 }}>
-            Nous collaborons avec les leaders mondiaux de la technologie pour vous offrir les meilleures solutions du marché.
+            {t.about.certifications.desc}
           </p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center" }}>
@@ -490,8 +491,16 @@ function AboutCertifications() {
 
 // ─── SECTION TECHNOLOGIES ─────────────────────────────────────────────────────
 function AboutTechnologies() {
+  const t = useTranslation();
   const ref = useRef<HTMLElement>(null);
   useGsapReveal(ref);
+
+  const technologies = [
+    { Icon: Cpu,      label: t.about.technologies.ai },
+    { Icon: Database, label: t.about.technologies.cloud },
+    { Icon: Wifi,     label: t.about.technologies.infra },
+    { Icon: ShieldCheck, label: t.about.technologies.cyber },
+  ];
 
   return (
     <section ref={ref} style={{ background: CARD_BG, padding: "100px 0" }} className="about-tech-section">
@@ -501,20 +510,20 @@ function AboutTechnologies() {
             color: ORANGE, fontWeight: 700, fontSize: 12, letterSpacing: 2,
             textTransform: "uppercase", marginBottom: 14, fontFamily: "Outfit, sans-serif",
           }}>
-            NOS TECHNOLOGIES
+            {t.about.technologies.badge}
           </div>
           <h2 style={{
             fontFamily: "Outfit, sans-serif", fontWeight: 800,
             fontSize: "clamp(28px, 4vw, 38px)", color: DARK,
             margin: 0, letterSpacing: "-0.5px",
           }}>
-            Des outils à la pointe
+            {t.about.technologies.title}
           </h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, textAlign: "center" }} className="about-tech-grid">
-          {technologies.map((t) => (
+          {technologies.map((tech) => (
             <div
-              key={t.label}
+              key={tech.label}
               data-reveal
               style={{
                 padding: "36px 20px", borderRadius: 16,
@@ -537,9 +546,9 @@ function AboutTechnologies() {
                 background: `${ORANGE}12`, display: "flex", alignItems: "center",
                 justifyContent: "center", margin: "0 auto 16px",
               }}>
-                <t.Icon size={28} color={ORANGE} />
+                <tech.Icon size={28} color={ORANGE} />
               </div>
-              <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK }}>{t.label}</div>
+              <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK }}>{tech.label}</div>
             </div>
           ))}
         </div>
@@ -550,6 +559,7 @@ function AboutTechnologies() {
 
 // ─── SECTION CTA ──────────────────────────────────────────────────────────────
 function AboutCTA() {
+  const t = useTranslation();
   const ref = useRef<HTMLElement>(null);
   useGsapReveal(ref, "top 85%");
 
@@ -569,20 +579,20 @@ function AboutCTA() {
           color: ORANGE, fontWeight: 700, fontSize: 12, letterSpacing: 2,
           textTransform: "uppercase", marginBottom: 14, fontFamily: "Outfit, sans-serif",
         }}>
-          PRÊT À COMMENCER ?
+          {t.about.cta.badge}
         </div>
         <h2 data-reveal style={{
           fontFamily: "Outfit, sans-serif", fontWeight: 800,
           fontSize: "clamp(28px, 4vw, 40px)", color: "#fff",
           margin: "0 0 18px", letterSpacing: "-0.5px",
         }}>
-          Travaillons ensemble
+          {t.about.cta.title}
         </h2>
         <p data-reveal style={{
           fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.65)",
           fontSize: 16, lineHeight: 1.8, maxWidth: 560, margin: "0 auto 40px",
         }}>
-          Contactez notre équipe pour un audit gratuit de votre infrastructure IT et découvrez comment IntegralTech peut transformer votre entreprise.
+          {t.about.cta.desc}
         </p>
         <Link
           data-reveal
@@ -604,7 +614,7 @@ function AboutCTA() {
             e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.3)";
           }}
         >
-          Demander un audit gratuit
+          {t.about.cta.btn}
           <ArrowRight size={16} />
         </Link>
       </div>
@@ -614,13 +624,14 @@ function AboutCTA() {
 
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function AboutPage() {
+  const t = useTranslation();
   usePageTransitionEffect();
 
   return (
     <div id="about">
       <SEO
-        title="À Propos de Nous"
-        description="Découvrez l'histoire, les valeurs, les certifications et les engagements d'IntegralTech, leader en solutions IT et innovation au Maroc."
+        title={t.about.seoTitle}
+        description={t.about.seoDesc}
         path="/about"
       />
       <AboutHero />
