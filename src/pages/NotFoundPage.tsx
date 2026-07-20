@@ -2,9 +2,10 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { AlertCircle, Home, ArrowLeft } from "lucide-react";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../constants";
-import { useTranslation } from "../context/LanguageContext";
+import { useLanguage, useTranslation } from "../context/LanguageContext";
 
 export default function NotFoundPage() {
+  const { language } = useLanguage();
   const t = useTranslation();
 
   return (
@@ -120,7 +121,7 @@ export default function NotFoundPage() {
               transition: "background 0.15s",
             }}
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={16} style={{ transform: language === "ar" ? "scaleX(-1)" : undefined }} />
             {t.notFound.backBtn}
           </button>
         </div>

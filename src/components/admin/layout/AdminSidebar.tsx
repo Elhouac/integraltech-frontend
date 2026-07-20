@@ -178,12 +178,12 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
               <SidebarLink to="/admin/categories" label="Catégories" icon={FolderOpen} collapsed={collapsed} onClick={onCloseMobile} />
             )}
             {showBlog && (
-              <SidebarLink to="/admin/media" label="Médiathèque" icon={Image} collapsed={collapsed} onClick={onCloseMobile} />
+              <SidebarLink to="/admin/media" label="Médiathèque" icon={Image} collapsed={collapsed} onClick={onCloseMobile} disabled />
             )}
             {showSettings && (
               <>
-                <SidebarLink to="/admin/services" label="Services" icon={Wrench} collapsed={collapsed} onClick={onCloseMobile} />
-                <SidebarLink to="/admin/solutions" label="Solutions" icon={Lightbulb} collapsed={collapsed} onClick={onCloseMobile} />
+                <SidebarLink to="/admin/services" label="Services" icon={Wrench} collapsed={collapsed} onClick={onCloseMobile} disabled />
+                <SidebarLink to="/admin/solutions" label="Solutions" icon={Lightbulb} collapsed={collapsed} onClick={onCloseMobile} disabled />
               </>
             )}
           </>

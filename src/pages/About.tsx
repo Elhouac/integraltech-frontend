@@ -16,25 +16,71 @@ import { useTranslation } from "../context/LanguageContext";
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
+function ensureVisible(elements: HTMLElement[]) {
+  elements.forEach((element) => {
+    element.style.opacity = "1";
+    element.style.transform = "none";
+    element.style.removeProperty("translate");
+    element.style.removeProperty("rotate");
+    element.style.removeProperty("scale");
+  });
+}
+
 function useGsapReveal(ref: React.RefObject<HTMLElement | null>, start = "top 80%") {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const targets = Array.from(el.querySelectorAll<HTMLElement>("[data-reveal]"));
+    if (targets.length === 0) return;
+
+    const completeReveal = () => ensureVisible(targets);
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
+    if (prefersReduced) {
+      completeReveal();
+      return;
+    }
 
-    const ctx = gsap.context(() => {
-      gsap.from(el.querySelectorAll<HTMLElement>("[data-reveal]"), {
-        opacity: 0,
-        y: 40,
-        duration: 0.8,
-        ease: "power3.out",
-        stagger: 0.12,
-        scrollTrigger: { trigger: el, start, once: true },
-      });
-    }, el);
+    let ctx: gsap.Context | undefined;
+    try {
+      ctx = gsap.context(() => {
+        gsap.fromTo(
+          targets,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            stagger: 0.12,
+            immediateRender: false,
+            onComplete: completeReveal,
+            onInterrupt: completeReveal,
+            scrollTrigger: {
+              trigger: el,
+              start,
+              once: true,
+              onLeave: (self) => {
+                self.animation?.progress(1);
+                completeReveal();
+              },
+              onRefresh: (self) => {
+                if (self.progress === 1) {
+                  self.animation?.progress(1);
+                  completeReveal();
+                }
+              },
+            },
+          },
+        );
+      }, el);
+    } catch {
+      completeReveal();
+    }
 
-    return () => ctx.revert();
+    return () => {
+      ctx?.revert();
+      completeReveal();
+    };
   }, [ref, start]);
 }
 
@@ -46,17 +92,42 @@ function AboutHero() {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const targets = Array.from(el.querySelectorAll<HTMLElement>("[data-hero]"));
+    if (targets.length === 0) return;
+
+    const completeReveal = () => ensureVisible(targets);
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
+    if (prefersReduced) {
+      completeReveal();
+      return;
+    }
 
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.from(el.querySelectorAll<HTMLElement>("[data-hero]"), {
-        opacity: 0, y: 30, duration: 0.7, stagger: 0.15,
-      });
-    }, el);
+    let ctx: gsap.Context | undefined;
+    try {
+      ctx = gsap.context(() => {
+        gsap.fromTo(
+          targets,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+            ease: "power3.out",
+            stagger: 0.15,
+            immediateRender: false,
+            onComplete: completeReveal,
+            onInterrupt: completeReveal,
+          },
+        );
+      }, el);
+    } catch {
+      completeReveal();
+    }
 
-    return () => ctx.revert();
+    return () => {
+      ctx?.revert();
+      completeReveal();
+    };
   }, []);
 
   return (

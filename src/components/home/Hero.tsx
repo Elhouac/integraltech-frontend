@@ -1,6 +1,6 @@
 import { motion, type HTMLMotionProps } from "framer-motion";
 import { NavLink } from "react-router-dom";
-import { useTranslation } from "../../context/LanguageContext";
+import { useLanguage, useTranslation } from "../../context/LanguageContext";
 import {
   ShieldCheck, Headphones, Award, Settings,
   Database, Cpu, Wifi, ArrowRight,
@@ -25,6 +25,7 @@ const floatAnim = (duration: number, delay: number): HTMLMotionProps<"div"> => (
 // ── Component ─────────────────────────────────────────────
 
 export default function Hero() {
+  const { language } = useLanguage();
   const t = useTranslation();
 
   // Fallback trust label map (will be replaced by i18n in Batch 6)
@@ -220,7 +221,7 @@ export default function Hero() {
               }}
             >
               {t.hero.ctaQuote}
-              <ArrowRight size={16} />
+              <ArrowRight size={16} style={{ transform: language === "ar" ? "scaleX(-1)" : undefined }} />
             </NavLink>
 
             <NavLink

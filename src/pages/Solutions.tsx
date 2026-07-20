@@ -10,6 +10,16 @@ import { useTranslation } from "../context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
+function ensureVisible(elements: HTMLElement[]) {
+  elements.forEach((element) => {
+    element.style.opacity = "1";
+    element.style.transform = "none";
+    element.style.removeProperty("translate");
+    element.style.removeProperty("rotate");
+    element.style.removeProperty("scale");
+  });
+}
+
 interface SolutionItem {
   id: string;
   Icon: any;
@@ -29,28 +39,76 @@ function SolutionCard({ s, index }: { s: SolutionItem; index: number }) {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
+    const visual = el.querySelector<HTMLElement>(".sol-visual");
+    const content = el.querySelector<HTMLElement>(".sol-content");
+    const points = Array.from(el.querySelectorAll<HTMLElement>(".sol-point"));
+    if (!visual || !content) return;
 
-    const ctx = gsap.context(() => {
-      const visual = el.querySelector<HTMLElement>(".sol-visual");
-      const content = el.querySelector<HTMLElement>(".sol-content");
-      const points = el.querySelectorAll<HTMLElement>(".sol-point");
+    const targets = [visual, content, ...points];
+    const completeReveal = () => ensureVisible(targets);
+    const media = gsap.matchMedia();
 
-      gsap.set([visual, content], { opacity: 0, x: isEven ? -50 : 50 });
-      gsap.set(points, { opacity: 0, x: -20 });
+    try {
+      media.add(
+        {
+          compact: "(max-width: 1024px) and (prefers-reduced-motion: no-preference)",
+          desktop: "(min-width: 1025px) and (prefers-reduced-motion: no-preference)",
+          reduceMotion: "(prefers-reduced-motion: reduce)",
+        },
+        (context) => {
+          const conditions = context.conditions as {
+            compact: boolean;
+            desktop: boolean;
+            reduceMotion: boolean;
+          };
 
-      const tl = gsap.timeline({
-        scrollTrigger: { trigger: el, start: "top 78%", once: true },
-        defaults: { ease: "power3.out" },
-      });
+          if (conditions.reduceMotion) {
+            completeReveal();
+            return;
+          }
 
-      tl.to(visual, { opacity: 1, x: 0, duration: 0.9 })
-        .to(content, { opacity: 1, x: 0, duration: 0.9 }, "<0.15")
-        .to(points, { opacity: 1, x: 0, duration: 0.5, stagger: 0.08 }, "<0.3");
-    }, el);
+          const primaryFrom = conditions.compact
+            ? { opacity: 0, x: 0, y: 24 }
+            : { opacity: 0, x: isEven ? -50 : 50, y: 0 };
+          const pointFrom = conditions.compact
+            ? { opacity: 0, x: 0, y: 12 }
+            : { opacity: 0, x: -20, y: 0 };
 
-    return () => ctx.revert();
+          const timeline = gsap.timeline({
+            scrollTrigger: {
+              trigger: el,
+              start: "top 78%",
+              once: true,
+              onLeave: (self) => {
+                self.animation?.progress(1);
+                completeReveal();
+              },
+              onRefresh: (self) => {
+                if (self.progress === 1) {
+                  self.animation?.progress(1);
+                  completeReveal();
+                }
+              },
+            },
+            defaults: { ease: "power3.out" },
+            onComplete: completeReveal,
+            onInterrupt: completeReveal,
+          });
+
+          timeline
+            .fromTo(visual, primaryFrom, { opacity: 1, x: 0, y: 0, duration: 0.9 })
+            .fromTo(content, primaryFrom, { opacity: 1, x: 0, y: 0, duration: 0.9 }, "<0.15")
+            .fromTo(points, pointFrom, { opacity: 1, x: 0, y: 0, duration: 0.5, stagger: 0.08 }, "<0.3");
+        },
+      );
+    } catch {
+      completeReveal();
+    }
+
+    return () => {
+      media.revert();
+      completeReveal();
+    };
   }, [isEven]);
 
   return (

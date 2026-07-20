@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link } from "react-router-dom";
@@ -7,24 +7,31 @@ import { Search, Calendar, Tag, ChevronLeft, ChevronRight, Mail, ArrowRight } fr
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
 import { useTranslation } from "../context/LanguageContext";
+import { BLOG_SEEN_NEW_ARTICLES_KEY, blogArticles, newBlogArticleIds, type BlogCategory } from "../data/blogArticles";
 
 gsap.registerPlugin(ScrollTrigger);
 
 interface ArticleItem {
   id: number;
-  categoryKey: string;
+  categoryKey: BlogCategory;
   category: string;
   date: string;
   title: string;
   summary: string;
-  readTime: string;
+  publishedAt: string;
+  readingTime: number;
+  featured: boolean;
+  isNew: boolean;
   color: string;
 }
 
 interface CategoryItem {
   label: string;
-  key: string;
+  key: FilterKey;
 }
+
+type FilterKey = "all" | "new" | BlogCategory;
+type SortKey = "recent" | "oldest" | "shortest";
 
 const ARTICLES_PER_PAGE = 6;
 
@@ -69,15 +76,11 @@ function ArticleCard({ article, index }: { article: ArticleItem; index: number }
         display: "flex", alignItems: "center", justifyItems: "center",
         justifyContent: "center", padding: 24, position: "relative",
       }}>
-        <div style={{
-          position: "absolute", top: 16, left: 16,
-          background: article.color, color: "#fff",
-          fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 10,
-          letterSpacing: 1, padding: "4px 12px", borderRadius: 20,
-          textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5,
-        }}>
-          <Tag size={10} />
-          {article.category}
+        <div className="blog-card-badges">
+          <span style={{ background: article.color }} className="blog-category-badge">
+            <Tag size={10} />{article.category}
+          </span>
+          {article.isNew && <span className="blog-new-badge">{t.blogPage.filters.new}</span>}
         </div>
         <div style={{
           fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 15,
@@ -95,7 +98,7 @@ function ArticleCard({ article, index }: { article: ArticleItem; index: number }
             <Calendar size={12} />{article.date}
           </span>
           <span style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 12, opacity: 0.7 }}>
-            {article.readTime} {t.blogPage.readTime}
+            {article.readingTime} {t.blogPage.readTimeShort} {t.blogPage.readTime}
           </span>
         </div>
         <h3 style={{
@@ -128,13 +131,14 @@ function ArticleCard({ article, index }: { article: ArticleItem; index: number }
 
 // ─── NEWSLETTER SIDEBAR ────────────────────────────────────────────────────────
 interface SidebarProps {
-  selected: string;
-  onSelect: (c: string) => void;
+  selected: FilterKey;
+  onSelect: (c: FilterKey) => void;
   categoriesList: CategoryItem[];
   recentArticles: ArticleItem[];
+  counts: Record<FilterKey, number>;
 }
 
-function Sidebar({ selected, onSelect, categoriesList, recentArticles }: SidebarProps) {
+function Sidebar({ selected, onSelect, categoriesList, recentArticles, counts }: SidebarProps) {
   const t = useTranslation();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -147,7 +151,7 @@ function Sidebar({ selected, onSelect, categoriesList, recentArticles }: Sidebar
   return (
     <aside style={{ width: 280, flexShrink: 0, display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Categories */}
-      <div style={{
+      <div className="blog-sidebar-categories" style={{
         background: CARD_BG, borderRadius: 16, padding: "24px 20px",
         border: `1px solid ${BORDER}`,
       }}>
@@ -156,7 +160,9 @@ function Sidebar({ selected, onSelect, categoriesList, recentArticles }: Sidebar
           {categoriesList.map((cat) => (
             <button
               key={cat.key}
+              type="button"
               onClick={() => onSelect(cat.key)}
+              aria-pressed={selected === cat.key}
               style={{
                 background: selected === cat.key ? ORANGE : "transparent",
                 color: selected === cat.key ? "#fff" : DARK,
@@ -167,18 +173,18 @@ function Sidebar({ selected, onSelect, categoriesList, recentArticles }: Sidebar
                 fontWeight: 600,
                 fontSize: 13,
                 cursor: "pointer",
-                textAlign: "left",
+                textAlign: "start",
                 transition: "all 0.2s",
               }}
             >
-              {cat.label}
+              <span>{cat.label}</span><span aria-hidden="true">{counts[cat.key]}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Newsletter */}
-      <div style={{
+      <div className="blog-sidebar-newsletter" style={{
         background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 100%)`,
         borderRadius: 16, padding: "28px 20px",
       }}>
@@ -222,7 +228,7 @@ function Sidebar({ selected, onSelect, categoriesList, recentArticles }: Sidebar
       </div>
 
       {/* Recent */}
-      <div style={{
+      <div className="blog-sidebar-recent" style={{
         background: CARD_BG, borderRadius: 16, padding: "24px 20px",
         border: `1px solid ${BORDER}`,
       }}>
@@ -248,31 +254,38 @@ function Sidebar({ selected, onSelect, categoriesList, recentArticles }: Sidebar
 export default function BlogPage() {
   const t = useTranslation();
   usePageTransitionEffect();
-  const [category, setCategory] = useState("Tous");
+  const [category, setCategory] = useState<FilterKey>("all");
+  const [sort, setSort] = useState<SortKey>("recent");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const heroRef = useRef<HTMLDivElement>(null);
 
   const categoriesList: CategoryItem[] = [
-    { label: t.blogPage.categories.all, key: "Tous" },
-    { label: t.blogPage.categories.cybersecurity, key: "Cybersécurité" },
-    { label: t.blogPage.categories.cloud, key: "Cloud" },
-    { label: t.blogPage.categories.erp, key: "ERP" },
-    { label: t.blogPage.categories.digitalTransform, key: "Transformation digitale" },
-    { label: t.blogPage.categories.news, key: "Actualités" }
+    { label: t.blogPage.categories.all, key: "all" },
+    { label: t.blogPage.filters.new, key: "new" },
+    { label: t.blogPage.categories.cybersecurity, key: "cybersecurity" },
+    { label: t.blogPage.categories.cloud, key: "cloud" },
+    { label: t.blogPage.categories.erp, key: "erp" },
+    { label: t.blogPage.categories.digitalTransform, key: "digitalTransform" },
+    { label: t.blogPage.categories.news, key: "news" }
   ];
 
-  const articlesList: ArticleItem[] = [
-    { id: 1, categoryKey: "Cybersécurité", category: t.blogPage.categories.cybersecurity, date: t.blogPage.art1Date, title: t.blogPage.art1Title, summary: t.blogPage.art1Summary, readTime: `5 ${t.blogPage.readTimeShort}`, color: ORANGE },
-    { id: 2, categoryKey: "Cloud", category: t.blogPage.categories.cloud, date: t.blogPage.art2Date, title: t.blogPage.art2Title, summary: t.blogPage.art2Summary, readTime: `7 ${t.blogPage.readTimeShort}`, color: "#29B6F6" },
-    { id: 3, categoryKey: "ERP", category: t.blogPage.categories.erp, date: t.blogPage.art3Date, title: t.blogPage.art3Title, summary: t.blogPage.art3Summary, readTime: `8 ${t.blogPage.readTimeShort}`, color: "#CE93D8" },
-    { id: 4, categoryKey: "Transformation digitale", category: t.blogPage.categories.digitalTransform, date: t.blogPage.art4Date, title: t.blogPage.art4Title, summary: t.blogPage.art4Summary, readTime: `6 ${t.blogPage.readTimeShort}`, color: "#66BB6A" },
-    { id: 5, categoryKey: "Actualités", category: t.blogPage.categories.news, date: t.blogPage.art5Date, title: t.blogPage.art5Title, summary: t.blogPage.art5Summary, readTime: `3 ${t.blogPage.readTimeShort}`, color: "#FF7043" },
-    { id: 6, categoryKey: "Cybersécurité", category: t.blogPage.categories.cybersecurity, date: t.blogPage.art6Date, title: t.blogPage.art6Title, summary: t.blogPage.art6Summary, readTime: `9 ${t.blogPage.readTimeShort}`, color: ORANGE },
-    { id: 7, categoryKey: "Cloud", category: t.blogPage.categories.cloud, date: t.blogPage.art7Date, title: t.blogPage.art7Title, summary: t.blogPage.art7Summary, readTime: `10 ${t.blogPage.readTimeShort}`, color: "#29B6F6" },
-    { id: 8, categoryKey: "Transformation digitale", category: t.blogPage.categories.digitalTransform, date: t.blogPage.art8Date, title: t.blogPage.art8Title, summary: t.blogPage.art8Summary, readTime: `5 ${t.blogPage.readTimeShort}`, color: "#66BB6A" },
-    { id: 9, categoryKey: "ERP", category: t.blogPage.categories.erp, date: t.blogPage.art9Date, title: t.blogPage.art9Title, summary: t.blogPage.art9Summary, readTime: `7 ${t.blogPage.readTimeShort}`, color: "#CE93D8" },
-  ];
+  const articlesList = useMemo<ArticleItem[]>(() => blogArticles.map((article) => {
+    const ref = article.contentReference;
+    return {
+      ...article,
+      categoryKey: article.category,
+      category: t.blogPage.categories[article.category],
+      date: t.blogPage[`${ref}Date` as keyof typeof t.blogPage] as string,
+      title: t.blogPage[`${ref}Title` as keyof typeof t.blogPage] as string,
+      summary: t.blogPage[`${ref}Summary` as keyof typeof t.blogPage] as string,
+    };
+  }), [t]);
+
+  useEffect(() => {
+    localStorage.setItem(BLOG_SEEN_NEW_ARTICLES_KEY, JSON.stringify(newBlogArticleIds));
+    window.dispatchEvent(new Event("integraltech:blog:new-articles-seen"));
+  }, []);
 
   useLayoutEffect(() => {
     const el = heroRef.current;
@@ -290,20 +303,32 @@ export default function BlogPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    return articlesList.filter((a) => {
-      const matchCat = category === "Tous" || a.categoryKey === category;
+    const matches = articlesList.filter((a) => {
+      const matchCat = category === "all" || (category === "new" ? a.isNew : a.categoryKey === category);
       const matchSearch = !search.trim() || a.title.toLowerCase().includes(search.toLowerCase()) || a.summary.toLowerCase().includes(search.toLowerCase());
       return matchCat && matchSearch;
     });
-  }, [category, search, articlesList]);
+    return matches.sort((a, b) => {
+      if (sort === "shortest") return a.readingTime - b.readingTime;
+      return sort === "oldest" ? a.publishedAt.localeCompare(b.publishedAt) : b.publishedAt.localeCompare(a.publishedAt);
+    });
+  }, [category, search, sort, articlesList]);
 
-  const totalPages = Math.ceil(filtered.length / ARTICLES_PER_PAGE);
-  const paginated = filtered.slice((page - 1) * ARTICLES_PER_PAGE, page * ARTICLES_PER_PAGE);
+  const featuredArticle = filtered.find((article) => article.featured);
+  const regularArticles = filtered.filter((article) => !article.featured);
+  const totalPages = Math.ceil(regularArticles.length / ARTICLES_PER_PAGE);
+  const paginated = regularArticles.slice((page - 1) * ARTICLES_PER_PAGE, page * ARTICLES_PER_PAGE);
 
-  const handleCatChange = (cat: string) => { setCategory(cat); setPage(1); };
+  const handleCatChange = (cat: FilterKey) => { setCategory(cat); setPage(1); };
   const handleSearch = (q: string) => { setSearch(q); setPage(1); };
 
-  const recentArticles = useMemo(() => articlesList.slice(0, 4), [articlesList]);
+  const recentArticles = useMemo(() => [...articlesList].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, 4), [articlesList]);
+  const counts = useMemo(() => categoriesList.reduce<Record<FilterKey, number>>((result, item) => {
+    result[item.key] = item.key === "all" ? articlesList.length : item.key === "new"
+      ? articlesList.filter((article) => article.isNew).length
+      : articlesList.filter((article) => article.categoryKey === item.key).length;
+    return result;
+  }, { all: 0, new: 0, cybersecurity: 0, cloud: 0, erp: 0, digitalTransform: 0, news: 0 }), [articlesList, categoriesList]);
 
   return (
     <div id="blog">
@@ -349,14 +374,14 @@ export default function BlogPage() {
           </p>
           {/* Search bar */}
           <div data-hero style={{ maxWidth: 480, margin: "0 auto", position: "relative" }}>
-            <Search size={18} color="rgba(255,255,255,0.4)" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={18} color="rgba(255,255,255,0.4)" style={{ position: "absolute", insetInlineStart: 16, top: "50%", transform: "translateY(-50%)" }} />
             <input
               type="search"
               placeholder={t.blogPage.searchPlaceholder}
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               style={{
-                width: "100%", padding: "14px 16px 14px 46px", borderRadius: 12,
+                width: "100%", paddingBlock: 14, paddingInlineStart: 46, paddingInlineEnd: 16, borderRadius: 12,
                 border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)",
                 color: "#fff", fontFamily: "Open Sans, sans-serif", fontSize: 15,
                 outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
@@ -368,29 +393,30 @@ export default function BlogPage() {
         </div>
       </div>
 
-      {/* Category bar */}
-      <div style={{
-        background: `linear-gradient(135deg, #0f1b3d 0%, ${NAVY} 100%)`,
-        padding: "18px 0", display: "flex", justifyContent: "center",
-        gap: 8, overflowX: "auto",
-      }} className="blog-catbar">
-        <div style={{ width: "90%", maxWidth: 1200, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-          {categoriesList.map((cat) => (
-            <button
-              key={cat.key}
-              onClick={() => handleCatChange(cat.key)}
-              style={{
-                background: category === cat.key ? ORANGE : "rgba(255,255,255,0.06)",
-                color: "#fff", border: `1px solid ${category === cat.key ? ORANGE : "rgba(255,255,255,0.1)"}`,
-                borderRadius: 10, padding: "8px 18px",
-                fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 13,
-                cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-                transition: "all 0.2s",
-              }}
-            >
-              {cat.label}
-            </button>
-          ))}
+      {/* Filter and sorting bar */}
+      <div className="blog-catbar">
+        <div className="blog-filter-row">
+          <div className="blog-filter-scroll" aria-label={t.blogPage.filters.label}>
+            {categoriesList.map((cat) => (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => handleCatChange(cat.key)}
+                aria-pressed={category === cat.key}
+                className="blog-filter-chip"
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+          <label className="blog-sort-control">
+            <span>{t.blogPage.sort.label}</span>
+            <select value={sort} onChange={(event) => { setSort(event.target.value as SortKey); setPage(1); }}>
+              <option value="recent">{t.blogPage.sort.recent}</option>
+              <option value="oldest">{t.blogPage.sort.oldest}</option>
+              <option value="shortest">{t.blogPage.sort.shortest}</option>
+            </select>
+          </label>
         </div>
       </div>
 
@@ -402,15 +428,39 @@ export default function BlogPage() {
         }} className="blog-layout">
           {/* Articles */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            {paginated.length === 0 ? (
+            {filtered.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 0" }}>
-                <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 20, color: DARK, margin: "0 0 8px" }}>{t.blogPage.noArticles}</p>
-                <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 14, margin: 0 }}>{t.blogPage.tryOtherKeywords}</p>
+                <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 20, color: DARK, margin: "0 0 20px" }}>{t.blogPage.empty}</p>
+                <button type="button" className="blog-reset-button" onClick={() => handleCatChange("all")}>{t.blogPage.resetFilters}</button>
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }} className="blog-grid">
-                {paginated.map((a, i) => <ArticleCard key={a.id} article={a} index={i} />)}
-              </div>
+              <>
+                {featuredArticle && (
+                  <article className="blog-featured-card">
+                    <div className="blog-featured-visual" style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${featuredArticle.color}55 100%)` }}>
+                      <div className="blog-card-badges blog-featured-badges">
+                        <span className="blog-featured-badge">{t.blogPage.featured}</span>
+                        <span className="blog-category-badge" style={{ background: featuredArticle.color }}><Tag size={10} />{featuredArticle.category}</span>
+                        {featuredArticle.isNew && <span className="blog-new-badge">{t.blogPage.filters.new}</span>}
+                      </div>
+                    </div>
+                    <div className="blog-featured-content">
+                      <div className="blog-featured-meta">
+                        <span><Calendar size={14} />{featuredArticle.date}</span>
+                        <span>{featuredArticle.readingTime} {t.blogPage.readTimeShort} {t.blogPage.readTime}</span>
+                      </div>
+                      <h2>{featuredArticle.title}</h2>
+                      <p>{featuredArticle.summary}</p>
+                      <Link to="/blog">{t.blogPage.readArticle}<ArrowRight size={15} /></Link>
+                    </div>
+                  </article>
+                )}
+                {paginated.length > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }} className="blog-grid">
+                    {paginated.map((a, i) => <ArticleCard key={a.id} article={a} index={i} />)}
+                  </div>
+                )}
+              </>
             )}
 
             {/* Pagination */}
@@ -470,6 +520,7 @@ export default function BlogPage() {
             onSelect={handleCatChange}
             categoriesList={categoriesList}
             recentArticles={recentArticles}
+            counts={counts}
           />
         </div>
       </div>

@@ -4,8 +4,10 @@ import { ChevronUp } from "lucide-react";
 
 const SCROLL_THRESHOLD = 350;
 import { ORANGE, NAVY } from "../../constants";
+import { useTranslation } from "../../context/LanguageContext";
 
 export default function BackToTop() {
+  const t = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const [canAnimate, setCanAnimate] = useState(true);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -123,7 +125,7 @@ export default function BackToTop() {
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      aria-label="Retour en haut"
+      aria-label={t.common.backToTop}
       style={{
         position: "fixed",
         bottom: "32px",

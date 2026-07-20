@@ -172,7 +172,8 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                 }}
               >
                 <button
-                  onClick={() => { setUserMenuOpen(false); navigate("/admin/profile"); }}
+                  disabled
+                  aria-disabled="true"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -184,12 +185,14 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                     color: TEXT,
                     fontFamily: "var(--font-sans)",
                     fontSize: 13,
-                    cursor: "pointer",
+                    cursor: "not-allowed",
                     transition: "background 0.15s",
+                    opacity: 0.58,
                   }}
                 >
                   <User size={15} />
-                  Mon Profil
+                  <span style={{ flex: 1, textAlign: "start" }}>Mon Profil</span>
+                  <span className="admin-coming-soon-badge">Bientôt</span>
                 </button>
                 <div style={{ height: 1, background: BORDER }} />
                 <button

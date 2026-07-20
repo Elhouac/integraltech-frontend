@@ -2,9 +2,10 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { NavLink } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { useTranslation } from "../../context/LanguageContext";
+import { useLanguage, useTranslation } from "../../context/LanguageContext";
 
 export default function CTA() {
+  const { language } = useLanguage();
   const t = useTranslation();
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
@@ -121,7 +122,7 @@ export default function CTA() {
             }}
           >
             {t.cta.button}
-            <ArrowRight size={18} />
+            <ArrowRight size={18} style={{ transform: language === "ar" ? "scaleX(-1)" : undefined }} />
           </NavLink>
         </motion.div>
       </div>

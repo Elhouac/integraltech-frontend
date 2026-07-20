@@ -5,7 +5,7 @@ import { MapPin, Phone, Mail, Clock, ChevronDown, Facebook, Linkedin, Instagram,
 import SEO from "../components/seo/SEO";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
-import { useTranslation } from "../context/LanguageContext";
+import { useLanguage, useTranslation } from "../context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -43,7 +43,7 @@ function FaqItem({ item, index }: { item: FaqItemData; index: number }) {
           width: "100%", background: "none", border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
           fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: DARK,
-          textAlign: "left", padding: 0,
+          textAlign: "start", padding: 0,
         }}
         aria-expanded={open}
       >
@@ -55,7 +55,7 @@ function FaqItem({ item, index }: { item: FaqItemData; index: number }) {
         />
       </button>
       <div ref={answerRef} style={{ height: 0, overflow: "hidden" }}>
-        <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 14, lineHeight: 1.8, marginTop: 12, paddingRight: 32 }}>
+        <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 14, lineHeight: 1.8, marginTop: 12, paddingInlineStart: 32 }}>
           {item.a}
         </p>
       </div>
@@ -65,6 +65,7 @@ function FaqItem({ item, index }: { item: FaqItemData; index: number }) {
 
 // ─── CONTACT FORM ──────────────────────────────────────────────────────────────
 function ContactFormFull() {
+  const { language } = useLanguage();
   const t = useTranslation();
   const [form, setForm] = useState<FormData>({ name: "", email: "", phone: "", subject: "", message: "" });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -124,12 +125,12 @@ function ContactFormFull() {
         aria-required={required}
         aria-describedby={errors[id] ? `${id}-error` : undefined}
       />
-      {errors[id] && <span id={`${id}-error`} style={{ color: "#EF4444", fontFamily: "Open Sans, sans-serif", fontSize: 12 }}>{errors[id]}</span>}
+      {errors[id] && <span id={`${id}-error`} style={{ color: "#EF4444", fontFamily: "Open Sans, sans-serif", fontSize: 12, textAlign: "start" }}>{errors[id]}</span>}
     </div>
   );
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} aria-label="Formulaire de contact" noValidate style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <form ref={formRef} onSubmit={handleSubmit} aria-label={t.contact.formTitle} noValidate style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="contact-form-row">
         {field("name", t.contact.form.name, "text", true)}
         {field("email", t.contact.form.email, "email", true)}
@@ -162,7 +163,7 @@ function ContactFormFull() {
           aria-required
           aria-describedby={errors.message ? "message-error" : undefined}
         />
-        {errors.message && <span id="message-error" style={{ color: "#EF4444", fontFamily: "Open Sans, sans-serif", fontSize: 12 }}>{errors.message}</span>}
+        {errors.message && <span id="message-error" style={{ color: "#EF4444", fontFamily: "Open Sans, sans-serif", fontSize: 12, textAlign: "start" }}>{errors.message}</span>}
       </div>
 
       {status === "success" && (
@@ -204,7 +205,7 @@ function ContactFormFull() {
         }}
       >
         {t.contact.form.submit}
-        <ArrowRight size={16} />
+        <ArrowRight size={16} style={{ transform: language === "ar" ? "scaleX(-1)" : undefined }} />
       </button>
     </form>
   );
@@ -212,6 +213,7 @@ function ContactFormFull() {
 
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function ContactPage() {
+  const { language } = useLanguage();
   const t = useTranslation();
   usePageTransitionEffect();
   const heroRef = useRef<HTMLDivElement>(null);
@@ -356,7 +358,7 @@ export default function ContactPage() {
                 {t.contact.infoTitle}
               </h3>
               {[
-                { Icon: MapPin, text: "Av Allal Elfassi Centre Itrane, 3ème Étage N° 33 - Marrakech" },
+                { Icon: MapPin, text: "شارع علال الفاسي، مركز إتران، الطابق الثالث رقم 33 - مراكش" },
                 { Icon: Phone, text: "+212 (0) 688164547" },
                 { Icon: Mail, text: "contact@integraltech.ma" },
               ].map((item, i) => (
@@ -406,7 +408,7 @@ export default function ContactPage() {
                 fontFamily: "Open Sans, sans-serif", color: "rgba(255,255,255,0.65)",
                 fontSize: 13, textAlign: "center", margin: 0, maxWidth: 200,
               }}>
-                Av Allal Elfassi Centre Itrane, 3ème Étage N° 33 - Marrakech
+                شارع علال الفاسي، مركز إتران، الطابق الثالث رقم 33 - مراكش
               </p>
               <a
                 href="https://maps.google.com/?q=Av+Allal+Elfassi+Centre+Itrane+Marrakech"
@@ -419,7 +421,7 @@ export default function ContactPage() {
                 }}
               >
                 {t.contact.googleMaps}
-                <ArrowRight size={12} />
+                <ArrowRight size={12} style={{ transform: language === "ar" ? "scaleX(-1)" : undefined }} />
               </a>
             </div>
 

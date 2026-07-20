@@ -5,6 +5,8 @@ import type { MegaMenuItem } from "../../data/homeData";
 import { useTheme } from "../../context/ThemeContext";
 
 interface MegaMenuProps {
+  id: string;
+  labelledBy: string;
   items: MegaMenuItem[];
   isOpen: boolean;
   onClose: () => void;
@@ -15,9 +17,9 @@ interface MegaMenuProps {
 /**
  * Desktop mega-menu panel.
  * 2-column grid layout with icon, title, short description per item.
- * Closes on outside click or mouse leave.
+ * Closes on outside click; trigger hover/focus timing is owned by Navbar.
  */
-export default function MegaMenu({ items, isOpen, onClose, t }: MegaMenuProps) {
+export default function MegaMenu({ id, labelledBy, items, isOpen, onClose, t }: MegaMenuProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
 
@@ -39,31 +41,22 @@ export default function MegaMenu({ items, isOpen, onClose, t }: MegaMenuProps) {
     };
   }, [isOpen, onClose]);
 
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
           ref={panelRef}
-          initial={{ opacity: 0, y: 10, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.98 }}
+          id={id}
+          aria-labelledby={labelledBy}
+          initial={{ opacity: 0, y: 10, x: "-50%", scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, x: "-50%", scale: 1 }}
+          exit={{ opacity: 0, y: 10, x: "-50%", scale: 0.98 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
           role="menu"
           style={{
             position: "absolute",
             top: "calc(100% + 12px)",
-            left: "50%",
-            transform: "translateX(-50%)",
+            insetInlineStart: "50%",
             background: "var(--surface)",
             borderRadius: 16,
             border: "1px solid var(--border)",

@@ -27,12 +27,12 @@ export default function GlobalSearch() {
 
   // Define searchable index
   const getSearchIndex = (): SearchItem[] => [
-    { id: "home", title: t.nav.home, category: "Pages", to: "/" },
-    { id: "about", title: t.nav.about, category: "Pages", to: "/about" },
-    { id: "solutions", title: t.nav.solutions, category: "Pages", to: "/solutions" },
-    { id: "services", title: t.nav.services, category: "Pages", to: "/services" },
-    { id: "blog", title: t.nav.blog, category: "Pages", to: "/blog" },
-    { id: "contact", title: t.nav.contact, category: "Pages", to: "/contact" },
+    { id: "home", title: t.nav.home, category: t.search.pages, to: "/" },
+    { id: "about", title: t.nav.about, category: t.search.pages, to: "/about" },
+    { id: "solutions", title: t.nav.solutions, category: t.search.pages, to: "/solutions" },
+    { id: "services", title: t.nav.services, category: t.search.pages, to: "/services" },
+    { id: "blog", title: t.nav.blog, category: t.search.pages, to: "/blog" },
+    { id: "contact", title: t.nav.contact, category: t.search.pages, to: "/contact" },
   ];
 
   const searchIndex = React.useMemo(() => getSearchIndex(), [t.nav]);
@@ -260,7 +260,7 @@ export default function GlobalSearch() {
                   background: i === active ? "var(--hover)" : "transparent",
                   border: "none",
                   borderRadius: "8px",
-                  textAlign: "left",
+                  textAlign: "start",
                   transition: "background-color 0.15s",
                 }}
               >

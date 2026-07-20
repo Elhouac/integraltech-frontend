@@ -89,7 +89,6 @@ export default function DashboardPage() {
         className="admin-dashboard-grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 380px",
           gap: 20,
           alignItems: "start",
         }}

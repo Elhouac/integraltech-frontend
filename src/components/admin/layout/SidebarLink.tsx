@@ -10,16 +10,27 @@ interface SidebarLinkProps {
   badge?: number;
   collapsed?: boolean;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
-export default function SidebarLink({ to, label, icon: Icon, badge, collapsed, onClick }: SidebarLinkProps) {
+export default function SidebarLink({ to, label, icon: Icon, badge, collapsed, onClick, disabled = false }: SidebarLinkProps) {
   return (
     <NavLink
-      to={to}
+      to={disabled ? "#" : to}
       end={to === "/admin/dashboard"}
-      onClick={onClick}
-      aria-label={label}
-      style={({ isActive }) => ({
+      onClick={(event) => {
+        if (disabled) {
+          event.preventDefault();
+          return;
+        }
+        onClick?.();
+      }}
+      aria-label={disabled ? `${label} - Bientôt` : label}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : undefined}
+      style={({ isActive: routeIsActive }) => {
+        const isActive = routeIsActive && !disabled;
+        return ({
         display: "flex",
         alignItems: "center",
         gap: collapsed ? 0 : 12,
@@ -34,10 +45,13 @@ export default function SidebarLink({ to, label, icon: Icon, badge, collapsed, o
         background: isActive ? "var(--hover)" : "transparent",
         transition: "background 0.2s, color 0.2s",
         position: "relative",
-        cursor: "pointer",
-      })}
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.58 : 1,
+      }); }}
     >
-      {({ isActive }) => (
+      {({ isActive: routeIsActive }) => {
+        const isActive = routeIsActive && !disabled;
+        return (
         <>
           {/* Active indicator bar */}
           {isActive && (
@@ -89,8 +103,12 @@ export default function SidebarLink({ to, label, icon: Icon, badge, collapsed, o
               {badge > 99 ? "99+" : badge}
             </span>
           )}
+
+          {!collapsed && disabled && (
+            <span className="admin-coming-soon-badge">Bientôt</span>
+          )}
         </>
-      )}
+      ); }}
     </NavLink>
   );
 }

@@ -18,6 +18,7 @@ interface QuickActionsProps {
 
 export default function QuickActions({ actions }: QuickActionsProps) {
   const navigate = useNavigate();
+  const unavailablePaths = new Set(["/admin/media", "/admin/settings/general"]);
 
   return (
     <div
@@ -57,13 +58,17 @@ export default function QuickActions({ actions }: QuickActionsProps) {
           background: BORDER,
         }}
       >
-        {actions.map((action, index) => (
+        {actions.map((action, index) => {
+          const unavailable = unavailablePaths.has(action.to);
+          return (
           <motion.button
             key={action.label}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25, delay: 0.3 + index * 0.05 }}
-            onClick={() => navigate(action.to)}
+            onClick={() => !unavailable && navigate(action.to)}
+            disabled={unavailable}
+            aria-disabled={unavailable}
             style={{
               display: "flex",
               alignItems: "center",
@@ -71,10 +76,11 @@ export default function QuickActions({ actions }: QuickActionsProps) {
               padding: "16px 20px",
               background: SURFACE,
               border: "none",
-              cursor: "pointer",
-              textAlign: "left",
+              cursor: unavailable ? "not-allowed" : "pointer",
+              textAlign: "start",
               fontFamily: "var(--font-sans)",
               transition: "background 0.15s",
+              opacity: unavailable ? 0.58 : 1,
             }}
           >
             <div
@@ -101,6 +107,7 @@ export default function QuickActions({ actions }: QuickActionsProps) {
                 }}
               >
                 {action.label}
+                {unavailable && <span className="admin-coming-soon-badge">Bientôt</span>}
               </div>
               <div
                 style={{
@@ -112,7 +119,7 @@ export default function QuickActions({ actions }: QuickActionsProps) {
               </div>
             </div>
           </motion.button>
-        ))}
+        ); })}
       </div>
     </div>
   );

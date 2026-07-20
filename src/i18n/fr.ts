@@ -19,6 +19,7 @@ export const fr = {
     noResults: "Aucun résultat",
     close: "Fermer",
     shortcut: "Raccourci: Ctrl+K",
+    pages: "Pages",
   },
 
   // Hero Section
@@ -482,6 +483,20 @@ export const fr = {
     searchPlaceholder: "Rechercher un article...",
     noArticles: "Aucun article trouvé.",
     tryOtherKeywords: "Essayez d'autres mots-clés ou catégories.",
+    featured: "À la une",
+    empty: "Aucun article disponible dans cette catégorie.",
+    resetFilters: "Réinitialiser les filtres",
+    newArticlesLabel: (count: number) => `${count} nouveaux articles de blog`,
+    filters: {
+      label: "Filtrer les articles",
+      new: "NOUVEAU",
+    },
+    sort: {
+      label: "Trier par",
+      recent: "Plus récents",
+      oldest: "Plus anciens",
+      shortest: "Temps de lecture le plus court",
+    },
     categories: {
       all: "Tous",
       cybersecurity: "Cybersécurité",
@@ -643,6 +658,8 @@ export const fr = {
     skipToContent: "Aller au contenu",
     menuOpen: "Ouvrir le menu",
     menuClose: "Fermer le menu",
+    activateLightMode: "Activer le mode clair",
+    activateDarkMode: "Activer le mode sombre",
   },
 
   // Mega Menu Dropdowns

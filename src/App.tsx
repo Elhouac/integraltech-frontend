@@ -1,5 +1,5 @@
 import { type ReactNode, lazy, Suspense } from "react";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, Link } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 // ── Lazy-loaded public pages ──
@@ -12,7 +12,7 @@ const ContactPage = lazy(() => import("./pages/Contact"));
 const Home = lazy(() => import("./pages/Home"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 import { SearchProvider } from "./context/SearchContext";
-import { LanguageProvider } from "./context/LanguageContext";
+import { LanguageProvider, useTranslation } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { PageTransitionProvider } from "./context/PageTransitionContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -35,6 +35,7 @@ const PostCreatePage = lazy(() => import("./pages/admin/PostCreatePage"));
 const PostEditPage = lazy(() => import("./pages/admin/PostEditPage"));
 const CategoriesPage = lazy(() => import("./pages/admin/CategoriesPage"));
 const UsersPage = lazy(() => import("./pages/admin/UsersPage"));
+const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
 
 // ── Suspense fallback for admin chunk loading ──
 function AdminFallback() {
@@ -66,11 +67,14 @@ function AdminFallback() {
 function PublicFallback() {
   return (
     <div
+      className="public-route-fallback"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading page"
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: "400px",
         background: "transparent",
       }}
     >
@@ -83,17 +87,32 @@ function PublicFallback() {
           borderRadius: "50%",
           animation: "admin-spin 0.8s linear infinite",
         }}
+        aria-hidden="true"
       />
     </div>
   );
 }
 
+function AdminNotFound() {
+  return (
+    <section className="admin-not-found" aria-labelledby="admin-not-found-title">
+      <div className="admin-not-found-card">
+        <div className="admin-not-found-code" aria-hidden="true">404</div>
+        <h1 id="admin-not-found-title">Page introuvable</h1>
+        <p>La page demandée n’existe pas ou n’est plus disponible.</p>
+        <Link to="/admin/dashboard">Retour au dashboard</Link>
+      </div>
+    </section>
+  );
+}
+
 function AppShell({ children }: { children: ReactNode }) {
+  const t = useTranslation();
+
   return (
     <>
       <a className="skip-link" href="#main-content">
-        {/* Skip link text will be from translations but this is for accessibility */}
-        Skip to main content
+        {t.a11y.skipToContent}
       </a>
       <Navbar />
       <main id="main-content">{children}</main>
@@ -150,7 +169,8 @@ export default function App() {
                     <Route path="posts/:id/edit" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="blog" action="edit"><PostEditPage /></ProtectedRoute></Suspense>} />
                     <Route path="categories" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="categories" action="view"><CategoriesPage /></ProtectedRoute></Suspense>} />
                     <Route path="users" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="users" action="view"><UsersPage /></ProtectedRoute></Suspense>} />
-                    <Route path="*" element={<div style={{ padding: 40, fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--text)" }}>Page en construction</div>} />
+                    <Route path="settings/general" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="settings" action="view"><SettingsPage /></ProtectedRoute></Suspense>} />
+                    <Route path="*" element={<AdminNotFound />} />
                   </Route>
                   <Route path="*" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><NotFoundPage /></Suspense></ErrorBoundary></AppShell>} />
                 </Routes>

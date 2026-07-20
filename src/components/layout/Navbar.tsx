@@ -1,14 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { Search, Globe, Sun, Menu, X, Moon } from "lucide-react";
 import useSearch from "../../context/SearchContext";
 import { useLanguage, useTranslation } from "../../context/LanguageContext";
 import { useTheme } from "../../context/ThemeContext";
 import type { Language } from "../../i18n";
 import { ORANGE, NAVY, DARK, BODY_TEXT, BORDER } from "../../constants";
+import { BLOG_SEEN_NEW_ARTICLES_KEY, newBlogArticleIds } from "../../data/blogArticles";
+import MegaMenu from "./MegaMenu";
+import { megaMenuServices, megaMenuSolutions } from "../../data/homeData";
+
+type OpenMegaMenu = "solutions" | "services" | null;
 
 export default function Navbar() {
+  const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { openSearch } = useSearch();
   const { language, setLanguage } = useLanguage();
@@ -16,6 +22,11 @@ export default function Navbar() {
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [newArticleCount, setNewArticleCount] = useState(0);
+  const [openMegaMenu, setOpenMegaMenu] = useState<OpenMegaMenu>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const solutionsTriggerRef = useRef<HTMLAnchorElement>(null);
+  const servicesTriggerRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,6 +35,55 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const updateNewArticleCount = () => {
+      try {
+        const seen = new Set<number>(JSON.parse(localStorage.getItem(BLOG_SEEN_NEW_ARTICLES_KEY) ?? "[]"));
+        setNewArticleCount(newBlogArticleIds.filter((id) => !seen.has(id)).length);
+      } catch {
+        setNewArticleCount(newBlogArticleIds.length);
+      }
+    };
+    updateNewArticleCount();
+    window.addEventListener("storage", updateNewArticleCount);
+    window.addEventListener("integraltech:blog:new-articles-seen", updateNewArticleCount);
+    return () => {
+      window.removeEventListener("storage", updateNewArticleCount);
+      window.removeEventListener("integraltech:blog:new-articles-seen", updateNewArticleCount);
+    };
+  }, []);
+
+  const cancelMegaMenuClose = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  const closeMegaMenu = useCallback(() => {
+    cancelMegaMenuClose();
+    setOpenMegaMenu(null);
+  }, [cancelMegaMenuClose]);
+
+  const scheduleMegaMenuClose = useCallback(() => {
+    cancelMegaMenuClose();
+    closeTimerRef.current = setTimeout(() => setOpenMegaMenu(null), 140);
+  }, [cancelMegaMenuClose]);
+
+  useEffect(() => () => cancelMegaMenuClose(), [cancelMegaMenuClose]);
+
+  useEffect(() => {
+    if (!openMegaMenu) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const trigger = openMegaMenu === "solutions" ? solutionsTriggerRef.current : servicesTriggerRef.current;
+      closeMegaMenu();
+      trigger?.focus();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [closeMegaMenu, openMegaMenu]);
 
   const links = [
     { to: "/", label: t.nav.home },
@@ -40,9 +100,21 @@ export default function Navbar() {
     setShowLanguageMenu(false);
   };
 
+  const renderLinkLabel = (link: (typeof links)[number]) => (
+    <>
+      <span>{link.label}</span>
+      {link.to === "/blog" && location.pathname !== "/blog" && newArticleCount > 0 && (
+        <span className="navbar-blog-badge" aria-label={t.blogPage.newArticlesLabel(newArticleCount)}>
+          {newArticleCount > 9 ? "9+" : newArticleCount}
+        </span>
+      )}
+    </>
+  );
+
+  const megaMenuTranslation = (key: string) => t.megaMenu[key as keyof typeof t.megaMenu];
+
   return (
     <motion.nav
-      aria-label="Navigation principale"
       className="navbar-shell"
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -82,50 +154,94 @@ export default function Navbar() {
 
       {/* Desktop Links */}
       <div className="navbar-links" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            style={({ isActive }: { isActive: boolean }) => ({
-              color: isActive ? ORANGE : DARK,
-              fontWeight: isActive ? 600 : 500,
-              fontSize: 14,
-              textDecoration: "none",
-              fontFamily: "Outfit, sans-serif",
-              padding: "8px 16px",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              position: "relative",
-              transition: "all 0.2s ease",
-            })}
-          >
-            {({ isActive }) => (
-              <>
-                {link.label}
-                {["/solutions", "/services"].includes(link.to) && (
-                  <span style={{ marginLeft: 4, fontSize: 8 }}>▼</span>
-                )}
-                {isActive && (
-                  <motion.span
-                    layoutId="navbar-active-dot"
-                    style={{
-                      position: "absolute",
-                      bottom: -2,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      width: 4,
-                      height: 4,
-                      borderRadius: "50%",
-                      background: ORANGE,
-                    }}
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-              </>
-            )}
-          </NavLink>
-        ))}
+        {links.map((link) => {
+          const menuType = link.to === "/solutions" ? "solutions" : link.to === "/services" ? "services" : null;
+          const isMenuOpen = menuType !== null && openMegaMenu === menuType;
+          const triggerId = menuType ? `navbar-${menuType}-trigger` : undefined;
+          const menuId = menuType ? `navbar-${menuType}-menu` : undefined;
+          const triggerRef = menuType === "solutions" ? solutionsTriggerRef : menuType === "services" ? servicesTriggerRef : undefined;
+          const linkElement = (
+            <NavLink
+              key={link.to}
+              ref={triggerRef}
+              to={link.to}
+              id={triggerId}
+              aria-haspopup={menuType ? "menu" : undefined}
+              aria-expanded={menuType ? isMenuOpen : undefined}
+              aria-controls={menuType ? menuId : undefined}
+              onClick={() => menuType && closeMegaMenu()}
+              onFocus={() => menuType && setOpenMegaMenu(menuType)}
+              onKeyDown={(event) => {
+                if (menuType && (event.key === "Enter" || event.key === " ")) {
+                  event.preventDefault();
+                  cancelMegaMenuClose();
+                  setOpenMegaMenu(menuType);
+                }
+              }}
+              style={({ isActive }: { isActive: boolean }) => ({
+                color: isActive ? ORANGE : DARK,
+                fontWeight: isActive ? 600 : 500,
+                fontSize: 14,
+                textDecoration: "none",
+                fontFamily: "Outfit, sans-serif",
+                padding: "8px 16px",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                position: "relative",
+                transition: "all 0.2s ease",
+              })}
+            >
+              {({ isActive }) => (
+                <>
+                  {renderLinkLabel(link)}
+                  {menuType && <span style={{ marginInlineStart: 4, fontSize: 8 }}>▼</span>}
+                  {isActive && (
+                    <motion.span
+                      layoutId="navbar-active-dot"
+                      style={{
+                        position: "absolute",
+                        bottom: -2,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 4,
+                        height: 4,
+                        borderRadius: "50%",
+                        background: ORANGE,
+                      }}
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </>
+              )}
+            </NavLink>
+          );
+
+          if (!menuType) return linkElement;
+
+          return (
+            <div
+              key={link.to}
+              className="navbar-mega-menu-anchor"
+              onMouseEnter={() => { cancelMegaMenuClose(); setOpenMegaMenu(menuType); }}
+              onMouseLeave={scheduleMegaMenuClose}
+              onFocus={cancelMegaMenuClose}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) scheduleMegaMenuClose();
+              }}
+            >
+              {linkElement}
+              <MegaMenu
+                id={menuId!}
+                labelledBy={triggerId!}
+                items={menuType === "solutions" ? megaMenuSolutions : megaMenuServices}
+                isOpen={isMenuOpen}
+                onClose={closeMegaMenu}
+                t={megaMenuTranslation}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Right Side Actions */}
@@ -155,7 +271,7 @@ export default function Navbar() {
             e.currentTarget.style.color = BODY_TEXT;
             e.currentTarget.style.backgroundColor = "transparent";
           }}
-          aria-label={theme === "light" ? "Activer le mode sombre" : "Activer le mode clair"}
+          aria-label={theme === "light" ? t.a11y.activateDarkMode : t.a11y.activateLightMode}
         >
           {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
         </button>
@@ -206,7 +322,7 @@ export default function Navbar() {
                 style={{
                   position: "absolute",
                   top: "100%",
-                  right: 0,
+                  insetInlineEnd: 0,
                   marginTop: 6,
                   background: "var(--surface)",
                   borderRadius: 12,
@@ -231,7 +347,7 @@ export default function Navbar() {
                       fontSize: 13,
                       fontFamily: "Outfit, sans-serif",
                       fontWeight: language === lang ? 600 : 500,
-                      textAlign: language === "ar" ? "right" : "left",
+                      textAlign: "start",
                       transition: "background-color 0.15s",
                       display: "flex",
                       alignItems: "center",
@@ -275,7 +391,7 @@ export default function Navbar() {
             borderRadius: "10px",
             color: BODY_TEXT,
             transition: "all 0.2s ease",
-            marginRight: 4,
+            marginInlineEnd: 4,
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = DARK;
@@ -285,7 +401,7 @@ export default function Navbar() {
             e.currentTarget.style.color = BODY_TEXT;
             e.currentTarget.style.backgroundColor = "transparent";
           }}
-          aria-label="Open search"
+          aria-label={t.search.placeholder}
         >
           <Search size={18} />
         </button>
@@ -325,7 +441,7 @@ export default function Navbar() {
         <button
           className="navbar-icon-button"
           onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-label={mobileOpen ? t.a11y.menuClose : t.a11y.menuOpen}
           aria-expanded={mobileOpen}
           style={{
             background: NAVY,
@@ -337,7 +453,7 @@ export default function Navbar() {
             alignItems: "center",
             justifyContent: "center",
             color: "#fff",
-            marginLeft: 4,
+            marginInlineStart: 4,
             transition: "all 0.2s ease",
           }}
           onMouseEnter={(e) => {
@@ -362,8 +478,8 @@ export default function Navbar() {
             transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{
               position: "absolute",
-              left: 0,
-              right: 0,
+              insetInlineStart: 0,
+              insetInlineEnd: 0,
               background: "var(--mobile-menu-bg)",
               backdropFilter: "blur(16px)",
               border: `1px solid ${BORDER}`,
@@ -394,7 +510,7 @@ export default function Navbar() {
                   transition: "all 0.2s ease",
                 })}
               >
-                {link.label}
+                <span className="navbar-mobile-link-label">{renderLinkLabel(link)}</span>
               </NavLink>
             ))}
             {/* Contact CTA in Mobile Menu */}

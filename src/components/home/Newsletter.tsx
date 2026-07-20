@@ -3,7 +3,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Mail, CheckCircle, ArrowRight } from "lucide-react";
 import { ORANGE, NAVY, DARK, BODY_TEXT, BORDER, CARD_BG } from "../../constants";
-import { useTranslation } from "../../context/LanguageContext";
+import { useLanguage, useTranslation } from "../../context/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -12,6 +12,7 @@ export default function Newsletter() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const { language } = useLanguage();
   const t = useTranslation();
 
   useLayoutEffect(() => {
@@ -48,7 +49,7 @@ export default function Newsletter() {
   return (
     <section
       ref={sectionRef}
-      aria-label="Newsletter IntegralTech"
+      aria-label={t.newsletter.title}
       className="newsletter-section"
       style={{
         background: CARD_BG,
@@ -173,7 +174,7 @@ export default function Newsletter() {
             data-nl
             onSubmit={handleSubmit}
             noValidate
-            aria-label="Formulaire d'inscription à la newsletter"
+            aria-label={t.newsletter.title}
           >
             <div
               style={{
@@ -225,7 +226,7 @@ export default function Newsletter() {
                       fontFamily: "Open Sans, sans-serif",
                       fontSize: 12,
                       marginTop: 6,
-                      textAlign: "left",
+                      textAlign: "start",
                     }}
                   >
                     {errorMsg}
@@ -263,7 +264,7 @@ export default function Newsletter() {
                 }}
               >
                 {t.newsletter.button}
-                <ArrowRight size={16} />
+                <ArrowRight size={16} style={{ transform: language === "ar" ? "scaleX(-1)" : undefined }} />
               </button>
             </div>
             <p
