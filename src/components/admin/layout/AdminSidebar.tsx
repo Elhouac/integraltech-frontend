@@ -54,6 +54,7 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
   const showUsers = hasPermission(role, "users", "view");
   const showSettings = hasPermission(role, "settings", "view");
   const showServices = hasPermission(role, "services", "view");
+  const showSolutions = hasPermission(role, "solutions", "view");
 
   const navContent = (
     <div
@@ -169,7 +170,7 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
         )}
 
         {/* Section: Contenu */}
-        {(showBlog || showCategories || showServices) && (
+        {(showBlog || showCategories || showServices || showSolutions) && (
           <>
             <SectionLabel label="Contenu" collapsed={collapsed} />
             {showBlog && (
@@ -184,8 +185,8 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
             {showServices && (
               <SidebarLink to="/admin/services" label="Services" icon={Wrench} collapsed={collapsed} onClick={onCloseMobile} />
             )}
-            {showSettings && (
-              <SidebarLink to="/admin/solutions" label="Solutions" icon={Lightbulb} collapsed={collapsed} onClick={onCloseMobile} disabled />
+            {showSolutions && (
+              <SidebarLink to="/admin/solutions" label="Solutions" icon={Lightbulb} collapsed={collapsed} onClick={onCloseMobile} />
             )}
           </>
         )}

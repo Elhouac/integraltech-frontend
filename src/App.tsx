@@ -39,6 +39,9 @@ const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
 const AdminServicesPage = lazy(() => import("./pages/admin/services/ServicesPage"));
 const ServiceCreatePage = lazy(() => import("./pages/admin/services/ServiceCreatePage"));
 const ServiceEditPage = lazy(() => import("./pages/admin/services/ServiceEditPage"));
+const AdminSolutionsPage = lazy(() => import("./pages/admin/solutions/AdminSolutionsPage"));
+const SolutionCreatePage = lazy(() => import("./pages/admin/solutions/SolutionCreatePage"));
+const SolutionEditPage = lazy(() => import("./pages/admin/solutions/SolutionEditPage"));
 
 // ── Suspense fallback for admin chunk loading ──
 function AdminFallback() {
@@ -176,6 +179,9 @@ export default function App() {
                     <Route path="services" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="services" action="view"><AdminServicesPage /></ProtectedRoute></Suspense>} />
                     <Route path="services/create" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="services" action="create"><ServiceCreatePage /></ProtectedRoute></Suspense>} />
                     <Route path="services/:id/edit" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="services" action="edit"><ServiceEditPage /></ProtectedRoute></Suspense>} />
+                    <Route path="solutions" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="solutions" action="view"><AdminSolutionsPage /></ProtectedRoute></Suspense>} />
+                    <Route path="solutions/create" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="solutions" action="create"><SolutionCreatePage /></ProtectedRoute></Suspense>} />
+                    <Route path="solutions/:id/edit" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="solutions" action="edit"><SolutionEditPage /></ProtectedRoute></Suspense>} />
                     <Route path="*" element={<AdminNotFound />} />
                   </Route>
                   <Route path="*" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><NotFoundPage /></Suspense></ErrorBoundary></AppShell>} />

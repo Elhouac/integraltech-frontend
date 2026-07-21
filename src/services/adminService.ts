@@ -8,6 +8,7 @@ import {
   MOCK_POSTS,
   MOCK_SYSTEM_USERS,
   MOCK_SERVICES,
+  MOCK_SOLUTIONS,
 } from "../data/admin-mocks";
 import type {
   KpiData,
@@ -21,6 +22,8 @@ import type {
   LeadStatus,
   Service,
   ServiceStatus,
+  Solution,
+  SolutionStatus,
 } from "../types/admin";
 
 // Simulate network delay
@@ -348,6 +351,125 @@ export const adminService = {
     orderedIds.forEach((id, index) => {
       const svc = MOCK_SERVICES.find((s) => s.id === id);
       if (svc) svc.order = index + 1;
+    });
+  },
+
+  // ── Solutions ──
+
+  async getSolutions(): Promise<Solution[]> {
+    await delay();
+    return [...MOCK_SOLUTIONS];
+  },
+
+  async getSolutionById(id: number): Promise<Solution | undefined> {
+    await delay();
+    return MOCK_SOLUTIONS.find((s) => s.id === id);
+  },
+
+  async createSolution(data: Omit<Solution, "id" | "createdAt" | "updatedAt">): Promise<Solution> {
+    await delay();
+    const newSolution: Solution = {
+      ...data,
+      id: Date.now(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_SOLUTIONS.push(newSolution);
+    return newSolution;
+  },
+
+  async updateSolution(id: number, data: Partial<Solution>): Promise<Solution> {
+    await delay();
+    const idx = MOCK_SOLUTIONS.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error("Solution not found");
+    const updated: Solution = {
+      ...MOCK_SOLUTIONS[idx],
+      ...data,
+      id,
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_SOLUTIONS[idx] = updated;
+    return updated;
+  },
+
+  async duplicateSolution(id: number): Promise<Solution> {
+    await delay();
+    const source = MOCK_SOLUTIONS.find((s) => s.id === id);
+    if (!source) throw new Error("Solution not found");
+    const copy: Solution = {
+      ...JSON.parse(JSON.stringify(source)),
+      id: Date.now(),
+      title: {
+        fr: `${source.title.fr} (copie)`,
+        en: source.title.en ? `${source.title.en} (copy)` : "",
+        ar: source.title.ar ? `${source.title.ar} (نسخة)` : "",
+      },
+      slug: `${source.slug}-copie-${Date.now()}`,
+      status: "draft" as SolutionStatus,
+      featured: false,
+      submittedBy: null,
+      submittedAt: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewNote: null,
+      publishedAt: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_SOLUTIONS.push(copy);
+    return copy;
+  },
+
+  async deleteSolution(id: number): Promise<void> {
+    await delay();
+    const idx = MOCK_SOLUTIONS.findIndex((s) => s.id === id);
+    if (idx !== -1) {
+      MOCK_SOLUTIONS.splice(idx, 1);
+    }
+  },
+
+  async archiveSolution(id: number): Promise<Solution> {
+    await delay();
+    const idx = MOCK_SOLUTIONS.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error("Solution not found");
+    MOCK_SOLUTIONS[idx] = {
+      ...MOCK_SOLUTIONS[idx],
+      status: "archived",
+      updatedAt: new Date().toISOString(),
+    };
+    return MOCK_SOLUTIONS[idx];
+  },
+
+  async updateSolutionStatus(
+    id: number,
+    status: SolutionStatus,
+    meta?: { reviewedBy?: string; reviewNote?: string; publishedAt?: string }
+  ): Promise<Solution> {
+    await delay();
+    const idx = MOCK_SOLUTIONS.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error("Solution not found");
+    const now = new Date().toISOString();
+    const updates: Partial<Solution> = { status, updatedAt: now };
+    if (status === "pending_review") {
+      updates.submittedAt = now;
+    }
+    if (status === "approved" || status === "changes_requested") {
+      updates.reviewedBy = meta?.reviewedBy ?? null;
+      updates.reviewedAt = now;
+      updates.reviewNote = meta?.reviewNote ?? null;
+    }
+    if (status === "published") {
+      updates.publishedAt = meta?.publishedAt ?? now;
+    }
+    MOCK_SOLUTIONS[idx] = { ...MOCK_SOLUTIONS[idx], ...updates };
+    return MOCK_SOLUTIONS[idx];
+  },
+
+  async reorderSolutions(orderedIds: number[]): Promise<void> {
+    await delay();
+    orderedIds.forEach((id, index) => {
+      const sol = MOCK_SOLUTIONS.find((s) => s.id === id);
+      if (sol) sol.order = index + 1;
     });
   },
 };

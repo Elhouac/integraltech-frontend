@@ -140,3 +140,47 @@ export interface Service {
   reviewNote: string | null;
   publishedAt: string | null;
 }
+
+// ── Solutions ──
+
+export type SolutionStatus =
+  | "draft"
+  | "pending_review"
+  | "changes_requested"
+  | "approved"
+  | "published"
+  | "archived";
+
+export interface Solution {
+  id: number;
+  title: MultiLang;
+  slug: string;
+  shortDescription: MultiLang;
+  fullDescription: MultiLang;
+  problem: MultiLang;
+  approach: MultiLang;
+  benefits: MultiLang[];
+  features: MultiLang[];
+  targetAudience: MultiLang[];
+  industries: MultiLang[];
+  relatedServiceIds: number[];
+  icon: string;
+  imageUrl: string;
+  imageAlt: MultiLang;
+  accentColor: string;
+  ctaLabel: MultiLang;
+  ctaUrl: string;
+  order: number;
+  featured: boolean;
+  status: SolutionStatus;
+  seoTitle: MultiLang;
+  seoDescription: MultiLang;
+  createdAt: string;
+  updatedAt: string;
+  submittedBy: string | null;
+  submittedAt: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  publishedAt: string | null;
+}
