@@ -45,6 +45,9 @@ const SolutionEditPage = lazy(() => import("./pages/admin/solutions/SolutionEdit
 const AdminMediaPage = lazy(() => import("./pages/admin/media/AdminMediaPage"));
 const MediaCreatePage = lazy(() => import("./pages/admin/media/MediaCreatePage"));
 const MediaEditPage = lazy(() => import("./pages/admin/media/MediaEditPage"));
+const AdminProfilePage = lazy(() => import("./pages/admin/profile/AdminProfilePage"));
+const AdminNotificationsPage = lazy(() => import("./pages/admin/notifications/AdminNotificationsPage"));
+
 
 // ── Suspense fallback for admin chunk loading ──
 function AdminFallback() {
@@ -188,6 +191,8 @@ export default function App() {
                     <Route path="media" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="media" action="view"><AdminMediaPage /></ProtectedRoute></Suspense>} />
                     <Route path="media/create" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="media" action="create"><MediaCreatePage /></ProtectedRoute></Suspense>} />
                     <Route path="media/:id/edit" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="media" action="edit"><MediaEditPage /></ProtectedRoute></Suspense>} />
+                    <Route path="profile" element={<Suspense fallback={<AdminFallback />}><AdminProfilePage /></Suspense>} />
+                    <Route path="notifications" element={<Suspense fallback={<AdminFallback />}><AdminNotificationsPage /></Suspense>} />
                     <Route path="*" element={<AdminNotFound />} />
                   </Route>
                   <Route path="*" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><NotFoundPage /></Suspense></ErrorBoundary></AppShell>} />

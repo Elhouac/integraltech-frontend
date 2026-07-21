@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, Bell, User, LogOut, ChevronDown } from "lucide-react";
 import AdminBreadcrumb from "./AdminBreadcrumb";
+import NotificationCenterPanel from "../notifications/NotificationCenterPanel";
 import { useAuth } from "../../../context/AuthContext";
+import { adminService } from "../../../services/adminService";
 import { ACCENT, BORDER, TEXT, TEXT_SECONDARY, SURFACE } from "../../../constants";
 
 interface AdminHeaderProps {
@@ -14,18 +16,42 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [notifPanelOpen, setNotifPanelOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Close dropdown on outside click
+  const menuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const userId = user?.id || 1;
+  const role = user?.role || "reader";
+
+  const fetchUnread = useCallback(async () => {
+    try {
+      const count = await adminService.getUnreadNotificationCount(userId, role);
+      setUnreadCount(count);
+    } catch {
+      /* ignore */
+    }
+  }, [userId, role]);
+
+  useEffect(() => {
+    fetchUnread();
+  }, [fetchUnread]);
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifPanelOpen(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
 
   return (
     <header
@@ -70,38 +96,50 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
       {/* Right: Notifications + User */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {/* Notification bell */}
-        <button
-          aria-label="Notifications"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 36,
-            height: 36,
-            border: "none",
-            borderRadius: "var(--radius-sm)",
-            background: "transparent",
-            color: TEXT_SECONDARY,
-            cursor: "pointer",
-            position: "relative",
-            transition: "background 0.2s",
-          }}
-        >
-          <Bell size={18} />
-          {/* Badge */}
-          <span
-            style={{
-              position: "absolute",
-              top: 4,
-              right: 4,
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: ACCENT,
-              border: `2px solid ${SURFACE}`,
+        <div ref={notifRef} style={{ position: "relative" }}>
+          <button
+            onClick={() => {
+              setNotifPanelOpen((prev) => !prev);
+              fetchUnread();
             }}
-          />
-        </button>
+            aria-label="Notifications"
+            aria-expanded={notifPanelOpen}
+            aria-haspopup="true"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 36,
+              height: 36,
+              border: "none",
+              borderRadius: "var(--radius-sm)",
+              background: notifPanelOpen ? "var(--hover)" : "transparent",
+              color: notifPanelOpen ? TEXT : TEXT_SECONDARY,
+              cursor: "pointer",
+              position: "relative",
+              transition: "background 0.2s",
+            }}
+          >
+            <Bell size={18} />
+            {/* Dynamic unread Badge */}
+            {unreadCount > 0 && (
+              <span className="admin-notif-badge">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          <AnimatePresence>
+            {notifPanelOpen && (
+              <NotificationCenterPanel
+                userId={userId}
+                role={role}
+                onClose={() => setNotifPanelOpen(false)}
+                onStateChange={fetchUnread}
+              />
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* User dropdown */}
         <div ref={menuRef} style={{ position: "relative" }}>
@@ -172,8 +210,10 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                 }}
               >
                 <button
-                  disabled
-                  aria-disabled="true"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    navigate("/admin/profile");
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -185,14 +225,12 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                     color: TEXT,
                     fontFamily: "var(--font-sans)",
                     fontSize: 13,
-                    cursor: "not-allowed",
+                    cursor: "pointer",
                     transition: "background 0.15s",
-                    opacity: 0.58,
                   }}
                 >
                   <User size={15} />
                   <span style={{ flex: 1, textAlign: "start" }}>Mon Profil</span>
-                  <span className="admin-coming-soon-badge">Bientôt</span>
                 </button>
                 <div style={{ height: 1, background: BORDER }} />
                 <button

@@ -10,6 +10,10 @@ import {
   MOCK_SERVICES,
   MOCK_SOLUTIONS,
   MOCK_MEDIA_ASSETS,
+  MOCK_ADMIN_PROFILES,
+  MOCK_ACCOUNT_SESSIONS,
+  MOCK_ADMIN_NOTIFICATIONS,
+  MOCK_NOTIFICATION_PREFERENCES,
 } from "../data/admin-mocks";
 import type {
   KpiData,
@@ -27,6 +31,10 @@ import type {
   SolutionStatus,
   MediaAsset,
   MediaStatus,
+  AdminProfile,
+  MockAccountSession,
+  AdminNotification,
+  NotificationPreferences,
 } from "../types/admin";
 
 // Simulate network delay
@@ -568,4 +576,245 @@ export const adminService = {
       if (idx !== -1) MOCK_MEDIA_ASSETS.splice(idx, 1);
     });
   },
+
+  // ── Admin Profile & Account ──
+
+  async getCurrentAdminProfile(userId: number): Promise<AdminProfile | undefined> {
+    await delay();
+    return MOCK_ADMIN_PROFILES.find((p) => p.userId === userId);
+  },
+
+  async updateCurrentAdminProfile(userId: number, data: Partial<AdminProfile>): Promise<AdminProfile> {
+    await delay();
+    const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
+    if (idx === -1) throw new Error("Profile not found");
+    // Prevent editing protected fields
+    const { loginEmail: _le, role: _r, userId: _u, id: _id, createdAt: _ca, ...safeData } = data as AdminProfile;
+    const updated: AdminProfile = {
+      ...MOCK_ADMIN_PROFILES[idx],
+      ...safeData,
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_ADMIN_PROFILES[idx] = updated;
+    return updated;
+  },
+
+  async updateAdminProfilePreferences(
+    userId: number,
+    prefs: Pick<AdminProfile, "language" | "theme" | "interfaceDensity" | "timezone" | "dateFormat" | "timeFormat">
+  ): Promise<AdminProfile> {
+    await delay();
+    const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
+    if (idx === -1) throw new Error("Profile not found");
+    MOCK_ADMIN_PROFILES[idx] = { ...MOCK_ADMIN_PROFILES[idx], ...prefs, updatedAt: new Date().toISOString() };
+    return MOCK_ADMIN_PROFILES[idx];
+  },
+
+  async updateAdminProfileAvatar(userId: number, avatarUrl: string): Promise<AdminProfile> {
+    await delay();
+    const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
+    if (idx === -1) throw new Error("Profile not found");
+    MOCK_ADMIN_PROFILES[idx] = { ...MOCK_ADMIN_PROFILES[idx], avatarUrl, updatedAt: new Date().toISOString() };
+    return MOCK_ADMIN_PROFILES[idx];
+  },
+
+  async removeAdminProfileAvatar(userId: number): Promise<AdminProfile> {
+    await delay();
+    const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
+    if (idx === -1) throw new Error("Profile not found");
+    MOCK_ADMIN_PROFILES[idx] = { ...MOCK_ADMIN_PROFILES[idx], avatarUrl: "", updatedAt: new Date().toISOString() };
+    return MOCK_ADMIN_PROFILES[idx];
+  },
+
+  async changeMockAccountPassword(
+    _userId: number,
+    input: { currentPassword: string; newPassword: string; confirmPassword: string }
+  ): Promise<{ success: boolean }> {
+    await delay();
+    // Validate input shape only — never inspect or compare real credentials
+    if (!input.currentPassword || !input.newPassword || !input.confirmPassword) {
+      throw new Error("All password fields are required");
+    }
+    if (input.newPassword !== input.confirmPassword) {
+      throw new Error("Passwords do not match");
+    }
+    if (input.newPassword === input.currentPassword) {
+      throw new Error("New password must differ from current");
+    }
+    // Simulate success — never persist or return password values
+    return { success: true };
+  },
+
+  async getMockAccountSessions(userId: number): Promise<MockAccountSession[]> {
+    await delay();
+    return MOCK_ACCOUNT_SESSIONS.filter((s) => s.userId === userId).map((s) => ({ ...s }));
+  },
+
+  async revokeMockAccountSession(userId: number, sessionId: number): Promise<MockAccountSession> {
+    await delay();
+    const idx = MOCK_ACCOUNT_SESSIONS.findIndex((s) => s.id === sessionId && s.userId === userId);
+    if (idx === -1) throw new Error("Session not found");
+    if (MOCK_ACCOUNT_SESSIONS[idx].isCurrent) throw new Error("Cannot revoke current session");
+    if (MOCK_ACCOUNT_SESSIONS[idx].status === "revoked") throw new Error("Session already revoked");
+    MOCK_ACCOUNT_SESSIONS[idx] = { ...MOCK_ACCOUNT_SESSIONS[idx], status: "revoked" };
+    return MOCK_ACCOUNT_SESSIONS[idx];
+  },
+
+  async revokeAllOtherMockAccountSessions(userId: number): Promise<void> {
+    await delay();
+    MOCK_ACCOUNT_SESSIONS.forEach((s, i) => {
+      if (s.userId === userId && !s.isCurrent && s.status === "active") {
+        MOCK_ACCOUNT_SESSIONS[i] = { ...s, status: "revoked" };
+      }
+    });
+  },
+
+  // ── Admin Notification Center ──
+
+  async getCurrentUserNotifications(userId: number, role: string): Promise<AdminNotification[]> {
+    await delay(150);
+    return MOCK_ADMIN_NOTIFICATIONS.filter(
+      (n) =>
+        n.recipientUserId === userId ||
+        n.recipientRole === role ||
+        (!n.recipientUserId && !n.recipientRole)
+    )
+      .map((n) => ({ ...n }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  async getUnreadNotificationCount(userId: number, role: string): Promise<number> {
+    const list = await this.getCurrentUserNotifications(userId, role);
+    return list.filter((n) => n.status === "unread").length;
+  },
+
+  async markNotificationAsRead(id: number): Promise<AdminNotification> {
+    await delay(100);
+    const item = MOCK_ADMIN_NOTIFICATIONS.find((n) => n.id === id);
+    if (!item) throw new Error("Notification not found");
+    item.status = "read";
+    item.readAt = new Date().toISOString();
+    return { ...item };
+  },
+
+  async markNotificationAsUnread(id: number): Promise<AdminNotification> {
+    await delay(100);
+    const item = MOCK_ADMIN_NOTIFICATIONS.find((n) => n.id === id);
+    if (!item) throw new Error("Notification not found");
+    item.status = "unread";
+    item.readAt = null;
+    return { ...item };
+  },
+
+  async markAllNotificationsAsRead(userId: number, role: string): Promise<void> {
+    await delay(150);
+    const now = new Date().toISOString();
+    MOCK_ADMIN_NOTIFICATIONS.forEach((n) => {
+      if (
+        (n.recipientUserId === userId || n.recipientRole === role || (!n.recipientUserId && !n.recipientRole)) &&
+        n.status === "unread"
+      ) {
+        n.status = "read";
+        n.readAt = now;
+      }
+    });
+  },
+
+  async archiveNotification(id: number): Promise<AdminNotification> {
+    await delay(100);
+    const item = MOCK_ADMIN_NOTIFICATIONS.find((n) => n.id === id);
+    if (!item) throw new Error("Notification not found");
+    item.status = "archived";
+    item.archivedAt = new Date().toISOString();
+    return { ...item };
+  },
+
+  async restoreNotification(id: number): Promise<AdminNotification> {
+    await delay(100);
+    const item = MOCK_ADMIN_NOTIFICATIONS.find((n) => n.id === id);
+    if (!item) throw new Error("Notification not found");
+    item.status = item.readAt ? "read" : "unread";
+    item.archivedAt = null;
+    return { ...item };
+  },
+
+  async deleteNotification(id: number): Promise<void> {
+    await delay(100);
+    const idx = MOCK_ADMIN_NOTIFICATIONS.findIndex((n) => n.id === id);
+    if (idx !== -1) {
+      MOCK_ADMIN_NOTIFICATIONS.splice(idx, 1);
+    }
+  },
+
+  async bulkMarkNotificationsAsRead(ids: number[]): Promise<void> {
+    await delay(150);
+    const now = new Date().toISOString();
+    const set = new Set(ids);
+    MOCK_ADMIN_NOTIFICATIONS.forEach((n) => {
+      if (set.has(n.id)) {
+        n.status = "read";
+        n.readAt = now;
+      }
+    });
+  },
+
+  async bulkArchiveNotifications(ids: number[]): Promise<void> {
+    await delay(150);
+    const now = new Date().toISOString();
+    const set = new Set(ids);
+    MOCK_ADMIN_NOTIFICATIONS.forEach((n) => {
+      if (set.has(n.id)) {
+        n.status = "archived";
+        n.archivedAt = now;
+      }
+    });
+  },
+
+  async bulkDeleteNotifications(ids: number[]): Promise<void> {
+    await delay(150);
+    const set = new Set(ids);
+    for (let i = MOCK_ADMIN_NOTIFICATIONS.length - 1; i >= 0; i--) {
+      if (set.has(MOCK_ADMIN_NOTIFICATIONS[i].id)) {
+        MOCK_ADMIN_NOTIFICATIONS.splice(i, 1);
+      }
+    }
+  },
+
+  async getNotificationPreferences(userId: number): Promise<NotificationPreferences> {
+    await delay(100);
+    if (!MOCK_NOTIFICATION_PREFERENCES[userId]) {
+      MOCK_NOTIFICATION_PREFERENCES[userId] = {
+        userId,
+        inAppEnabled: true,
+        contentReviewEnabled: true,
+        leadAlertsEnabled: true,
+        mediaAlertsEnabled: true,
+        securityAlertsEnabled: true,
+        accountAlertsEnabled: true,
+        quietHoursEnabled: false,
+        quietHoursStart: "22:00",
+        quietHoursEnd: "07:00",
+        digestFrequency: "daily",
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return { ...MOCK_NOTIFICATION_PREFERENCES[userId] };
+  },
+
+  async updateNotificationPreferences(
+    userId: number,
+    prefs: Partial<NotificationPreferences>
+  ): Promise<NotificationPreferences> {
+    await delay(150);
+    const current = await this.getNotificationPreferences(userId);
+    const updated: NotificationPreferences = {
+      ...current,
+      ...prefs,
+      securityAlertsEnabled: true, // Always mandatory
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_NOTIFICATION_PREFERENCES[userId] = updated;
+    return { ...updated };
+  },
 };
+

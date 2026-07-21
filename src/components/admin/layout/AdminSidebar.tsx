@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard, Inbox, Mail, FileText, FolderOpen,
   Image, Settings as SettingsIcon, Wrench, Lightbulb,
-  Users, Sun, Moon, X,
+  Users, User, Bell, Sun, Moon, X,
 } from "lucide-react";
 import SidebarLink from "./SidebarLink";
 import { useTheme } from "../../../context/ThemeContext";
@@ -204,6 +204,11 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
             )}
           </>
         )}
+
+        {/* Mon profil & Notifications — always visible to authenticated users */}
+        <SectionLabel label="Compte" collapsed={collapsed} />
+        <SidebarLink to="/admin/profile" label="Mon Profil" icon={User} collapsed={collapsed} onClick={onCloseMobile} />
+        <SidebarLink to="/admin/notifications" label="Notifications" icon={Bell} collapsed={collapsed} onClick={onCloseMobile} />
       </nav>
 
       {/* ── Footer: Theme toggle ── */}

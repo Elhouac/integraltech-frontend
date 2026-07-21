@@ -222,3 +222,112 @@ export interface MediaAsset {
   createdAt: string;
   updatedAt: string;
 }
+
+// ── Admin Profile & Account ──
+
+export type InterfaceLanguage = "fr" | "en" | "ar";
+export type InterfaceTheme = "system" | "light" | "dark";
+export type InterfaceDensity = "comfortable" | "compact";
+export type DateFormatOption = "DD/MM/YYYY" | "YYYY-MM-DD" | "DD MMM YYYY";
+export type TimeFormatOption = "24h" | "12h";
+export type TwoFactorStatus = "unavailable" | "disabled" | "enabled";
+export type SessionStatus = "active" | "revoked";
+
+export interface AdminProfile {
+  id: number;
+  userId: number;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  loginEmail: string;
+  contactEmail: string;
+  phone: string;
+  jobTitle: string;
+  department: string;
+  bio: string;
+  avatarUrl: string;
+  role: string;
+  language: InterfaceLanguage;
+  theme: InterfaceTheme;
+  interfaceDensity: InterfaceDensity;
+  timezone: string;
+  dateFormat: DateFormatOption;
+  timeFormat: TimeFormatOption;
+  lastPasswordChangeAt: string | null;
+  twoFactorStatus: TwoFactorStatus;
+  lastSecurityReviewAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MockAccountSession {
+  id: number;
+  userId: number;
+  deviceLabel: string;
+  browserLabel: string;
+  platformLabel: string;
+  approximateLocationLabel: string;
+  ipLabel: string;
+  createdAt: string;
+  lastActiveAt: string;
+  isCurrent: boolean;
+  status: SessionStatus;
+}
+
+// ── Admin Notification Center ──
+
+export type NotificationType =
+  | "system"
+  | "content"
+  | "review"
+  | "security"
+  | "lead"
+  | "media"
+  | "account";
+
+export type NotificationPriority = "low" | "normal" | "high" | "critical";
+
+export type NotificationStatus = "unread" | "read" | "archived";
+
+export interface NotificationRelatedResource {
+  resourceType: string;
+  resourceId: number;
+  resourceLabel: string;
+}
+
+export interface AdminNotification {
+  id: number;
+  recipientUserId?: number;
+  recipientRole?: string;
+  type: NotificationType;
+  priority: NotificationPriority;
+  title: string;
+  message: string;
+  status: NotificationStatus;
+  actionLabel?: string;
+  actionUrl?: string;
+  relatedResource?: NotificationRelatedResource;
+  createdAt: string;
+  readAt?: string | null;
+  archivedAt?: string | null;
+  expiresAt?: string | null;
+  isDemo?: boolean;
+}
+
+export type DigestFrequency = "immediate" | "daily" | "weekly" | "disabled";
+
+export interface NotificationPreferences {
+  userId: number;
+  inAppEnabled: boolean;
+  contentReviewEnabled: boolean;
+  leadAlertsEnabled: boolean;
+  mediaAlertsEnabled: boolean;
+  securityAlertsEnabled: boolean;
+  accountAlertsEnabled: boolean;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  digestFrequency: DigestFrequency;
+  updatedAt: string;
+}
+
