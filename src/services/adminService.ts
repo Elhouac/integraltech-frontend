@@ -9,6 +9,7 @@ import {
   MOCK_SYSTEM_USERS,
   MOCK_SERVICES,
   MOCK_SOLUTIONS,
+  MOCK_MEDIA_ASSETS,
 } from "../data/admin-mocks";
 import type {
   KpiData,
@@ -24,6 +25,8 @@ import type {
   ServiceStatus,
   Solution,
   SolutionStatus,
+  MediaAsset,
+  MediaStatus,
 } from "../types/admin";
 
 // Simulate network delay
@@ -470,6 +473,99 @@ export const adminService = {
     orderedIds.forEach((id, index) => {
       const sol = MOCK_SOLUTIONS.find((s) => s.id === id);
       if (sol) sol.order = index + 1;
+    });
+  },
+
+  // ── Media Library ──
+
+  async getMediaAssets(): Promise<MediaAsset[]> {
+    await delay();
+    return [...MOCK_MEDIA_ASSETS];
+  },
+
+  async getMediaAssetById(id: number): Promise<MediaAsset | undefined> {
+    await delay();
+    return MOCK_MEDIA_ASSETS.find((m) => m.id === id);
+  },
+
+  async createMediaAsset(data: Omit<MediaAsset, "id" | "createdAt" | "updatedAt">): Promise<MediaAsset> {
+    await delay();
+    const asset: MediaAsset = {
+      ...data,
+      id: Date.now(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_MEDIA_ASSETS.push(asset);
+    return asset;
+  },
+
+  async updateMediaAsset(id: number, data: Partial<MediaAsset>): Promise<MediaAsset> {
+    await delay();
+    const idx = MOCK_MEDIA_ASSETS.findIndex((m) => m.id === id);
+    if (idx === -1) throw new Error("Media asset not found");
+    const updated: MediaAsset = {
+      ...MOCK_MEDIA_ASSETS[idx],
+      ...data,
+      id,
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_MEDIA_ASSETS[idx] = updated;
+    return updated;
+  },
+
+  async duplicateMediaAsset(id: number): Promise<MediaAsset> {
+    await delay();
+    const source = MOCK_MEDIA_ASSETS.find((m) => m.id === id);
+    if (!source) throw new Error("Media asset not found");
+    const copy: MediaAsset = {
+      ...JSON.parse(JSON.stringify(source)),
+      id: Date.now(),
+      name: `${source.name}-copie`,
+      status: "active" as MediaStatus,
+      usageReferences: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_MEDIA_ASSETS.push(copy);
+    return copy;
+  },
+
+  async archiveMediaAsset(id: number): Promise<MediaAsset> {
+    await delay();
+    const idx = MOCK_MEDIA_ASSETS.findIndex((m) => m.id === id);
+    if (idx === -1) throw new Error("Media asset not found");
+    MOCK_MEDIA_ASSETS[idx] = { ...MOCK_MEDIA_ASSETS[idx], status: "archived", updatedAt: new Date().toISOString() };
+    return MOCK_MEDIA_ASSETS[idx];
+  },
+
+  async restoreMediaAsset(id: number): Promise<MediaAsset> {
+    await delay();
+    const idx = MOCK_MEDIA_ASSETS.findIndex((m) => m.id === id);
+    if (idx === -1) throw new Error("Media asset not found");
+    MOCK_MEDIA_ASSETS[idx] = { ...MOCK_MEDIA_ASSETS[idx], status: "active", updatedAt: new Date().toISOString() };
+    return MOCK_MEDIA_ASSETS[idx];
+  },
+
+  async deleteMediaAsset(id: number): Promise<void> {
+    await delay();
+    const idx = MOCK_MEDIA_ASSETS.findIndex((m) => m.id === id);
+    if (idx !== -1) MOCK_MEDIA_ASSETS.splice(idx, 1);
+  },
+
+  async bulkArchiveMediaAssets(ids: number[]): Promise<void> {
+    await delay();
+    ids.forEach((id) => {
+      const m = MOCK_MEDIA_ASSETS.find((a) => a.id === id);
+      if (m) { m.status = "archived"; m.updatedAt = new Date().toISOString(); }
+    });
+  },
+
+  async bulkDeleteMediaAssets(ids: number[]): Promise<void> {
+    await delay();
+    ids.forEach((id) => {
+      const idx = MOCK_MEDIA_ASSETS.findIndex((a) => a.id === id);
+      if (idx !== -1) MOCK_MEDIA_ASSETS.splice(idx, 1);
     });
   },
 };

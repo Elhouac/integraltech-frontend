@@ -8,6 +8,7 @@ export type Resource =
   | "categories"
   | "services"
   | "solutions"
+  | "media"
   | "users"
   | "settings";
 
@@ -24,6 +25,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     categories: ALL_ACTIONS,
     services: ALL_ACTIONS,
     solutions: ALL_ACTIONS,
+    media: ALL_ACTIONS,
     users: ALL_ACTIONS,
     settings: ALL_ACTIONS,
   },
@@ -35,6 +37,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     categories: ALL_ACTIONS,
     services: ALL_ACTIONS,
     solutions: ALL_ACTIONS,
+    media: ALL_ACTIONS,
     users: ALL_ACTIONS,
     settings: ALL_ACTIONS,
   },
@@ -44,11 +47,13 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     categories: ALL_ACTIONS,
     services: ["view", "create", "edit"],
     solutions: ["view", "create", "edit"],
+    media: ["view", "create", "edit"],
   },
   support: {
     dashboard: ["view"],
     leads: ["view", "edit", "export"],
     subscribers: ALL_ACTIONS,
+    media: ["view"],
   },
   viewer: {
     dashboard: ["view"],
@@ -58,6 +63,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     categories: ["view"],
     services: ["view"],
     solutions: ["view"],
+    media: ["view"],
   },
   reader: {
     dashboard: ["view"],
@@ -67,6 +73,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     categories: ["view"],
     services: ["view"],
     solutions: ["view"],
+    media: ["view"],
   },
 };
 

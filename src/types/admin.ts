@@ -184,3 +184,41 @@ export interface Solution {
   reviewNote: string | null;
   publishedAt: string | null;
 }
+
+// ── Media Library ──
+
+export type MediaType = "image" | "document" | "video";
+export type MediaSource = "local_mock" | "external_url" | "existing_asset";
+export type MediaStatus = "active" | "archived";
+
+export interface UsageReference {
+  resourceType: string;
+  resourceId: number;
+  resourceLabel: string;
+}
+
+export interface MediaAsset {
+  id: number;
+  name: string;
+  originalName: string;
+  mediaType: MediaType;
+  mimeType: string;
+  url: string;
+  thumbnailUrl: string;
+  source: MediaSource;
+  title: MultiLang;
+  altText: MultiLang;
+  caption: MultiLang;
+  description: MultiLang;
+  folder: string;
+  tags: string[];
+  sizeBytes: number;
+  width: number | null;
+  height: number | null;
+  durationSeconds: number | null;
+  status: MediaStatus;
+  usageReferences: UsageReference[];
+  uploadedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
