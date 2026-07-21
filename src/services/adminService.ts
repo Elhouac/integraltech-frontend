@@ -7,6 +7,7 @@ import {
   MOCK_CATEGORIES,
   MOCK_POSTS,
   MOCK_SYSTEM_USERS,
+  MOCK_SERVICES,
 } from "../data/admin-mocks";
 import type {
   KpiData,
@@ -18,6 +19,8 @@ import type {
   Category,
   SystemUser,
   LeadStatus,
+  Service,
+  ServiceStatus,
 } from "../types/admin";
 
 // Simulate network delay
@@ -227,5 +230,124 @@ export const adminService = {
       user.is_active = !user.is_active;
     }
     return user;
+  },
+
+  // ── Services ──
+
+  async getServices(): Promise<Service[]> {
+    await delay();
+    return [...MOCK_SERVICES];
+  },
+
+  async getServiceById(id: number): Promise<Service | undefined> {
+    await delay();
+    return MOCK_SERVICES.find((s) => s.id === id);
+  },
+
+  async createService(data: Omit<Service, "id" | "createdAt" | "updatedAt">): Promise<Service> {
+    await delay();
+    const newService: Service = {
+      ...data,
+      id: Date.now(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_SERVICES.push(newService);
+    return newService;
+  },
+
+  async updateService(id: number, data: Partial<Service>): Promise<Service> {
+    await delay();
+    const idx = MOCK_SERVICES.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error("Service not found");
+    const updated: Service = {
+      ...MOCK_SERVICES[idx],
+      ...data,
+      id,
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_SERVICES[idx] = updated;
+    return updated;
+  },
+
+  async duplicateService(id: number): Promise<Service> {
+    await delay();
+    const source = MOCK_SERVICES.find((s) => s.id === id);
+    if (!source) throw new Error("Service not found");
+    const copy: Service = {
+      ...JSON.parse(JSON.stringify(source)),
+      id: Date.now(),
+      title: {
+        fr: `${source.title.fr} (copie)`,
+        en: source.title.en ? `${source.title.en} (copy)` : "",
+        ar: source.title.ar ? `${source.title.ar} (نسخة)` : "",
+      },
+      slug: `${source.slug}-copie-${Date.now()}`,
+      status: "draft" as ServiceStatus,
+      featured: false,
+      submittedBy: null,
+      submittedAt: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewNote: null,
+      publishedAt: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_SERVICES.push(copy);
+    return copy;
+  },
+
+  async deleteService(id: number): Promise<void> {
+    await delay();
+    const idx = MOCK_SERVICES.findIndex((s) => s.id === id);
+    if (idx !== -1) {
+      MOCK_SERVICES.splice(idx, 1);
+    }
+  },
+
+  async archiveService(id: number): Promise<Service> {
+    await delay();
+    const idx = MOCK_SERVICES.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error("Service not found");
+    MOCK_SERVICES[idx] = {
+      ...MOCK_SERVICES[idx],
+      status: "archived",
+      updatedAt: new Date().toISOString(),
+    };
+    return MOCK_SERVICES[idx];
+  },
+
+  async updateServiceStatus(
+    id: number,
+    status: ServiceStatus,
+    meta?: { reviewedBy?: string; reviewNote?: string; publishedAt?: string }
+  ): Promise<Service> {
+    await delay();
+    const idx = MOCK_SERVICES.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error("Service not found");
+    const now = new Date().toISOString();
+    const updates: Partial<Service> = { status, updatedAt: now };
+    if (status === "pending_review") {
+      updates.submittedAt = now;
+    }
+    if (status === "approved" || status === "changes_requested") {
+      updates.reviewedBy = meta?.reviewedBy ?? null;
+      updates.reviewedAt = now;
+      updates.reviewNote = meta?.reviewNote ?? null;
+    }
+    if (status === "published") {
+      updates.publishedAt = meta?.publishedAt ?? now;
+    }
+    MOCK_SERVICES[idx] = { ...MOCK_SERVICES[idx], ...updates };
+    return MOCK_SERVICES[idx];
+  },
+
+  async reorderServices(orderedIds: number[]): Promise<void> {
+    await delay();
+    orderedIds.forEach((id, index) => {
+      const svc = MOCK_SERVICES.find((s) => s.id === id);
+      if (svc) svc.order = index + 1;
+    });
   },
 };

@@ -95,3 +95,48 @@ export interface SystemUser {
   is_active: boolean;
   last_login: string | null;
 }
+
+// ── Services ──
+
+export interface MultiLang {
+  fr: string;
+  en: string;
+  ar: string;
+}
+
+export type ServiceStatus =
+  | "draft"
+  | "pending_review"
+  | "changes_requested"
+  | "approved"
+  | "published"
+  | "archived";
+
+export interface Service {
+  id: number;
+  title: MultiLang;
+  slug: string;
+  shortDescription: MultiLang;
+  fullDescription: MultiLang;
+  benefits: MultiLang[];
+  features: MultiLang[];
+  icon: string;
+  imageUrl: string;
+  imageAlt: MultiLang;
+  accentColor: string;
+  ctaLabel: MultiLang;
+  ctaUrl: string;
+  order: number;
+  featured: boolean;
+  status: ServiceStatus;
+  seoTitle: MultiLang;
+  seoDescription: MultiLang;
+  createdAt: string;
+  updatedAt: string;
+  submittedBy: string | null;
+  submittedAt: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  publishedAt: string | null;
+}

@@ -36,6 +36,9 @@ const PostEditPage = lazy(() => import("./pages/admin/PostEditPage"));
 const CategoriesPage = lazy(() => import("./pages/admin/CategoriesPage"));
 const UsersPage = lazy(() => import("./pages/admin/UsersPage"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
+const AdminServicesPage = lazy(() => import("./pages/admin/services/ServicesPage"));
+const ServiceCreatePage = lazy(() => import("./pages/admin/services/ServiceCreatePage"));
+const ServiceEditPage = lazy(() => import("./pages/admin/services/ServiceEditPage"));
 
 // ── Suspense fallback for admin chunk loading ──
 function AdminFallback() {
@@ -170,6 +173,9 @@ export default function App() {
                     <Route path="categories" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="categories" action="view"><CategoriesPage /></ProtectedRoute></Suspense>} />
                     <Route path="users" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="users" action="view"><UsersPage /></ProtectedRoute></Suspense>} />
                     <Route path="settings/general" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="settings" action="view"><SettingsPage /></ProtectedRoute></Suspense>} />
+                    <Route path="services" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="services" action="view"><AdminServicesPage /></ProtectedRoute></Suspense>} />
+                    <Route path="services/create" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="services" action="create"><ServiceCreatePage /></ProtectedRoute></Suspense>} />
+                    <Route path="services/:id/edit" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="services" action="edit"><ServiceEditPage /></ProtectedRoute></Suspense>} />
                     <Route path="*" element={<AdminNotFound />} />
                   </Route>
                   <Route path="*" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><NotFoundPage /></Suspense></ErrorBoundary></AppShell>} />

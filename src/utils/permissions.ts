@@ -6,6 +6,7 @@ export type Resource =
   | "subscribers"
   | "blog"
   | "categories"
+  | "services"
   | "users"
   | "settings";
 
@@ -20,6 +21,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     subscribers: ALL_ACTIONS,
     blog: ALL_ACTIONS,
     categories: ALL_ACTIONS,
+    services: ALL_ACTIONS,
     users: ALL_ACTIONS,
     settings: ALL_ACTIONS,
   },
@@ -29,6 +31,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     subscribers: ALL_ACTIONS,
     blog: ALL_ACTIONS,
     categories: ALL_ACTIONS,
+    services: ALL_ACTIONS,
     users: ALL_ACTIONS,
     settings: ALL_ACTIONS,
   },
@@ -36,6 +39,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     dashboard: ["view"],
     blog: ALL_ACTIONS,
     categories: ALL_ACTIONS,
+    services: ["view", "create", "edit"],
   },
   support: {
     dashboard: ["view"],
@@ -48,6 +52,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     subscribers: ["view"],
     blog: ["view"],
     categories: ["view"],
+    services: ["view"],
   },
   reader: {
     dashboard: ["view"],
@@ -55,6 +60,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     subscribers: ["view"],
     blog: ["view"],
     categories: ["view"],
+    services: ["view"],
   },
 };
 
