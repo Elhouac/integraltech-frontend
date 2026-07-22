@@ -10,7 +10,8 @@ export type Resource =
   | "solutions"
   | "media"
   | "users"
-  | "settings";
+  | "settings"
+  | "analytics";
 
 export type Action = "view" | "create" | "edit" | "delete" | "export";
 
@@ -28,6 +29,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     media: ALL_ACTIONS,
     users: ALL_ACTIONS,
     settings: ALL_ACTIONS,
+    analytics: ALL_ACTIONS,
   },
   admin: {
     dashboard: ALL_ACTIONS,
@@ -40,6 +42,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     media: ALL_ACTIONS,
     users: ALL_ACTIONS,
     settings: ALL_ACTIONS,
+    analytics: ALL_ACTIONS,
   },
   editor: {
     dashboard: ["view"],
@@ -48,12 +51,14 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     services: ["view", "create", "edit"],
     solutions: ["view", "create", "edit"],
     media: ["view", "create", "edit"],
+    analytics: ["view"],
   },
   support: {
     dashboard: ["view"],
     leads: ["view", "edit", "export"],
     subscribers: ALL_ACTIONS,
     media: ["view"],
+    analytics: ["view"],
   },
   viewer: {
     dashboard: ["view"],
@@ -64,6 +69,7 @@ const PERMISSIONS_MATRIX: Record<UserRole, Partial<Record<Resource, Action[]>>> 
     services: ["view"],
     solutions: ["view"],
     media: ["view"],
+    analytics: ["view"],
   },
   reader: {
     dashboard: ["view"],

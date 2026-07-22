@@ -2452,7 +2452,7 @@ a:focus-visible,
   max-width: calc(100vw - 32px);
   background: var(--surface);
   border: 1px solid var(--border);
-  borderRadius: var(--radius-lg);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   z-index: 50;

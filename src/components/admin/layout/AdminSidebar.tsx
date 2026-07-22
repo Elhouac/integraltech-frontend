@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard, Inbox, Mail, FileText, FolderOpen,
   Image, Settings as SettingsIcon, Wrench, Lightbulb,
-  Users, User, Bell, History, Sun, Moon, X,
+  Users, User, Bell, History, BarChart3, Sun, Moon, X,
 } from "lucide-react";
 import SidebarLink from "./SidebarLink";
 import { useTheme } from "../../../context/ThemeContext";
@@ -56,6 +56,7 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
   const showServices = hasPermission(role, "services", "view");
   const showSolutions = hasPermission(role, "solutions", "view");
   const showMedia = hasPermission(role, "media", "view");
+  const showAnalytics = hasPermission(role, "analytics", "view");
 
   const navContent = (
     <div
@@ -189,6 +190,14 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
             {showSolutions && (
               <SidebarLink to="/admin/solutions" label="Solutions" icon={Lightbulb} collapsed={collapsed} onClick={onCloseMobile} />
             )}
+          </>
+        )}
+
+        {/* Section: Pilotage */}
+        {showAnalytics && (
+          <>
+            <SectionLabel label="Pilotage" collapsed={collapsed} />
+            <SidebarLink to="/admin/analytics" label="Rapports & analyses" icon={BarChart3} collapsed={collapsed} onClick={onCloseMobile} />
           </>
         )}
 

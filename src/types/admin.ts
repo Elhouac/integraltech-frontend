@@ -413,4 +413,117 @@ export interface AdminAuditEvent {
   isDemo?: boolean;
 }
 
+// ── Admin Analytics & Reports ──
+
+export type AnalyticsDateRange = "7d" | "30d" | "90d" | "all";
+export type AnalyticsTrendDirection = "up" | "down" | "stable" | "unavailable";
+export type AnalyticsMetricFormat = "number" | "bytes";
+export type AnalyticsSectionId =
+  | "content"
+  | "media"
+  | "leads"
+  | "subscribers"
+  | "users"
+  | "notifications"
+  | "audit";
+
+export interface AnalyticsMetric {
+  id: string;
+  label: string;
+  value: number | null;
+  previousValue: number | null;
+  difference: number | null;
+  differencePercentage: number | null;
+  trend: AnalyticsTrendDirection;
+  description: string;
+  format: AnalyticsMetricFormat;
+  isDemo: true;
+}
+
+export interface AnalyticsTimeSeriesPoint {
+  date: string;
+  label: string;
+  value: number;
+}
+
+export interface AnalyticsBreakdownItem {
+  id: string;
+  label: string;
+  value: number;
+  percentage: number;
+}
+
+export interface AnalyticsBreakdownGroup {
+  id: string;
+  title: string;
+  description: string;
+  items: AnalyticsBreakdownItem[];
+}
+
+export interface AnalyticsTableColumn {
+  key: string;
+  label: string;
+  numeric?: boolean;
+  sortable?: boolean;
+}
+
+export type AnalyticsTableCell = string | number | null;
+
+export interface AnalyticsTableRow {
+  id: string;
+  label: string;
+  values: Record<string, AnalyticsTableCell>;
+}
+
+export interface AnalyticsReportSection {
+  id: AnalyticsSectionId;
+  title: string;
+  description: string;
+  metrics: AnalyticsMetric[];
+  breakdowns: AnalyticsBreakdownGroup[];
+  trend: AnalyticsTimeSeriesPoint[];
+  trendTitle: string;
+  trendDescription: string;
+  tableColumns: AnalyticsTableColumn[];
+  tableRows: AnalyticsTableRow[];
+  authorized: boolean;
+}
+
+export interface AnalyticsOverview {
+  range: AnalyticsDateRange;
+  generatedAt: string;
+  overviewMetrics: AnalyticsMetric[];
+  combinedTrend: AnalyticsTimeSeriesPoint[];
+  sections: AnalyticsReportSection[];
+  ignoredInvalidDates: number;
+  isDemo: true;
+}
+
+export interface AnalyticsFilterOption {
+  value: AnalyticsDateRange;
+  label: string;
+}
+
+export interface AnalyticsFilterOptions {
+  ranges: AnalyticsFilterOption[];
+  authorizedSections: AnalyticsSectionId[];
+  canExport: boolean;
+}
+
+export interface AnalyticsExportRow {
+  section: string;
+  group: string;
+  indicator: string;
+  value: string | number;
+}
+
+export interface AnalyticsExportReport {
+  filenameBase: string;
+  generatedAt: string;
+  range: AnalyticsDateRange;
+  rangeLabel: string;
+  includedSections: string[];
+  rows: AnalyticsExportRow[];
+  isDemo: true;
+}
 
