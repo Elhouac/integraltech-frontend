@@ -22,6 +22,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   create: "Nouveau",
   edit: "Modifier",
   login: "Connexion",
+  "audit-log": "Journal d’activité",
   "forgot-password": "Mot de passe oublié",
   "reset-password": "Réinitialisation",
 };

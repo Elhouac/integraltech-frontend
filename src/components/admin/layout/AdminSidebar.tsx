@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard, Inbox, Mail, FileText, FolderOpen,
   Image, Settings as SettingsIcon, Wrench, Lightbulb,
-  Users, User, Bell, Sun, Moon, X,
+  Users, User, Bell, History, Sun, Moon, X,
 } from "lucide-react";
 import SidebarLink from "./SidebarLink";
 import { useTheme } from "../../../context/ThemeContext";
@@ -193,17 +193,14 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
         )}
 
         {/* Section: Système */}
-        {(showUsers || showSettings) && (
-          <>
-            <SectionLabel label="Système" collapsed={collapsed} />
-            {showUsers && (
-              <SidebarLink to="/admin/users" label="Utilisateurs" icon={Users} collapsed={collapsed} onClick={onCloseMobile} />
-            )}
-            {showSettings && (
-              <SidebarLink to="/admin/settings/general" label="Paramètres" icon={SettingsIcon} collapsed={collapsed} onClick={onCloseMobile} />
-            )}
-          </>
+        <SectionLabel label="Système" collapsed={collapsed} />
+        {showUsers && (
+          <SidebarLink to="/admin/users" label="Utilisateurs" icon={Users} collapsed={collapsed} onClick={onCloseMobile} />
         )}
+        {showSettings && (
+          <SidebarLink to="/admin/settings/general" label="Paramètres" icon={SettingsIcon} collapsed={collapsed} onClick={onCloseMobile} />
+        )}
+        <SidebarLink to="/admin/audit-log" label="Journal d’activité" icon={History} collapsed={collapsed} onClick={onCloseMobile} />
 
         {/* Mon profil & Notifications — always visible to authenticated users */}
         <SectionLabel label="Compte" collapsed={collapsed} />

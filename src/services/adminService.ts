@@ -14,6 +14,7 @@ import {
   MOCK_ACCOUNT_SESSIONS,
   MOCK_ADMIN_NOTIFICATIONS,
   MOCK_NOTIFICATION_PREFERENCES,
+  MOCK_ADMIN_AUDIT_EVENTS,
 } from "../data/admin-mocks";
 import type {
   KpiData,
@@ -35,6 +36,7 @@ import type {
   MockAccountSession,
   AdminNotification,
   NotificationPreferences,
+  AdminAuditEvent,
 } from "../types/admin";
 
 // Simulate network delay
@@ -596,6 +598,21 @@ export const adminService = {
       updatedAt: new Date().toISOString(),
     };
     MOCK_ADMIN_PROFILES[idx] = updated;
+    this.appendCurrentSessionAuditEvent({
+      actorUserId: userId,
+      actorDisplayName: updated.displayName || "Utilisateur",
+      actorRole: updated.role,
+      action: "profile_update",
+      resourceType: "profile",
+      resourceId: updated.id,
+      resourceLabel: `Profil ${updated.displayName}`,
+      description: "Mise à jour des informations personnelles du profil.",
+      severity: "info",
+      outcome: "success",
+      ipLabel: "192.0.2.xxx",
+      deviceLabel: "Navigateur actuel",
+      sessionLabel: "Session actuelle",
+    }).catch(() => {});
     return updated;
   },
 
@@ -607,6 +624,21 @@ export const adminService = {
     const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
     if (idx === -1) throw new Error("Profile not found");
     MOCK_ADMIN_PROFILES[idx] = { ...MOCK_ADMIN_PROFILES[idx], ...prefs, updatedAt: new Date().toISOString() };
+    this.appendCurrentSessionAuditEvent({
+      actorUserId: userId,
+      actorDisplayName: MOCK_ADMIN_PROFILES[idx].displayName || "Utilisateur",
+      actorRole: MOCK_ADMIN_PROFILES[idx].role,
+      action: "preference_update",
+      resourceType: "profile",
+      resourceId: MOCK_ADMIN_PROFILES[idx].id,
+      resourceLabel: `Préférences ${MOCK_ADMIN_PROFILES[idx].displayName}`,
+      description: "Mise à jour des préférences d'interface du profil.",
+      severity: "info",
+      outcome: "success",
+      ipLabel: "192.0.2.xxx",
+      deviceLabel: "Navigateur actuel",
+      sessionLabel: "Session actuelle",
+    }).catch(() => {});
     return MOCK_ADMIN_PROFILES[idx];
   },
 
@@ -615,6 +647,21 @@ export const adminService = {
     const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
     if (idx === -1) throw new Error("Profile not found");
     MOCK_ADMIN_PROFILES[idx] = { ...MOCK_ADMIN_PROFILES[idx], avatarUrl, updatedAt: new Date().toISOString() };
+    this.appendCurrentSessionAuditEvent({
+      actorUserId: userId,
+      actorDisplayName: MOCK_ADMIN_PROFILES[idx].displayName || "Utilisateur",
+      actorRole: MOCK_ADMIN_PROFILES[idx].role,
+      action: "avatar_update",
+      resourceType: "profile",
+      resourceId: MOCK_ADMIN_PROFILES[idx].id,
+      resourceLabel: `Photo de profil ${MOCK_ADMIN_PROFILES[idx].displayName}`,
+      description: "Modification de la photo de profil en mode démonstration.",
+      severity: "info",
+      outcome: "success",
+      ipLabel: "192.0.2.xxx",
+      deviceLabel: "Navigateur actuel",
+      sessionLabel: "Session actuelle",
+    }).catch(() => {});
     return MOCK_ADMIN_PROFILES[idx];
   },
 
@@ -641,6 +688,21 @@ export const adminService = {
     if (input.newPassword === input.currentPassword) {
       throw new Error("New password must differ from current");
     }
+    this.appendCurrentSessionAuditEvent({
+      actorUserId: _userId,
+      actorDisplayName: "Utilisateur",
+      actorRole: "admin",
+      action: "password_change_simulation",
+      resourceType: "profile",
+      resourceLabel: "Mot de passe du compte",
+      description: "Simulation de modification du mot de passe de connexion.",
+      severity: "warning",
+      outcome: "success",
+      changes: [{ field: "password", label: "Mot de passe", isSensitive: true }],
+      ipLabel: "192.0.2.xxx",
+      deviceLabel: "Navigateur actuel",
+      sessionLabel: "Session actuelle",
+    }).catch(() => {});
     // Simulate success — never persist or return password values
     return { success: true };
   },
@@ -816,5 +878,81 @@ export const adminService = {
     MOCK_NOTIFICATION_PREFERENCES[userId] = updated;
     return { ...updated };
   },
+
+  // ── Admin Audit Log & Activity History ──
+
+  async getCurrentUserAuditEvents(
+    userId: number,
+    role: string,
+    scope: "my_activity" | "global" = "my_activity"
+  ): Promise<AdminAuditEvent[]> {
+    await delay(150);
+
+    // Permission enforcement: non-admin roles can ONLY see their own activity
+    const isGlobalAllowed = (role === "super_admin" || role === "admin") && scope === "global";
+
+    return MOCK_ADMIN_AUDIT_EVENTS.filter((e) => {
+      if (isGlobalAllowed) return true;
+      return e.actorUserId === userId;
+    })
+      .map((e) => ({ ...e }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  async getAuditEventById(id: number): Promise<AdminAuditEvent | undefined> {
+    await delay(100);
+    const item = MOCK_ADMIN_AUDIT_EVENTS.find((e) => e.id === id);
+    return item ? { ...item } : undefined;
+  },
+
+  async getAuditSummary(
+    userId: number,
+    role: string,
+    scope: "my_activity" | "global" = "my_activity"
+  ) {
+    const list = await this.getCurrentUserAuditEvents(userId, role, scope);
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    const total = list.length;
+    const today = list.filter((e) => e.createdAt.startsWith(todayStr)).length;
+    const success = list.filter((e) => e.outcome === "success").length;
+    const deniedFailed = list.filter((e) => e.outcome === "denied" || e.outcome === "failed").length;
+    const highCritical = list.filter((e) => e.severity === "warning" || e.severity === "critical").length;
+    const currentSession = list.filter((e) => e.source === "current_session").length;
+
+    return { total, today, success, deniedFailed, highCritical, currentSession };
+  },
+
+  async appendCurrentSessionAuditEvent(
+    eventData: Omit<AdminAuditEvent, "id" | "source" | "createdAt">
+  ): Promise<AdminAuditEvent> {
+    await delay(50);
+    const maxId = MOCK_ADMIN_AUDIT_EVENTS.reduce((max, item) => Math.max(max, item.id), 700);
+    const newEvent: AdminAuditEvent = {
+      ...eventData,
+      id: maxId + 1,
+      source: "current_session",
+      createdAt: new Date().toISOString(),
+      isDemo: true,
+      // Sanitize changes to ensure sensitive fields are scrubbed
+      changes: eventData.changes?.map((c) => {
+        const isSens =
+          c.isSensitive ||
+          /password|token|secret|credential|apiKey|smtpPassword|recoveryCode/i.test(c.field);
+        if (isSens) {
+          return {
+            field: c.field,
+            label: c.label,
+            isSensitive: true,
+          };
+        }
+        return c;
+      }),
+    };
+
+    MOCK_ADMIN_AUDIT_EVENTS.unshift(newEvent);
+    return { ...newEvent };
+  },
 };
+
 

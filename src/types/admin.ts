@@ -331,3 +331,86 @@ export interface NotificationPreferences {
   updatedAt: string;
 }
 
+// ── Admin Audit Log & Activity History ──
+
+export type AuditAction =
+  | "create"
+  | "update"
+  | "duplicate"
+  | "submit_review"
+  | "request_changes"
+  | "approve"
+  | "publish"
+  | "archive"
+  | "restore"
+  | "delete"
+  | "bulk_update"
+  | "preference_update"
+  | "profile_update"
+  | "avatar_update"
+  | "password_change_simulation"
+  | "session_revoke_simulation"
+  | "notification_read"
+  | "notification_archive"
+  | "notification_delete"
+  | "notification_preferences_update"
+  | "export"
+  | "access_denied"
+  | "system";
+
+export type AuditResourceType =
+  | "service"
+  | "solution"
+  | "media"
+  | "profile"
+  | "session"
+  | "notification"
+  | "notification_preferences"
+  | "post"
+  | "category"
+  | "lead"
+  | "subscriber"
+  | "user"
+  | "settings"
+  | "system";
+
+export type AuditSeverity = "info" | "warning" | "critical";
+export type AuditOutcome = "success" | "denied" | "failed";
+export type AuditSource = "demo_seed" | "current_session";
+
+export interface AuditChangeDetail {
+  field: string;
+  label: string;
+  before?: string;
+  after?: string;
+  isSensitive?: boolean;
+}
+
+export interface AuditMetadataItem {
+  label: string;
+  value: string;
+}
+
+export interface AdminAuditEvent {
+  id: number;
+  actorUserId: number;
+  actorDisplayName: string;
+  actorRole: string;
+  action: AuditAction;
+  resourceType: AuditResourceType;
+  resourceId?: number;
+  resourceLabel: string;
+  description: string;
+  severity: AuditSeverity;
+  outcome: AuditOutcome;
+  source: AuditSource;
+  changes?: AuditChangeDetail[];
+  metadata?: AuditMetadataItem[];
+  ipLabel: string;
+  deviceLabel: string;
+  sessionLabel: string;
+  createdAt: string;
+  isDemo?: boolean;
+}
+
+

@@ -155,19 +155,15 @@ export default function AdminNotificationsPage() {
 
   // Pagination calculation
   const totalItems = sortedNotifications.length;
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
   const paginatedNotifications = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return sortedNotifications.slice(start, start + ITEMS_PER_PAGE);
   }, [sortedNotifications, currentPage]);
 
   const paginationMeta: PaginationMeta = {
-    currentPage,
-    lastPage: totalPages,
+    page: currentPage,
     perPage: ITEMS_PER_PAGE,
     total: totalItems,
-    from: totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1,
-    to: Math.min(currentPage * ITEMS_PER_PAGE, totalItems),
   };
 
   // Summary Counters
