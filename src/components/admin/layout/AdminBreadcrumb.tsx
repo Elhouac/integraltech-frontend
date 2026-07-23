@@ -43,7 +43,7 @@ export default function AdminBreadcrumb() {
     .filter(Boolean);
 
   return (
-    <nav aria-label="Fil d'Ariane" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "var(--font-sans)" }}>
+    <nav className="admin-breadcrumb" aria-label="Fil d'Ariane" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "var(--font-sans)" }}>
       <Link
         to="/admin/dashboard"
         style={{ display: "flex", alignItems: "center", color: TEXT_SECONDARY, textDecoration: "none", transition: "color 0.2s" }}
@@ -55,12 +55,16 @@ export default function AdminBreadcrumb() {
       {segments.map((segment, index) => {
         const path = `/admin/${segments.slice(0, index + 1).join("/")}`;
         const isLast = index === segments.length - 1;
+        const isResourceId = /^\d+$/.test(segment);
 
         return (
           <span key={path} style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <ChevronRight size={12} color="var(--muted)" style={{ flexShrink: 0 }} />
-            {isLast ? (
-              <span style={{ color: TEXT, fontWeight: 600 }}>
+            {isLast || isResourceId ? (
+              <span
+                aria-current={isLast ? "page" : undefined}
+                style={{ color: isLast ? TEXT : TEXT_SECONDARY, fontWeight: isLast ? 600 : 400 }}
+              >
                 {getLabel(segment)}
               </span>
             ) : (

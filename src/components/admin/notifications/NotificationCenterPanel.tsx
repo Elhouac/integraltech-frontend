@@ -4,11 +4,12 @@ import { motion } from "framer-motion";
 import { Bell, CheckCheck, ExternalLink, ShieldAlert, FileText, Wrench, Image as ImageIcon, User, Inbox, Info } from "lucide-react";
 import { adminService } from "../../../services/adminService";
 import type { AdminNotification, NotificationType } from "../../../types/admin";
+import type { UserRole } from "../../../context/AuthContext";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../../constants";
 
 interface NotificationCenterPanelProps {
   userId: number;
-  role: string;
+  role: UserRole;
   onClose: () => void;
   onStateChange?: () => void;
 }
@@ -78,7 +79,7 @@ export default function NotificationCenterPanel({
   const handleItemClick = async (notif: AdminNotification) => {
     if (notif.status === "unread") {
       try {
-        await adminService.markNotificationAsRead(notif.id);
+        await adminService.markNotificationAsRead(notif.id, userId, role);
         onStateChange?.();
       } catch {
         /* ignore */
@@ -94,6 +95,7 @@ export default function NotificationCenterPanel({
 
   return (
     <motion.div
+      id="admin-notification-panel"
       className="admin-notif-panel"
       initial={{ opacity: 0, y: -8, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -127,6 +129,7 @@ export default function NotificationCenterPanel({
         </div>
         {unreadCount > 0 && (
           <button
+            type="button"
             onClick={handleMarkAllRead}
             style={{
               display: "inline-flex",
@@ -173,6 +176,14 @@ export default function NotificationCenterPanel({
                 key={notif.id}
                 className={`admin-notif-item${isUnread ? " unread" : ""}`}
                 onClick={() => handleItemClick(notif)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    void handleItemClick(notif);
+                  }
+                }}
+                role={notif.actionUrl || isUnread ? "button" : undefined}
+                tabIndex={notif.actionUrl || isUnread ? 0 : undefined}
                 style={{ cursor: notif.actionUrl || isUnread ? "pointer" : "default" }}
               >
                 <div className={`admin-notif-type-icon ${notif.type}`}>
@@ -226,6 +237,7 @@ export default function NotificationCenterPanel({
       {/* Footer */}
       <div className="admin-notif-panel-footer">
         <button
+          type="button"
           onClick={() => {
             onClose();
             navigate("/admin/notifications");

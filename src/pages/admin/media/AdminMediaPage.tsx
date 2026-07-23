@@ -37,13 +37,13 @@ export default function AdminMediaPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const role = user?.role ?? "viewer";
-  const isAdmin = role === "super_admin" || role === "admin";
   const canCreate = hasPermission(role, "media", "create");
   const canEdit = hasPermission(role, "media", "edit");
   const canDelete = hasPermission(role, "media", "delete");
 
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   // Filters
@@ -64,12 +64,17 @@ export default function AdminMediaPage() {
   const [bulkDeleteDialog, setBulkDeleteDialog] = useState(false);
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
     try {
-      const data = await adminService.getMediaAssets();
+      const data = await adminService.getMediaAssets(role);
       setAssets(data);
+    } catch {
+      setLoadError(true);
+    } finally {
       setLoading(false);
-    } catch { /* */ }
-  }, []);
+    }
+  }, [role]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -131,15 +136,15 @@ export default function AdminMediaPage() {
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
   const handleDuplicate = async (id: number) => {
-    try { await adminService.duplicateMediaAsset(id); await fetchData(); showToast("Média dupliqué."); } catch { /* */ }
+    try { await adminService.duplicateMediaAsset(id, role); await fetchData(); showToast("Média dupliqué."); } catch { showToast("Action non autorisée ou indisponible."); }
   };
 
   const handleArchive = async (id: number) => {
-    try { await adminService.archiveMediaAsset(id); await fetchData(); showToast("Média archivé."); } catch { /* */ }
+    try { await adminService.archiveMediaAsset(id, role); await fetchData(); showToast("Média archivé."); } catch { showToast("Action non autorisée ou indisponible."); }
   };
 
   const handleRestore = async (id: number) => {
-    try { await adminService.restoreMediaAsset(id); await fetchData(); showToast("Média restauré."); } catch { /* */ }
+    try { await adminService.restoreMediaAsset(id, role); await fetchData(); showToast("Média restauré."); } catch { showToast("Action non autorisée ou indisponible."); }
   };
 
   const handleCopyUrl = (url: string) => {
@@ -148,35 +153,53 @@ export default function AdminMediaPage() {
   };
 
   const handleDelete = async () => {
-    if (deleteDialog.id !== null) {
-      await adminService.deleteMediaAsset(deleteDialog.id);
-      setSelected((prev) => { const n = new Set(prev); n.delete(deleteDialog.id!); return n; });
-      await fetchData();
-      showToast("Média supprimé.");
+    const mediaId = deleteDialog.id;
+    if (mediaId !== null) {
+      try {
+        await adminService.deleteMediaAsset(mediaId, role);
+        setSelected((prev) => { const n = new Set(prev); n.delete(mediaId); return n; });
+        await fetchData();
+        showToast("Média supprimé.");
+      } catch {
+        showToast("Suppression refusée : média utilisé ou action non autorisée.");
+      }
     }
     setDeleteDialog({ open: false, id: null, usageCount: 0 });
   };
 
   const confirmDelete = (asset: MediaAsset) => {
+    if (asset.usageReferences.length > 0) {
+      showToast("Suppression impossible : ce média est encore utilisé.");
+      return;
+    }
     setDeleteDialog({ open: true, id: asset.id, usageCount: asset.usageReferences.length });
   };
 
   const handleBulkArchive = async () => {
-    await adminService.bulkArchiveMediaAssets([...selected]);
-    clearSelection(); await fetchData(); showToast(`${selected.size} média(s) archivé(s).`);
+    try {
+      await adminService.bulkArchiveMediaAssets([...selected], role);
+      clearSelection(); await fetchData(); showToast(`${selected.size} média(s) archivé(s).`);
+    } catch {
+      showToast("Archivage non autorisé.");
+    }
   };
 
   const handleBulkDelete = async () => {
-    await adminService.bulkDeleteMediaAssets([...selected]);
-    clearSelection(); await fetchData(); showToast(`${selected.size} média(s) supprimé(s).`);
+    try {
+      await adminService.bulkDeleteMediaAssets([...selected], role);
+      clearSelection(); await fetchData(); showToast(`${selected.size} média(s) supprimé(s).`);
+    } catch {
+      showToast("Suppression refusée : la sélection contient un média utilisé ou non autorisé.");
+    }
     setBulkDeleteDialog(false);
   };
 
   const canDeleteAsset = (a: MediaAsset) => {
     if (!canDelete) return false;
-    if (a.usageReferences.length > 0 && !isAdmin) return false;
-    return true;
+    return a.usageReferences.length === 0;
   };
+
+  const selectedHasUsedAsset = assets.some((asset) => selected.has(asset.id) && asset.usageReferences.length > 0);
 
   // Styles
   const selectStyle: React.CSSProperties = {
@@ -273,11 +296,21 @@ export default function AdminMediaPage() {
           background: `${typeCfg.color}15`, display: "flex", alignItems: "center", justifyContent: "center",
           overflow: "hidden",
         }}>
-          {asset.mediaType === "image" && (asset.thumbnailUrl || asset.url)
-            ? <img src={asset.thumbnailUrl || asset.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                onError={(e) => { (e.target as HTMLImageElement).replaceWith(document.createTextNode("")); }}
-              />
-            : <Icon size={18} style={{ color: typeCfg.color }} />}
+          {asset.mediaType === "image" && (asset.thumbnailUrl || asset.url) && (
+            <img src={asset.thumbnailUrl || asset.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                const fallback = e.currentTarget.nextElementSibling;
+                if (fallback instanceof HTMLElement) fallback.style.display = "flex";
+              }}
+            />
+          )}
+          <span
+            aria-hidden="true"
+            style={{ width: "100%", height: "100%", display: asset.mediaType === "image" && (asset.thumbnailUrl || asset.url) ? "none" : "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <Icon size={18} style={{ color: typeCfg.color }} />
+          </span>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: "var(--font-sans)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{asset.name}</div>
@@ -370,9 +403,13 @@ export default function AdminMediaPage() {
               <Archive size={13} /> Archiver
             </button>
           )}
-          {canDelete && isAdmin && (
-            <button onClick={() => setBulkDeleteDialog(true)}
-              style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: "var(--radius-sm)", border: "none", background: DANGER, color: "#fff", fontSize: 12, fontWeight: 600, fontFamily: "var(--font-sans)", cursor: "pointer" }}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => setBulkDeleteDialog(true)}
+              disabled={selectedHasUsedAsset}
+              title={selectedHasUsedAsset ? "Retirez les médias utilisés de la sélection avant de supprimer." : "Supprimer la sélection"}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: "var(--radius-sm)", border: "none", background: DANGER, color: "#fff", fontSize: 12, fontWeight: 600, fontFamily: "var(--font-sans)", cursor: selectedHasUsedAsset ? "not-allowed" : "pointer", opacity: selectedHasUsedAsset ? 0.55 : 1 }}
             >
               <Trash2 size={13} /> Supprimer
             </button>
@@ -393,6 +430,11 @@ export default function AdminMediaPage() {
             </div>
           ))}
         </div>
+      ) : loadError ? (
+        <div className="admin-alert admin-alert-error" role="alert">
+          <span>Impossible de charger la médiathèque de démonstration.</span>
+          <button type="button" onClick={() => void fetchData()}>Réessayer</button>
+        </div>
       ) : paginated.length === 0 ? (
         <EmptyState
           icon={ImageIcon}
@@ -402,19 +444,21 @@ export default function AdminMediaPage() {
       ) : viewMode === "grid" ? (
         <div className="admin-media-grid">{paginated.map(renderCard)}</div>
       ) : (
-        <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
-          {/* List header */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderBottom: `1px solid ${BORDER}`, background: "var(--background)", fontSize: 11, fontWeight: 700, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>
-            <div style={{ width: 16 }} />
-            <div style={{ width: 40 }} />
-            <div style={{ flex: 1 }}>Nom</div>
-            <div style={{ minWidth: 70 }}>Type</div>
-            <div style={{ minWidth: 60 }}>Taille</div>
-            <div style={{ minWidth: 60 }}>Statut</div>
-            <div style={{ minWidth: 90 }}>Modifié</div>
-            <div style={{ minWidth: 80 }}>Actions</div>
+        <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: "var(--radius-lg)", overflowX: "auto" }}>
+          <div style={{ minWidth: 760 }}>
+            {/* List header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderBottom: `1px solid ${BORDER}`, background: "var(--background)", fontSize: 11, fontWeight: 700, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>
+              <div style={{ width: 16 }} />
+              <div style={{ width: 40 }} />
+              <div style={{ flex: 1 }}>Nom</div>
+              <div style={{ minWidth: 70 }}>Type</div>
+              <div style={{ minWidth: 60 }}>Taille</div>
+              <div style={{ minWidth: 60 }}>Statut</div>
+              <div style={{ minWidth: 90 }}>Modifié</div>
+              <div style={{ minWidth: 80 }}>Actions</div>
+            </div>
+            {paginated.map(renderListRow)}
           </div>
-          {paginated.map(renderListRow)}
         </div>
       )}
 
@@ -447,7 +491,7 @@ export default function AdminMediaPage() {
       {/* Toast */}
       <AnimatePresence>
         {toast && (
-          <motion.div className="admin-settings-toast"
+          <motion.div className="admin-settings-toast" role="status" aria-live="polite"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
           >
             {toast}

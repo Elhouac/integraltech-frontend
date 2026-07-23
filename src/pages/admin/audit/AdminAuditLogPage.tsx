@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Info, ShieldCheck, Lock } from "lucide-react";
 import AuditSummaryCards from "../../../components/admin/audit/AuditSummaryCards";
@@ -25,7 +25,9 @@ export default function AdminAuditLogPage() {
   const [scope, setScope] = useState<"my_activity" | "global">(canViewGlobal ? "global" : "my_activity");
   const [events, setEvents] = useState<AdminAuditEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Filters State
   const [search, setSearch] = useState("");
@@ -46,11 +48,13 @@ export default function AdminAuditLogPage() {
 
   const fetchAuditEvents = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const data = await adminService.getCurrentUserAuditEvents(userId, role, scope);
       setEvents(data);
     } catch {
-      /* ignore */
+      setEvents([]);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -71,8 +75,13 @@ export default function AdminAuditLogPage() {
 
   const showToast = (msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
   };
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
 
   // Filter & Search Logic
   const filteredEvents = useMemo(() => {
@@ -330,8 +339,13 @@ export default function AdminAuditLogPage() {
 
       {/* Main Audit Event List / Table */}
       {loading ? (
-        <div style={{ padding: 48, textAlign: "center", fontSize: 14, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>
+        <div role="status" aria-live="polite" style={{ padding: 48, textAlign: "center", fontSize: 14, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>
           Chargement du journal d'audit...
+        </div>
+      ) : loadError ? (
+        <div className="admin-alert admin-alert-error" role="alert">
+          <span>Impossible de charger le journal d'audit de démonstration.</span>
+          <button type="button" onClick={() => void fetchAuditEvents()}>Réessayer</button>
         </div>
       ) : (
         <div>

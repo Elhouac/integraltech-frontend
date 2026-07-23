@@ -139,20 +139,29 @@ export default function ServiceForm({ mode, service, existingSlugs }: ServiceFor
       if (taken) errs.slug = "Ce slug est déjà utilisé par un autre service.";
     }
     if (order < 1) errs.order = "L'ordre doit être un entier positif.";
-    if (imageUrl && !isValidUrl(imageUrl)) errs.imageUrl = "URL d'image invalide.";
-    if (ctaUrl && !ctaUrl.startsWith("/") && !isValidUrl(ctaUrl)) errs.ctaUrl = "URL du CTA invalide.";
+    if (imageUrl && !isSafeHttpUrl(imageUrl)) errs.imageUrl = "URL d'image invalide. Utilisez HTTP ou HTTPS.";
+    if (ctaUrl && !isSafeCtaUrl(ctaUrl)) errs.ctaUrl = "URL du CTA invalide.";
     if (accentColor && !/^#[0-9A-Fa-f]{6}$/.test(accentColor)) errs.accentColor = "Couleur hexadécimale invalide (ex: #3B82F6).";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }, [title.fr, shortDesc.fr, slug, order, imageUrl, ctaUrl, accentColor, existingSlugs, service?.slug]);
 
-  function isValidUrl(v: string): boolean {
-    try { new URL(v); return true; } catch { return false; }
+  function isSafeHttpUrl(v: string): boolean {
+    try {
+      const parsed = new URL(v);
+      return (parsed.protocol === "http:" || parsed.protocol === "https:") && !parsed.username && !parsed.password;
+    } catch {
+      return false;
+    }
+  }
+
+  function isSafeCtaUrl(v: string): boolean {
+    return (/^\/(?![\\/])/.test(v) && !/[\\\u0000-\u001F]/.test(v) && !/%5c/i.test(v)) || isSafeHttpUrl(v);
   }
 
   // ── Save ──
   const handleSave = async (submitStatus?: ServiceStatus) => {
-    if (!validate()) return;
+    if (!user || !validate()) return;
     setSaving(true);
     try {
       const payload = {
@@ -160,8 +169,8 @@ export default function ServiceForm({ mode, service, existingSlugs }: ServiceFor
         features, benefits, icon, imageUrl, imageAlt, accentColor, ctaLabel, ctaUrl,
         order, featured, status: submitStatus ?? status,
         seoTitle, seoDescription: seoDesc,
-        submittedBy: submitStatus === "pending_review" ? (user?.name ?? null) : (service?.submittedBy ?? null),
-        submittedAt: submitStatus === "pending_review" ? new Date().toISOString() : (service?.submittedAt ?? null),
+        submittedBy: isAdmin && submitStatus === "pending_review" ? user.name : (service?.submittedBy ?? null),
+        submittedAt: isAdmin && submitStatus === "pending_review" ? new Date().toISOString() : (service?.submittedAt ?? null),
         reviewedBy: service?.reviewedBy ?? null,
         reviewedAt: service?.reviewedAt ?? null,
         reviewNote: service?.reviewNote ?? null,
@@ -169,9 +178,9 @@ export default function ServiceForm({ mode, service, existingSlugs }: ServiceFor
       };
 
       if (mode === "create") {
-        await adminService.createService(payload);
+        await adminService.createService(payload, user.role);
       } else if (service) {
-        await adminService.updateService(service.id, { ...payload, status: submitStatus ?? status });
+        await adminService.updateService(service.id, { ...payload, status: submitStatus ?? status }, user.role);
       }
 
       showToast(mode === "create" ? "Service créé avec succès." : "Service mis à jour avec succès.");
@@ -186,21 +195,21 @@ export default function ServiceForm({ mode, service, existingSlugs }: ServiceFor
   // Workflow actions (admin only)
   const handleApprove = async () => {
     if (!service || !isAdmin) return;
-    await adminService.updateServiceStatus(service.id, "approved", { reviewedBy: user?.name });
+    await adminService.updateServiceStatus(service.id, "approved", user.role, { reviewedBy: user.name });
     showToast("Service approuvé.");
     setTimeout(() => navigate("/admin/services"), 800);
   };
 
   const handleRequestChanges = async () => {
     if (!service || !isAdmin || !reviewNote.trim()) return;
-    await adminService.updateServiceStatus(service.id, "changes_requested", { reviewedBy: user?.name, reviewNote: reviewNote.trim() });
+    await adminService.updateServiceStatus(service.id, "changes_requested", user.role, { reviewedBy: user.name, reviewNote: reviewNote.trim() });
     showToast("Modifications demandées.");
     setTimeout(() => navigate("/admin/services"), 800);
   };
 
   const handlePublish = async () => {
     if (!service || !isAdmin) return;
-    await adminService.updateServiceStatus(service.id, "published", { reviewedBy: user?.name });
+    await adminService.updateServiceStatus(service.id, "published", user.role, { reviewedBy: user.name });
     showToast("Service publié.");
     setTimeout(() => navigate("/admin/services"), 800);
   };
@@ -237,12 +246,14 @@ export default function ServiceForm({ mode, service, existingSlugs }: ServiceFor
   const canSubmit = status === "draft" || status === "changes_requested";
   const canApprove = isAdmin && status === "pending_review";
   const canPublish = isAdmin && status === "approved";
+  const workflowStatusLocked = mode === "edit" && !isAdmin && !canSubmit;
+  const safeDraftStatus = workflowStatusLocked ? status : "draft";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* ── Header ── */}
       <div>
-        <button onClick={() => {
+        <button type="button" onClick={() => {
           if (isDirty && !window.confirm("Quitter sans enregistrer ?")) return;
           navigate("/admin/services");
         }}
@@ -534,10 +545,10 @@ export default function ServiceForm({ mode, service, existingSlugs }: ServiceFor
         >
           Annuler
         </button>
-        <button type="button" onClick={() => handleSave("draft")} disabled={saving}
+        <button type="button" onClick={() => handleSave(safeDraftStatus)} disabled={saving}
           style={{ ...btnBase, border: `1px solid ${BORDER}`, background: SURFACE, color: TEXT, opacity: saving ? 0.6 : 1 }}
         >
-          <Save size={14} /> Enregistrer brouillon
+          <Save size={14} /> {workflowStatusLocked ? "Enregistrer les modifications" : "Enregistrer brouillon"}
         </button>
         {canSubmit && (
           <button type="button" onClick={() => handleSave("pending_review")} disabled={saving}
@@ -551,7 +562,7 @@ export default function ServiceForm({ mode, service, existingSlugs }: ServiceFor
       {/* Toast */}
       <AnimatePresence>
         {toast && (
-          <motion.div className="admin-settings-toast"
+          <motion.div className="admin-settings-toast" role="status" aria-live="polite"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
           >
             {toast}

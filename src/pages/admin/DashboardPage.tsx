@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import KpiGrid from "../../components/admin/dashboard/KpiGrid";
@@ -8,6 +8,7 @@ import { adminService } from "../../services/adminService";
 import type { KpiData, ActivityData } from "../../types/admin";
 import { MOCK_QUICK_ACTIONS } from "../../data/admin-mocks";
 import { TEXT, TEXT_SECONDARY } from "../../constants";
+import { hasPermission } from "../../utils/permissions";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -23,27 +24,39 @@ export default function DashboardPage() {
   const [kpis, setKpis] = useState<KpiData[]>([]);
   const [activities, setActivities] = useState<ActivityData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  const quickActions = useMemo(
+    () => user ? MOCK_QUICK_ACTIONS.filter((item) => hasPermission(user.role, item.resource, item.action)) : [],
+    [user]
+  );
+
+  const loadData = useCallback(async (isActive: () => boolean = () => true) => {
+    if (!user) return;
+    setIsLoading(true);
+    setLoadError(false);
+    try {
+      const [kpiRes, actRes] = await Promise.all([
+        adminService.getKpiData(user.role),
+        adminService.getActivities(user.role),
+      ]);
+      if (isActive()) {
+        setKpis(kpiRes);
+        setActivities(actRes);
+      }
+    } catch (err) {
+      console.error("Dashboard failed to load", err);
+      if (isActive()) setLoadError(true);
+    } finally {
+      if (isActive()) setIsLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     let active = true;
-    async function loadData() {
-      try {
-        const [kpiRes, actRes] = await Promise.all([
-          adminService.getKpiData(),
-          adminService.getActivities(),
-        ]);
-        if (active) {
-          setKpis(kpiRes);
-          setActivities(actRes);
-          setIsLoading(false);
-        }
-      } catch (err) {
-        console.error("Dashboard failed to load", err);
-      }
-    }
-    loadData();
+    void loadData(() => active);
     return () => { active = false; };
-  }, []);
+  }, [loadData]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -75,11 +88,19 @@ export default function DashboardPage() {
         >
           Voici un aperçu de votre plateforme aujourd'hui.
         </p>
+        <p className="admin-demo-notice" role="note">
+          Données temporaires de démonstration : aucune statistique n'est issue d'un serveur et les changements sont réinitialisés au rechargement.
+        </p>
       </motion.div>
 
       {/* ── KPI Cards ── */}
       {isLoading ? (
         <div style={{ padding: 20, color: TEXT_SECONDARY }}>Chargement des statistiques...</div>
+      ) : loadError ? (
+        <div className="admin-alert admin-alert-error" role="alert">
+          <span>Impossible de charger les données de démonstration.</span>
+          <button type="button" onClick={() => void loadData()}>Réessayer</button>
+        </div>
       ) : (
         <KpiGrid data={kpis} />
       )}
@@ -94,7 +115,7 @@ export default function DashboardPage() {
         }}
       >
         <RecentActivity activities={activities} />
-        <QuickActions actions={MOCK_QUICK_ACTIONS} />
+        <QuickActions actions={quickActions} />
       </div>
     </div>
   );

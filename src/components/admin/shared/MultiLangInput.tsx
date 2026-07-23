@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { BORDER, SURFACE, TEXT, TEXT_SECONDARY, ACCENT } from "../../../constants";
 
 type LangKey = "fr" | "en" | "ar";
@@ -19,6 +19,7 @@ export default function MultiLangInput({
   required = false,
 }: MultiLangInputProps) {
   const [activeTab, setActiveTab] = useState<LangKey>("fr");
+  const controlId = useId();
 
   const handleTextChange = (text: string) => {
     onChange({
@@ -32,6 +33,12 @@ export default function MultiLangInput({
     { key: "en", label: "EN" },
     { key: "ar", label: "AR" },
   ];
+  const languageNames: Record<LangKey, string> = {
+    fr: "Français",
+    en: "Anglais",
+    ar: "Arabe",
+  };
+  const activeLanguageName = languageNames[activeTab];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
@@ -46,6 +53,7 @@ export default function MultiLangInput({
         }}
       >
         <label
+          htmlFor={controlId}
           style={{
             fontSize: 13,
             fontWeight: 600,
@@ -58,6 +66,8 @@ export default function MultiLangInput({
 
         {/* Language tabs switcher */}
         <div
+          role="group"
+          aria-label={`Langue du champ ${label}`}
           style={{
             display: "flex",
             background: "var(--hover)",
@@ -74,13 +84,15 @@ export default function MultiLangInput({
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
+                aria-pressed={isActive}
+                aria-label={`${languageNames[tab.key]}${hasValue ? ", traduction remplie" : ""}`}
                 style={{
                   padding: "4px 10px",
                   fontSize: 11,
                   fontWeight: 600,
                   fontFamily: "var(--font-sans)",
                   border: "none",
-                  borderRadius: "var(--radius-xs)",
+                  borderRadius: "var(--radius-sm)",
                   background: isActive ? SURFACE : "transparent",
                   color: isActive ? ACCENT : TEXT_SECONDARY,
                   cursor: "pointer",
@@ -112,9 +124,11 @@ export default function MultiLangInput({
       {/* Input / Textarea display for active language */}
       {type === "textarea" ? (
         <textarea
+          id={controlId}
           value={value[activeTab] || ""}
           onChange={(e) => handleTextChange(e.target.value)}
           dir={activeTab === "ar" ? "rtl" : "ltr"}
+          aria-label={`${label} (${activeLanguageName})`}
           style={{
             width: "100%",
             minHeight: 110,
@@ -140,10 +154,12 @@ export default function MultiLangInput({
         />
       ) : (
         <input
+          id={controlId}
           type="text"
           value={value[activeTab] || ""}
           onChange={(e) => handleTextChange(e.target.value)}
           dir={activeTab === "ar" ? "rtl" : "ltr"}
+          aria-label={`${label} (${activeLanguageName})`}
           style={{
             width: "100%",
             padding: "8px 14px",

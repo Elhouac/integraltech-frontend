@@ -50,11 +50,141 @@ import type {
   AnalyticsExportRow,
 } from "../types/admin";
 import type { UserRole } from "../context/AuthContext";
+import { hasPermission } from "../utils/permissions";
+import type { Action, Resource } from "../utils/permissions";
 
 // Simulate network delay
 const delay = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function cloneMock<T>(value: T): T {
+  return structuredClone(value);
+}
+
+export const ADMIN_NOTIFICATIONS_CHANGED_EVENT = "admin-notifications-changed";
+
+function dispatchNotificationsChanged(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(ADMIN_NOTIFICATIONS_CHANGED_EVENT));
+  }
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+type ServiceActor = { id: number; role: UserRole };
+
+const ADMIN_ROLES: readonly UserRole[] = ["super_admin", "admin"];
+
+const MOCK_WORKFLOW_ACTOR_LABELS: Record<UserRole, string> = {
+  super_admin: "Super Admin (session mock)",
+  admin: "Administrateur (session mock)",
+  editor: "Éditeur (session mock)",
+  support: "Support (session mock)",
+  viewer: "Observateur (session mock)",
+  reader: "Lecteur (session mock)",
+};
+
+type NotificationUserState = {
+  status: AdminNotification["status"];
+  readAt: string | null;
+  archivedAt: string | null;
+  deleted: boolean;
+};
+
+const notificationUserStates = new Map<string, NotificationUserState>();
+
+function assertPermission(role: UserRole, resource: Resource, action: Action): void {
+  if (!hasPermission(role, resource, action)) {
+    throw new Error(`Not authorized to ${action} ${resource}`);
+  }
+}
+
+function assertAdminRole(role: UserRole, action: string): void {
+  if (!ADMIN_ROLES.includes(role)) {
+    throw new Error(`Not authorized to ${action}`);
+  }
+}
+
+function isSafeHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return (parsed.protocol === "http:" || parsed.protocol === "https:") && !parsed.username && !parsed.password;
+  } catch {
+    return false;
+  }
+}
+
+function isSafeRelativePath(value: string): boolean {
+  return /^\/(?![\\/])/.test(value) && !/[\\\u0000-\u001F]/.test(value) && !/%5c/i.test(value);
+}
+
+function assertSafeContentUrls(data: { imageUrl?: string; ctaUrl?: string }): void {
+  if (data.imageUrl && !isSafeHttpUrl(data.imageUrl)) throw new Error("Unsafe image URL");
+  if (data.ctaUrl && !isSafeRelativePath(data.ctaUrl) && !isSafeHttpUrl(data.ctaUrl)) {
+    throw new Error("Unsafe CTA URL");
+  }
+}
+
+function assertSafeMediaUrls(data: Partial<MediaAsset>): void {
+  if (data.url && !isSafeRelativePath(data.url) && !isSafeHttpUrl(data.url)) {
+    throw new Error("Unsafe media URL");
+  }
+  if (data.thumbnailUrl && !isSafeRelativePath(data.thumbnailUrl) && !isSafeHttpUrl(data.thumbnailUrl)) {
+    throw new Error("Unsafe media thumbnail URL");
+  }
+}
+
+function isSensitiveAuditName(value: string): boolean {
+  const folded = value.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+  const normalized = folded.replace(/[^a-z0-9]/g, "");
+  const compactArabic = value.replace(/[\s\u0640]/g, "");
+  return /password|motdepasse|token|jeton|jetondacces|accesstoken|refreshtoken|secret|credential|identifiant|apikey|cleapi|smtppassword|motdepassesmtp|recoverycode|codederecuperation/.test(normalized)
+    || /كلم[ةه]المرور|رمزالوصول|رمزالتحديث|مفتاح(?:api|واجهة)|رمزالاسترداد|سر/.test(compactArabic);
+}
+
+function assertAdminWorkflowTransition(
+  role: UserRole,
+  previousStatus: ServiceStatus | SolutionStatus | undefined,
+  nextStatus: ServiceStatus | SolutionStatus
+): void {
+  if (ADMIN_ROLES.includes(role) || previousStatus === nextStatus) return;
+  const editorTransitionAllowed =
+    (previousStatus === undefined || previousStatus === "draft" || previousStatus === "changes_requested")
+    && (nextStatus === "draft" || nextStatus === "pending_review");
+  if (!editorTransitionAllowed) assertAdminRole(role, `change workflow status from ${previousStatus ?? "new"} to ${nextStatus}`);
+}
+
+function assertNoPrivilegedWorkflowMetadataChange(
+  role: UserRole,
+  current: Service | Solution,
+  data: Partial<Service> | Partial<Solution>
+): void {
+  if (ADMIN_ROLES.includes(role)) return;
+  const protectedFields = ["reviewedBy", "reviewedAt", "reviewNote", "publishedAt"] as const;
+  for (const field of protectedFields) {
+    if (Object.prototype.hasOwnProperty.call(data, field) && data[field] !== current[field]) {
+      throw new Error(`Not authorized to change workflow metadata: ${field}`);
+    }
+  }
+  const submissionFields = ["submittedBy", "submittedAt"] as const;
+  for (const field of submissionFields) {
+    if (Object.prototype.hasOwnProperty.call(data, field) && data[field] !== current[field]) {
+      throw new Error(`Not authorized to change submission metadata: ${field}`);
+    }
+  }
+}
+
+function assertNoPrivilegedWorkflowMetadataOnCreate(
+  role: UserRole,
+  data: Omit<Service, "id" | "createdAt" | "updatedAt"> | Omit<Solution, "id" | "createdAt" | "updatedAt">
+): void {
+  if (ADMIN_ROLES.includes(role)) return;
+  if (data.reviewedBy || data.reviewedAt || data.reviewNote || data.publishedAt) {
+    throw new Error("Not authorized to set review or publication metadata");
+  }
+  if (data.submittedBy || data.submittedAt) {
+    throw new Error("Submission metadata is derived by the mock service");
+  }
+}
 
 const ANALYTICS_RANGE_OPTIONS: AnalyticsFilterOptions["ranges"] = [
   { value: "7d", label: "7 derniers jours" },
@@ -216,14 +346,16 @@ function buildTimeSeries(dateValues: Array<string | null | undefined>, window: A
     return points;
   }
 
-  if (window.start === null || window.endExclusive === null) return [];
+  const windowStart = window.start;
+  const windowEndExclusive = window.endExclusive;
+  if (windowStart === null || windowEndExclusive === null) return [];
   const bucketDays = window.range === "90d" ? 7 : 1;
   const bucketMs = bucketDays * DAY_MS;
-  const bucketCount = Math.ceil((window.endExclusive - window.start) / bucketMs);
+  const bucketCount = Math.ceil((windowEndExclusive - windowStart) / bucketMs);
 
   return Array.from({ length: bucketCount }, (_, index) => {
-    const bucketStart = window.start! + index * bucketMs;
-    const bucketEnd = Math.min(bucketStart + bucketMs, window.endExclusive!);
+    const bucketStart = windowStart + index * bucketMs;
+    const bucketEnd = Math.min(bucketStart + bucketMs, windowEndExclusive);
     return {
       date: new Date(bucketStart).toISOString().slice(0, 10),
       label: bucketDays === 1
@@ -234,13 +366,98 @@ function buildTimeSeries(dateValues: Array<string | null | undefined>, window: A
   });
 }
 
+function isNotificationVisible(notification: AdminNotification, userId: number, role: UserRole): boolean {
+  const isRecipient =
+    notification.recipientUserId === userId ||
+    notification.recipientRole === role ||
+    (!notification.recipientUserId && !notification.recipientRole);
+  if (!isRecipient) return false;
+
+  if (!notification.expiresAt) return true;
+  const expiresAt = safeTimestamp(notification.expiresAt);
+  return expiresAt !== null && expiresAt > Date.now();
+}
+
+function notificationStateKey(notificationId: number, userId: number): string {
+  return `${userId}:${notificationId}`;
+}
+
+function getNotificationUserState(notificationId: number, userId: number): NotificationUserState | undefined {
+  return notificationUserStates.get(notificationStateKey(notificationId, userId));
+}
+
+function materializeNotification(notification: AdminNotification, userId: number): AdminNotification {
+  const state = getNotificationUserState(notification.id, userId);
+  if (!state) return cloneMock(notification);
+  return cloneMock({
+    ...notification,
+    status: state.status,
+    readAt: state.readAt,
+    archivedAt: state.archivedAt,
+  });
+}
+
+function persistNotificationUserState(notification: AdminNotification, userId: number, deleted = false): void {
+  notificationUserStates.set(notificationStateKey(notification.id, userId), {
+    status: notification.status,
+    readAt: notification.readAt ?? null,
+    archivedAt: notification.archivedAt ?? null,
+    deleted,
+  });
+}
+
 function getVisibleNotifications(userId: number, role: UserRole): AdminNotification[] {
-  return MOCK_ADMIN_NOTIFICATIONS.filter(
-    (notification) =>
-      notification.recipientUserId === userId ||
-      notification.recipientRole === role ||
-      (!notification.recipientUserId && !notification.recipientRole)
+  return MOCK_ADMIN_NOTIFICATIONS
+    .filter((notification) => isNotificationVisible(notification, userId, role))
+    .filter((notification) => !getNotificationUserState(notification.id, userId)?.deleted)
+    .map((notification) => materializeNotification(notification, userId));
+}
+
+function getVisibleNotificationById(
+  id: number,
+  userId: number,
+  role: UserRole
+): AdminNotification {
+  const notification = MOCK_ADMIN_NOTIFICATIONS.find(
+    (item) => item.id === id && isNotificationVisible(item, userId, role)
   );
+  if (!notification || getNotificationUserState(notification.id, userId)?.deleted) {
+    throw new Error("Notification not found");
+  }
+  return materializeNotification(notification, userId);
+}
+
+function getVisibleNotificationsByIds(
+  ids: number[],
+  userId: number,
+  role: UserRole
+): AdminNotification[] {
+  const uniqueIds = [...new Set(ids)];
+  return uniqueIds.map((id) => getVisibleNotificationById(id, userId, role));
+}
+
+function assertNotificationCanBeDeleted(notification: AdminNotification, role: UserRole): void {
+  const canDelete =
+    ADMIN_ROLES.includes(role) ||
+    (role === "editor" && (notification.priority === "low" || notification.priority === "normal"));
+  if (!canDelete) throw new Error("Not authorized to delete notification");
+}
+
+function cloneAuditEvent(event: AdminAuditEvent): AdminAuditEvent {
+  return cloneMock(event);
+}
+
+function assertMediaAssetsCanBeDeleted(ids: number[]): void {
+  const uniqueIds = [...new Set(ids)];
+  const assets = uniqueIds.map((id) => {
+    const asset = MOCK_MEDIA_ASSETS.find((item) => item.id === id);
+    if (!asset) throw new Error("Media asset not found");
+    return asset;
+  });
+
+  if (assets.some((asset) => asset.usageReferences.length > 0)) {
+    throw new Error("Media assets in use cannot be deleted");
+  }
 }
 
 function countInvalidDates(values: Array<string | null | undefined>): number {
@@ -753,32 +970,47 @@ function buildAnalyticsExportRows(sections: AnalyticsReportSection[]): Analytics
 }
 
 export const adminService = {
-  async getKpiData(): Promise<KpiData[]> {
+  async getKpiData(role: UserRole): Promise<KpiData[]> {
     await delay();
-    return [...MOCK_KPI_DATA];
+    const valuesByResource: Partial<Record<Resource, number>> = {
+      leads: MOCK_LEADS.length,
+      subscribers: MOCK_SUBSCRIBERS.filter((item) => item.is_active).length,
+      blog: MOCK_POSTS.filter((item) => item.status === "published").length,
+      media: MOCK_MEDIA_ASSETS.filter((item) => item.status === "active").length,
+    };
+    return MOCK_KPI_DATA
+      .filter((item) => hasPermission(role, item.resource, "view"))
+      .map((item) => ({ ...item, value: valuesByResource[item.resource] ?? item.value }));
   },
 
-  async getActivities(): Promise<ActivityData[]> {
+  async getActivities(role: UserRole): Promise<ActivityData[]> {
     await delay();
-    return [...MOCK_ACTIVITIES];
+    return MOCK_ACTIVITIES
+      .filter((item) => hasPermission(role, item.resource, "view"))
+      .map((item) => ({ ...item }));
   },
 
-  async getLeads(): Promise<Lead[]> {
+  async getLeads(role: UserRole): Promise<Lead[]> {
+    assertPermission(role, "leads", "view");
     await delay();
-    return [...MOCK_LEADS];
+    return cloneMock(MOCK_LEADS);
   },
 
-  async getLeadById(id: number): Promise<Lead | undefined> {
+  async getLeadById(id: number, role: UserRole): Promise<Lead | undefined> {
+    assertPermission(role, "leads", "view");
     await delay();
-    return MOCK_LEADS.find((l) => l.id === id);
+    const lead = MOCK_LEADS.find((l) => l.id === id);
+    return lead ? cloneMock(lead) : undefined;
   },
 
-  async getLeadNotes(leadId: number): Promise<LeadNote[]> {
+  async getLeadNotes(leadId: number, role: UserRole): Promise<LeadNote[]> {
+    assertPermission(role, "leads", "view");
     await delay();
-    return MOCK_LEAD_NOTES.filter((n) => n.lead_id === leadId);
+    return cloneMock(MOCK_LEAD_NOTES.filter((n) => n.lead_id === leadId));
   },
 
-  async addLeadNote(leadId: number, author: string, content: string): Promise<LeadNote> {
+  async addLeadNote(leadId: number, author: string, content: string, role: UserRole): Promise<LeadNote> {
+    assertPermission(role, "leads", "edit");
     await delay();
     const newNote: LeadNote = {
       id: Date.now(),
@@ -788,34 +1020,38 @@ export const adminService = {
       created_at: new Date().toISOString(),
     };
     MOCK_LEAD_NOTES.push(newNote);
-    return newNote;
+    return cloneMock(newNote);
   },
 
-  async updateLeadStatus(id: number, status: LeadStatus): Promise<Lead | undefined> {
+  async updateLeadStatus(id: number, status: LeadStatus, role: UserRole): Promise<Lead | undefined> {
+    assertPermission(role, "leads", "edit");
     await delay();
     const lead = MOCK_LEADS.find((l) => l.id === id);
     if (lead) {
       lead.status = status;
       lead.is_read = true;
     }
-    return lead;
+    return lead ? cloneMock(lead) : undefined;
   },
 
-  async markLeadAsRead(id: number): Promise<Lead | undefined> {
+  async markLeadAsRead(id: number, role: UserRole): Promise<Lead | undefined> {
+    assertPermission(role, "leads", "edit");
     await delay();
     const lead = MOCK_LEADS.find((l) => l.id === id);
     if (lead) {
       lead.is_read = true;
     }
-    return lead;
+    return lead ? cloneMock(lead) : undefined;
   },
 
-  async getSubscribers(): Promise<Subscriber[]> {
+  async getSubscribers(role: UserRole): Promise<Subscriber[]> {
+    assertPermission(role, "subscribers", "view");
     await delay();
-    return [...MOCK_SUBSCRIBERS];
+    return cloneMock(MOCK_SUBSCRIBERS);
   },
 
-  async updateSubscriberStatus(ids: number[], active: boolean): Promise<void> {
+  async updateSubscriberStatus(ids: number[], active: boolean, role: UserRole): Promise<void> {
+    assertPermission(role, "subscribers", "edit");
     await delay();
     MOCK_SUBSCRIBERS.forEach((sub) => {
       if (ids.includes(sub.id)) {
@@ -824,7 +1060,8 @@ export const adminService = {
     });
   },
 
-  async deleteSubscribers(ids: number[]): Promise<void> {
+  async deleteSubscribers(ids: number[], role: UserRole): Promise<void> {
+    assertPermission(role, "subscribers", "delete");
     await delay();
     for (const id of ids) {
       const idx = MOCK_SUBSCRIBERS.findIndex((s) => s.id === id);
@@ -834,24 +1071,44 @@ export const adminService = {
     }
   },
 
-  async getPosts(): Promise<Post[]> {
+  async getPosts(role: UserRole): Promise<Post[]> {
+    assertPermission(role, "blog", "view");
     await delay();
-    return [...MOCK_POSTS];
+    return cloneMock(MOCK_POSTS);
   },
 
-  async savePost(postData: Omit<Post, "id" | "created_at" | "slug"> & { id?: number }): Promise<Post> {
-    await delay();
+  async savePost(
+    postData: Omit<Post, "id" | "created_at" | "slug"> & { id?: number },
+    role: UserRole
+  ): Promise<Post> {
     const isEdit = postData.id !== undefined && postData.id !== null;
+    assertPermission(role, "blog", isEdit ? "edit" : "create");
+    if (role === "editor" && !isEdit && postData.status === "published") {
+      throw new Error("Editors cannot save a post with published status");
+    }
+    await delay();
     if (isEdit) {
       const idx = MOCK_POSTS.findIndex((p) => p.id === postData.id);
       if (idx !== -1) {
+        const current = MOCK_POSTS[idx];
+        if (role === "editor") {
+          if (postData.status === "published" && current.status !== "published") {
+            throw new Error("Editors cannot publish posts");
+          }
+          if (current.status === "published" && postData.status !== "published") {
+            throw new Error("Editors cannot unpublish posts");
+          }
+          if (current.status === "published" && postData.published_at !== current.published_at) {
+            throw new Error("Editors cannot change publication metadata");
+          }
+        }
         const updated: Post = {
-          ...MOCK_POSTS[idx],
+          ...current,
           ...postData,
           slug: postData.title.fr.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         } as Post;
         MOCK_POSTS[idx] = updated;
-        return updated;
+        return cloneMock(updated);
       }
       throw new Error("Post not found");
     } else {
@@ -862,11 +1119,12 @@ export const adminService = {
         created_at: new Date().toISOString(),
       } as Post;
       MOCK_POSTS.push(newPost);
-      return newPost;
+      return cloneMock(newPost);
     }
   },
 
-  async deletePost(id: number): Promise<void> {
+  async deletePost(id: number, role: UserRole): Promise<void> {
+    assertPermission(role, "blog", "delete");
     await delay();
     const idx = MOCK_POSTS.findIndex((p) => p.id === id);
     if (idx !== -1) {
@@ -874,14 +1132,16 @@ export const adminService = {
     }
   },
 
-  async getCategories(): Promise<Category[]> {
+  async getCategories(role: UserRole): Promise<Category[]> {
+    assertPermission(role, "categories", "view");
     await delay();
-    return [...MOCK_CATEGORIES];
+    return cloneMock(MOCK_CATEGORIES);
   },
 
-  async saveCategory(catData: Omit<Category, "id"> & { id?: number }): Promise<Category> {
-    await delay();
+  async saveCategory(catData: Omit<Category, "id"> & { id?: number }, role: UserRole): Promise<Category> {
     const isEdit = catData.id !== undefined && catData.id !== null;
+    assertPermission(role, "categories", isEdit ? "edit" : "create");
+    await delay();
     if (isEdit) {
       const idx = MOCK_CATEGORIES.findIndex((c) => c.id === catData.id);
       if (idx !== -1) {
@@ -890,7 +1150,7 @@ export const adminService = {
           ...catData,
         };
         MOCK_CATEGORIES[idx] = updated;
-        return updated;
+        return cloneMock(updated);
       }
       throw new Error("Category not found");
     } else {
@@ -899,11 +1159,12 @@ export const adminService = {
         id: Date.now(),
       };
       MOCK_CATEGORIES.push(newCat);
-      return newCat;
+      return cloneMock(newCat);
     }
   },
 
-  async deleteCategory(id: number): Promise<void> {
+  async deleteCategory(id: number, role: UserRole): Promise<void> {
+    assertPermission(role, "categories", "delete");
     await delay();
     const idx = MOCK_CATEGORIES.findIndex((c) => c.id === id);
     if (idx !== -1) {
@@ -911,24 +1172,39 @@ export const adminService = {
     }
   },
 
-  async getSystemUsers(): Promise<SystemUser[]> {
+  async getSystemUsers(role: UserRole): Promise<SystemUser[]> {
+    assertPermission(role, "users", "view");
     await delay();
-    return [...MOCK_SYSTEM_USERS];
+    return cloneMock(MOCK_SYSTEM_USERS);
   },
 
-  async saveSystemUser(userData: Omit<SystemUser, "id" | "last_login"> & { id?: number }): Promise<SystemUser> {
-    await delay();
+  async saveSystemUser(
+    userData: Omit<SystemUser, "id" | "last_login"> & { id?: number },
+    actor: ServiceActor
+  ): Promise<SystemUser> {
     const isEdit = userData.id !== undefined && userData.id !== null;
+    assertPermission(actor.role, "users", isEdit ? "edit" : "create");
+    await delay();
     if (isEdit) {
       const idx = MOCK_SYSTEM_USERS.findIndex((u) => u.id === userData.id);
       if (idx !== -1) {
+        const current = MOCK_SYSTEM_USERS[idx];
+        if (
+          current.id === actor.id &&
+          (userData.email !== current.email ||
+            userData.role !== current.role ||
+            userData.is_active !== current.is_active)
+        ) {
+          throw new Error("Cannot change your own login email, role, or account status");
+        }
         const updated: SystemUser = {
-          ...MOCK_SYSTEM_USERS[idx],
+          ...current,
           ...userData,
         } as SystemUser;
         MOCK_SYSTEM_USERS[idx] = updated;
-        return updated;
+        return { ...updated };
       }
+      throw new Error("User not found");
     }
     
     // Create
@@ -938,10 +1214,12 @@ export const adminService = {
       last_login: null,
     } as SystemUser;
     MOCK_SYSTEM_USERS.push(newUser);
-    return newUser;
+    return { ...newUser };
   },
 
-  async deleteSystemUser(id: number): Promise<void> {
+  async deleteSystemUser(id: number, actor: ServiceActor): Promise<void> {
+    assertPermission(actor.role, "users", "delete");
+    if (id === actor.id) throw new Error("Cannot delete your own account");
     await delay();
     const idx = MOCK_SYSTEM_USERS.findIndex((u) => u.id === id);
     if (idx !== -1) {
@@ -949,54 +1227,95 @@ export const adminService = {
     }
   },
 
-  async toggleSystemUserStatus(id: number): Promise<SystemUser | undefined> {
+  async toggleSystemUserStatus(id: number, actor: ServiceActor): Promise<SystemUser | undefined> {
+    assertPermission(actor.role, "users", "edit");
+    if (id === actor.id) throw new Error("Cannot change your own account status");
     await delay();
     const user = MOCK_SYSTEM_USERS.find((u) => u.id === id);
     if (user) {
       user.is_active = !user.is_active;
     }
-    return user;
+    return user ? { ...user } : undefined;
   },
 
   // ── Services ──
 
-  async getServices(): Promise<Service[]> {
+  async getServices(role: UserRole): Promise<Service[]> {
+    assertPermission(role, "services", "view");
     await delay();
-    return [...MOCK_SERVICES];
+    return cloneMock(MOCK_SERVICES);
   },
 
-  async getServiceById(id: number): Promise<Service | undefined> {
+  async getServiceById(id: number, role: UserRole): Promise<Service | undefined> {
+    assertPermission(role, "services", "view");
     await delay();
-    return MOCK_SERVICES.find((s) => s.id === id);
+    const service = MOCK_SERVICES.find((s) => s.id === id);
+    return service ? cloneMock(service) : undefined;
   },
 
-  async createService(data: Omit<Service, "id" | "createdAt" | "updatedAt">): Promise<Service> {
+  async createService(
+    data: Omit<Service, "id" | "createdAt" | "updatedAt">,
+    role: UserRole
+  ): Promise<Service> {
+    assertPermission(role, "services", "create");
+    assertAdminWorkflowTransition(role, undefined, data.status);
+    assertNoPrivilegedWorkflowMetadataOnCreate(role, data);
+    assertSafeContentUrls(data);
     await delay();
+    if (MOCK_SERVICES.some((service) => service.slug === data.slug)) {
+      throw new Error("Service slug already exists");
+    }
+    const now = new Date().toISOString();
+    const normalizedData = !ADMIN_ROLES.includes(role) && data.status === "pending_review"
+      ? { ...data, submittedBy: MOCK_WORKFLOW_ACTOR_LABELS[role], submittedAt: now }
+      : data;
     const newService: Service = {
-      ...data,
+      ...normalizedData,
       id: Date.now(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     MOCK_SERVICES.push(newService);
-    return newService;
+    return cloneMock(newService);
   },
 
-  async updateService(id: number, data: Partial<Service>): Promise<Service> {
+  async updateService(id: number, data: Partial<Service>, role: UserRole): Promise<Service> {
+    assertPermission(role, "services", "edit");
+    assertSafeContentUrls(data);
     await delay();
     const idx = MOCK_SERVICES.findIndex((s) => s.id === id);
     if (idx === -1) throw new Error("Service not found");
+    if (data.slug && MOCK_SERVICES.some((service) => service.id !== id && service.slug === data.slug)) {
+      throw new Error("Service slug already exists");
+    }
+    assertNoPrivilegedWorkflowMetadataChange(role, MOCK_SERVICES[idx], data);
+    if (data.status) {
+      assertAdminWorkflowTransition(role, MOCK_SERVICES[idx].status, data.status);
+      if (data.status === "approved" || data.status === "published") {
+        assertAdminRole(role, `update ${data.status} services`);
+      }
+      if (data.status === "archived" && MOCK_SERVICES[idx].status !== "archived") {
+        assertAdminRole(role, "archive services");
+      }
+    }
+    const now = new Date().toISOString();
+    const normalizedData = !ADMIN_ROLES.includes(role)
+      && data.status === "pending_review"
+      && MOCK_SERVICES[idx].status !== "pending_review"
+      ? { ...data, submittedBy: MOCK_WORKFLOW_ACTOR_LABELS[role], submittedAt: now }
+      : data;
     const updated: Service = {
       ...MOCK_SERVICES[idx],
-      ...data,
+      ...normalizedData,
       id,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     };
     MOCK_SERVICES[idx] = updated;
-    return updated;
+    return cloneMock(updated);
   },
 
-  async duplicateService(id: number): Promise<Service> {
+  async duplicateService(id: number, role: UserRole): Promise<Service> {
+    assertPermission(role, "services", "create");
     await delay();
     const source = MOCK_SERVICES.find((s) => s.id === id);
     if (!source) throw new Error("Service not found");
@@ -1021,18 +1340,23 @@ export const adminService = {
       updatedAt: new Date().toISOString(),
     };
     MOCK_SERVICES.push(copy);
-    return copy;
+    return cloneMock(copy);
   },
 
-  async deleteService(id: number): Promise<void> {
+  async deleteService(id: number, role: UserRole): Promise<void> {
+    assertPermission(role, "services", "delete");
     await delay();
     const idx = MOCK_SERVICES.findIndex((s) => s.id === id);
-    if (idx !== -1) {
-      MOCK_SERVICES.splice(idx, 1);
+    if (idx === -1) return;
+    if (MOCK_SERVICES[idx].status === "published" || MOCK_SERVICES[idx].status === "approved") {
+      throw new Error("Published or approved services cannot be deleted");
     }
+    MOCK_SERVICES.splice(idx, 1);
   },
 
-  async archiveService(id: number): Promise<Service> {
+  async archiveService(id: number, role: UserRole): Promise<Service> {
+    assertPermission(role, "services", "edit");
+    assertAdminRole(role, "archive services");
     await delay();
     const idx = MOCK_SERVICES.findIndex((s) => s.id === id);
     if (idx === -1) throw new Error("Service not found");
@@ -1041,17 +1365,26 @@ export const adminService = {
       status: "archived",
       updatedAt: new Date().toISOString(),
     };
-    return MOCK_SERVICES[idx];
+    return cloneMock(MOCK_SERVICES[idx]);
   },
 
   async updateServiceStatus(
     id: number,
     status: ServiceStatus,
+    role: UserRole,
     meta?: { reviewedBy?: string; reviewNote?: string; publishedAt?: string }
   ): Promise<Service> {
+    assertPermission(role, "services", "edit");
     await delay();
     const idx = MOCK_SERVICES.findIndex((s) => s.id === id);
     if (idx === -1) throw new Error("Service not found");
+    assertAdminWorkflowTransition(role, MOCK_SERVICES[idx].status, status);
+    if (status === "approved" || status === "changes_requested" || status === "published") {
+      assertAdminRole(role, `set workflow status to ${status}`);
+    }
+    if (status === "archived" && MOCK_SERVICES[idx].status !== "archived") {
+      assertAdminRole(role, "archive services");
+    }
     const now = new Date().toISOString();
     const updates: Partial<Service> = { status, updatedAt: now };
     if (status === "pending_review") {
@@ -1066,10 +1399,11 @@ export const adminService = {
       updates.publishedAt = meta?.publishedAt ?? now;
     }
     MOCK_SERVICES[idx] = { ...MOCK_SERVICES[idx], ...updates };
-    return MOCK_SERVICES[idx];
+    return cloneMock(MOCK_SERVICES[idx]);
   },
 
-  async reorderServices(orderedIds: number[]): Promise<void> {
+  async reorderServices(orderedIds: number[], role: UserRole): Promise<void> {
+    assertPermission(role, "services", "edit");
     await delay();
     orderedIds.forEach((id, index) => {
       const svc = MOCK_SERVICES.find((s) => s.id === id);
@@ -1079,43 +1413,82 @@ export const adminService = {
 
   // ── Solutions ──
 
-  async getSolutions(): Promise<Solution[]> {
+  async getSolutions(role: UserRole): Promise<Solution[]> {
+    assertPermission(role, "solutions", "view");
     await delay();
-    return [...MOCK_SOLUTIONS];
+    return cloneMock(MOCK_SOLUTIONS);
   },
 
-  async getSolutionById(id: number): Promise<Solution | undefined> {
+  async getSolutionById(id: number, role: UserRole): Promise<Solution | undefined> {
+    assertPermission(role, "solutions", "view");
     await delay();
-    return MOCK_SOLUTIONS.find((s) => s.id === id);
+    const solution = MOCK_SOLUTIONS.find((s) => s.id === id);
+    return solution ? cloneMock(solution) : undefined;
   },
 
-  async createSolution(data: Omit<Solution, "id" | "createdAt" | "updatedAt">): Promise<Solution> {
+  async createSolution(
+    data: Omit<Solution, "id" | "createdAt" | "updatedAt">,
+    role: UserRole
+  ): Promise<Solution> {
+    assertPermission(role, "solutions", "create");
+    assertAdminWorkflowTransition(role, undefined, data.status);
+    assertNoPrivilegedWorkflowMetadataOnCreate(role, data);
+    assertSafeContentUrls(data);
     await delay();
+    if (MOCK_SOLUTIONS.some((solution) => solution.slug === data.slug)) {
+      throw new Error("Solution slug already exists");
+    }
+    const now = new Date().toISOString();
+    const normalizedData = !ADMIN_ROLES.includes(role) && data.status === "pending_review"
+      ? { ...data, submittedBy: MOCK_WORKFLOW_ACTOR_LABELS[role], submittedAt: now }
+      : data;
     const newSolution: Solution = {
-      ...data,
+      ...normalizedData,
       id: Date.now(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     MOCK_SOLUTIONS.push(newSolution);
-    return newSolution;
+    return cloneMock(newSolution);
   },
 
-  async updateSolution(id: number, data: Partial<Solution>): Promise<Solution> {
+  async updateSolution(id: number, data: Partial<Solution>, role: UserRole): Promise<Solution> {
+    assertPermission(role, "solutions", "edit");
+    assertSafeContentUrls(data);
     await delay();
     const idx = MOCK_SOLUTIONS.findIndex((s) => s.id === id);
     if (idx === -1) throw new Error("Solution not found");
+    if (data.slug && MOCK_SOLUTIONS.some((solution) => solution.id !== id && solution.slug === data.slug)) {
+      throw new Error("Solution slug already exists");
+    }
+    assertNoPrivilegedWorkflowMetadataChange(role, MOCK_SOLUTIONS[idx], data);
+    if (data.status) {
+      assertAdminWorkflowTransition(role, MOCK_SOLUTIONS[idx].status, data.status);
+      if (data.status === "approved" || data.status === "published") {
+        assertAdminRole(role, `update ${data.status} solutions`);
+      }
+      if (data.status === "archived" && MOCK_SOLUTIONS[idx].status !== "archived") {
+        assertAdminRole(role, "archive solutions");
+      }
+    }
+    const now = new Date().toISOString();
+    const normalizedData = !ADMIN_ROLES.includes(role)
+      && data.status === "pending_review"
+      && MOCK_SOLUTIONS[idx].status !== "pending_review"
+      ? { ...data, submittedBy: MOCK_WORKFLOW_ACTOR_LABELS[role], submittedAt: now }
+      : data;
     const updated: Solution = {
       ...MOCK_SOLUTIONS[idx],
-      ...data,
+      ...normalizedData,
       id,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     };
     MOCK_SOLUTIONS[idx] = updated;
-    return updated;
+    return cloneMock(updated);
   },
 
-  async duplicateSolution(id: number): Promise<Solution> {
+  async duplicateSolution(id: number, role: UserRole): Promise<Solution> {
+    assertPermission(role, "solutions", "create");
     await delay();
     const source = MOCK_SOLUTIONS.find((s) => s.id === id);
     if (!source) throw new Error("Solution not found");
@@ -1140,18 +1513,23 @@ export const adminService = {
       updatedAt: new Date().toISOString(),
     };
     MOCK_SOLUTIONS.push(copy);
-    return copy;
+    return cloneMock(copy);
   },
 
-  async deleteSolution(id: number): Promise<void> {
+  async deleteSolution(id: number, role: UserRole): Promise<void> {
+    assertPermission(role, "solutions", "delete");
     await delay();
     const idx = MOCK_SOLUTIONS.findIndex((s) => s.id === id);
-    if (idx !== -1) {
-      MOCK_SOLUTIONS.splice(idx, 1);
+    if (idx === -1) return;
+    if (MOCK_SOLUTIONS[idx].status === "published" || MOCK_SOLUTIONS[idx].status === "approved") {
+      throw new Error("Published or approved solutions cannot be deleted");
     }
+    MOCK_SOLUTIONS.splice(idx, 1);
   },
 
-  async archiveSolution(id: number): Promise<Solution> {
+  async archiveSolution(id: number, role: UserRole): Promise<Solution> {
+    assertPermission(role, "solutions", "edit");
+    assertAdminRole(role, "archive solutions");
     await delay();
     const idx = MOCK_SOLUTIONS.findIndex((s) => s.id === id);
     if (idx === -1) throw new Error("Solution not found");
@@ -1160,17 +1538,26 @@ export const adminService = {
       status: "archived",
       updatedAt: new Date().toISOString(),
     };
-    return MOCK_SOLUTIONS[idx];
+    return cloneMock(MOCK_SOLUTIONS[idx]);
   },
 
   async updateSolutionStatus(
     id: number,
     status: SolutionStatus,
+    role: UserRole,
     meta?: { reviewedBy?: string; reviewNote?: string; publishedAt?: string }
   ): Promise<Solution> {
+    assertPermission(role, "solutions", "edit");
     await delay();
     const idx = MOCK_SOLUTIONS.findIndex((s) => s.id === id);
     if (idx === -1) throw new Error("Solution not found");
+    assertAdminWorkflowTransition(role, MOCK_SOLUTIONS[idx].status, status);
+    if (status === "approved" || status === "changes_requested" || status === "published") {
+      assertAdminRole(role, `set workflow status to ${status}`);
+    }
+    if (status === "archived" && MOCK_SOLUTIONS[idx].status !== "archived") {
+      assertAdminRole(role, "archive solutions");
+    }
     const now = new Date().toISOString();
     const updates: Partial<Solution> = { status, updatedAt: now };
     if (status === "pending_review") {
@@ -1185,10 +1572,11 @@ export const adminService = {
       updates.publishedAt = meta?.publishedAt ?? now;
     }
     MOCK_SOLUTIONS[idx] = { ...MOCK_SOLUTIONS[idx], ...updates };
-    return MOCK_SOLUTIONS[idx];
+    return cloneMock(MOCK_SOLUTIONS[idx]);
   },
 
-  async reorderSolutions(orderedIds: number[]): Promise<void> {
+  async reorderSolutions(orderedIds: number[], role: UserRole): Promise<void> {
+    assertPermission(role, "solutions", "edit");
     await delay();
     orderedIds.forEach((id, index) => {
       const sol = MOCK_SOLUTIONS.find((s) => s.id === id);
@@ -1198,17 +1586,25 @@ export const adminService = {
 
   // ── Media Library ──
 
-  async getMediaAssets(): Promise<MediaAsset[]> {
+  async getMediaAssets(role: UserRole): Promise<MediaAsset[]> {
+    assertPermission(role, "media", "view");
     await delay();
-    return [...MOCK_MEDIA_ASSETS];
+    return cloneMock(MOCK_MEDIA_ASSETS);
   },
 
-  async getMediaAssetById(id: number): Promise<MediaAsset | undefined> {
+  async getMediaAssetById(id: number, role: UserRole): Promise<MediaAsset | undefined> {
+    assertPermission(role, "media", "view");
     await delay();
-    return MOCK_MEDIA_ASSETS.find((m) => m.id === id);
+    const asset = MOCK_MEDIA_ASSETS.find((m) => m.id === id);
+    return asset ? cloneMock(asset) : undefined;
   },
 
-  async createMediaAsset(data: Omit<MediaAsset, "id" | "createdAt" | "updatedAt">): Promise<MediaAsset> {
+  async createMediaAsset(
+    data: Omit<MediaAsset, "id" | "createdAt" | "updatedAt">,
+    role: UserRole
+  ): Promise<MediaAsset> {
+    assertPermission(role, "media", "create");
+    assertSafeMediaUrls(data);
     await delay();
     const asset: MediaAsset = {
       ...data,
@@ -1217,10 +1613,12 @@ export const adminService = {
       updatedAt: new Date().toISOString(),
     };
     MOCK_MEDIA_ASSETS.push(asset);
-    return asset;
+    return cloneMock(asset);
   },
 
-  async updateMediaAsset(id: number, data: Partial<MediaAsset>): Promise<MediaAsset> {
+  async updateMediaAsset(id: number, data: Partial<MediaAsset>, role: UserRole): Promise<MediaAsset> {
+    assertPermission(role, "media", "edit");
+    assertSafeMediaUrls(data);
     await delay();
     const idx = MOCK_MEDIA_ASSETS.findIndex((m) => m.id === id);
     if (idx === -1) throw new Error("Media asset not found");
@@ -1231,10 +1629,11 @@ export const adminService = {
       updatedAt: new Date().toISOString(),
     };
     MOCK_MEDIA_ASSETS[idx] = updated;
-    return updated;
+    return cloneMock(updated);
   },
 
-  async duplicateMediaAsset(id: number): Promise<MediaAsset> {
+  async duplicateMediaAsset(id: number, role: UserRole): Promise<MediaAsset> {
+    assertPermission(role, "media", "create");
     await delay();
     const source = MOCK_MEDIA_ASSETS.find((m) => m.id === id);
     if (!source) throw new Error("Media asset not found");
@@ -1248,32 +1647,37 @@ export const adminService = {
       updatedAt: new Date().toISOString(),
     };
     MOCK_MEDIA_ASSETS.push(copy);
-    return copy;
+    return cloneMock(copy);
   },
 
-  async archiveMediaAsset(id: number): Promise<MediaAsset> {
+  async archiveMediaAsset(id: number, role: UserRole): Promise<MediaAsset> {
+    assertPermission(role, "media", "edit");
     await delay();
     const idx = MOCK_MEDIA_ASSETS.findIndex((m) => m.id === id);
     if (idx === -1) throw new Error("Media asset not found");
     MOCK_MEDIA_ASSETS[idx] = { ...MOCK_MEDIA_ASSETS[idx], status: "archived", updatedAt: new Date().toISOString() };
-    return MOCK_MEDIA_ASSETS[idx];
+    return cloneMock(MOCK_MEDIA_ASSETS[idx]);
   },
 
-  async restoreMediaAsset(id: number): Promise<MediaAsset> {
+  async restoreMediaAsset(id: number, role: UserRole): Promise<MediaAsset> {
+    assertPermission(role, "media", "edit");
     await delay();
     const idx = MOCK_MEDIA_ASSETS.findIndex((m) => m.id === id);
     if (idx === -1) throw new Error("Media asset not found");
     MOCK_MEDIA_ASSETS[idx] = { ...MOCK_MEDIA_ASSETS[idx], status: "active", updatedAt: new Date().toISOString() };
-    return MOCK_MEDIA_ASSETS[idx];
+    return cloneMock(MOCK_MEDIA_ASSETS[idx]);
   },
 
-  async deleteMediaAsset(id: number): Promise<void> {
+  async deleteMediaAsset(id: number, role: UserRole): Promise<void> {
+    assertPermission(role, "media", "delete");
     await delay();
+    assertMediaAssetsCanBeDeleted([id]);
     const idx = MOCK_MEDIA_ASSETS.findIndex((m) => m.id === id);
-    if (idx !== -1) MOCK_MEDIA_ASSETS.splice(idx, 1);
+    MOCK_MEDIA_ASSETS.splice(idx, 1);
   },
 
-  async bulkArchiveMediaAssets(ids: number[]): Promise<void> {
+  async bulkArchiveMediaAssets(ids: number[], role: UserRole): Promise<void> {
+    assertPermission(role, "media", "edit");
     await delay();
     ids.forEach((id) => {
       const m = MOCK_MEDIA_ASSETS.find((a) => a.id === id);
@@ -1281,30 +1685,39 @@ export const adminService = {
     });
   },
 
-  async bulkDeleteMediaAssets(ids: number[]): Promise<void> {
+  async bulkDeleteMediaAssets(ids: number[], role: UserRole): Promise<void> {
+    assertPermission(role, "media", "delete");
     await delay();
-    ids.forEach((id) => {
-      const idx = MOCK_MEDIA_ASSETS.findIndex((a) => a.id === id);
-      if (idx !== -1) MOCK_MEDIA_ASSETS.splice(idx, 1);
-    });
+    assertMediaAssetsCanBeDeleted(ids);
+    const idSet = new Set(ids);
+    for (let index = MOCK_MEDIA_ASSETS.length - 1; index >= 0; index--) {
+      if (idSet.has(MOCK_MEDIA_ASSETS[index].id)) MOCK_MEDIA_ASSETS.splice(index, 1);
+    }
   },
 
   // ── Admin Profile & Account ──
 
   async getCurrentAdminProfile(userId: number): Promise<AdminProfile | undefined> {
     await delay();
-    return MOCK_ADMIN_PROFILES.find((p) => p.userId === userId);
+    const profile = MOCK_ADMIN_PROFILES.find((p) => p.userId === userId);
+    return profile ? cloneMock(profile) : undefined;
   },
 
   async updateCurrentAdminProfile(userId: number, data: Partial<AdminProfile>): Promise<AdminProfile> {
     await delay();
     const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
     if (idx === -1) throw new Error("Profile not found");
-    // Prevent editing protected fields
-    const { loginEmail: _le, role: _r, userId: _u, id: _id, createdAt: _ca, ...safeData } = data as AdminProfile;
+    const current = MOCK_ADMIN_PROFILES[idx];
     const updated: AdminProfile = {
-      ...MOCK_ADMIN_PROFILES[idx],
-      ...safeData,
+      ...current,
+      firstName: data.firstName ?? current.firstName,
+      lastName: data.lastName ?? current.lastName,
+      displayName: data.displayName ?? current.displayName,
+      contactEmail: data.contactEmail ?? current.contactEmail,
+      phone: data.phone ?? current.phone,
+      jobTitle: data.jobTitle ?? current.jobTitle,
+      department: data.department ?? current.department,
+      bio: data.bio ?? current.bio,
       updatedAt: new Date().toISOString(),
     };
     MOCK_ADMIN_PROFILES[idx] = updated;
@@ -1323,7 +1736,7 @@ export const adminService = {
       deviceLabel: "Navigateur actuel",
       sessionLabel: "Session actuelle",
     }).catch(() => {});
-    return updated;
+    return cloneMock(updated);
   },
 
   async updateAdminProfilePreferences(
@@ -1333,7 +1746,16 @@ export const adminService = {
     await delay();
     const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
     if (idx === -1) throw new Error("Profile not found");
-    MOCK_ADMIN_PROFILES[idx] = { ...MOCK_ADMIN_PROFILES[idx], ...prefs, updatedAt: new Date().toISOString() };
+    MOCK_ADMIN_PROFILES[idx] = {
+      ...MOCK_ADMIN_PROFILES[idx],
+      language: prefs.language,
+      theme: prefs.theme,
+      interfaceDensity: prefs.interfaceDensity,
+      timezone: prefs.timezone,
+      dateFormat: prefs.dateFormat,
+      timeFormat: prefs.timeFormat,
+      updatedAt: new Date().toISOString(),
+    };
     this.appendCurrentSessionAuditEvent({
       actorUserId: userId,
       actorDisplayName: MOCK_ADMIN_PROFILES[idx].displayName || "Utilisateur",
@@ -1349,10 +1771,11 @@ export const adminService = {
       deviceLabel: "Navigateur actuel",
       sessionLabel: "Session actuelle",
     }).catch(() => {});
-    return MOCK_ADMIN_PROFILES[idx];
+    return cloneMock(MOCK_ADMIN_PROFILES[idx]);
   },
 
   async updateAdminProfileAvatar(userId: number, avatarUrl: string): Promise<AdminProfile> {
+    if (!isSafeHttpUrl(avatarUrl)) throw new Error("Unsafe avatar URL");
     await delay();
     const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
     if (idx === -1) throw new Error("Profile not found");
@@ -1372,7 +1795,7 @@ export const adminService = {
       deviceLabel: "Navigateur actuel",
       sessionLabel: "Session actuelle",
     }).catch(() => {});
-    return MOCK_ADMIN_PROFILES[idx];
+    return cloneMock(MOCK_ADMIN_PROFILES[idx]);
   },
 
   async removeAdminProfileAvatar(userId: number): Promise<AdminProfile> {
@@ -1380,11 +1803,11 @@ export const adminService = {
     const idx = MOCK_ADMIN_PROFILES.findIndex((p) => p.userId === userId);
     if (idx === -1) throw new Error("Profile not found");
     MOCK_ADMIN_PROFILES[idx] = { ...MOCK_ADMIN_PROFILES[idx], avatarUrl: "", updatedAt: new Date().toISOString() };
-    return MOCK_ADMIN_PROFILES[idx];
+    return cloneMock(MOCK_ADMIN_PROFILES[idx]);
   },
 
   async changeMockAccountPassword(
-    _userId: number,
+    userId: number,
     input: { currentPassword: string; newPassword: string; confirmPassword: string }
   ): Promise<{ success: boolean }> {
     await delay();
@@ -1398,10 +1821,12 @@ export const adminService = {
     if (input.newPassword === input.currentPassword) {
       throw new Error("New password must differ from current");
     }
+    const profile = MOCK_ADMIN_PROFILES.find((item) => item.userId === userId);
+    if (!profile) throw new Error("Profile not found");
     this.appendCurrentSessionAuditEvent({
-      actorUserId: _userId,
-      actorDisplayName: "Utilisateur",
-      actorRole: "admin",
+      actorUserId: profile.userId,
+      actorDisplayName: profile.displayName || "Utilisateur",
+      actorRole: profile.role,
       action: "password_change_simulation",
       resourceType: "profile",
       resourceLabel: "Mot de passe du compte",
@@ -1419,7 +1844,7 @@ export const adminService = {
 
   async getMockAccountSessions(userId: number): Promise<MockAccountSession[]> {
     await delay();
-    return MOCK_ACCOUNT_SESSIONS.filter((s) => s.userId === userId).map((s) => ({ ...s }));
+    return cloneMock(MOCK_ACCOUNT_SESSIONS.filter((s) => s.userId === userId));
   },
 
   async revokeMockAccountSession(userId: number, sessionId: number): Promise<MockAccountSession> {
@@ -1429,7 +1854,7 @@ export const adminService = {
     if (MOCK_ACCOUNT_SESSIONS[idx].isCurrent) throw new Error("Cannot revoke current session");
     if (MOCK_ACCOUNT_SESSIONS[idx].status === "revoked") throw new Error("Session already revoked");
     MOCK_ACCOUNT_SESSIONS[idx] = { ...MOCK_ACCOUNT_SESSIONS[idx], status: "revoked" };
-    return MOCK_ACCOUNT_SESSIONS[idx];
+    return cloneMock(MOCK_ACCOUNT_SESSIONS[idx]);
   },
 
   async revokeAllOtherMockAccountSessions(userId: number): Promise<void> {
@@ -1443,113 +1868,114 @@ export const adminService = {
 
   // ── Admin Notification Center ──
 
-  async getCurrentUserNotifications(userId: number, role: string): Promise<AdminNotification[]> {
+  async getCurrentUserNotifications(userId: number, role: UserRole): Promise<AdminNotification[]> {
     await delay(150);
-    return MOCK_ADMIN_NOTIFICATIONS.filter(
-      (n) =>
-        n.recipientUserId === userId ||
-        n.recipientRole === role ||
-        (!n.recipientUserId && !n.recipientRole)
-    )
+    return getVisibleNotifications(userId, role)
       .map((n) => ({ ...n }))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
-  async getUnreadNotificationCount(userId: number, role: string): Promise<number> {
+  async getUnreadNotificationCount(userId: number, role: UserRole): Promise<number> {
     const list = await this.getCurrentUserNotifications(userId, role);
     return list.filter((n) => n.status === "unread").length;
   },
 
-  async markNotificationAsRead(id: number): Promise<AdminNotification> {
+  async markNotificationAsRead(id: number, userId: number, role: UserRole): Promise<AdminNotification> {
     await delay(100);
-    const item = MOCK_ADMIN_NOTIFICATIONS.find((n) => n.id === id);
-    if (!item) throw new Error("Notification not found");
+    const item = getVisibleNotificationById(id, userId, role);
+    if (item.status === "archived") throw new Error("Archived notifications cannot be marked as read");
     item.status = "read";
     item.readAt = new Date().toISOString();
+    persistNotificationUserState(item, userId);
+    dispatchNotificationsChanged();
     return { ...item };
   },
 
-  async markNotificationAsUnread(id: number): Promise<AdminNotification> {
+  async markNotificationAsUnread(id: number, userId: number, role: UserRole): Promise<AdminNotification> {
     await delay(100);
-    const item = MOCK_ADMIN_NOTIFICATIONS.find((n) => n.id === id);
-    if (!item) throw new Error("Notification not found");
+    const item = getVisibleNotificationById(id, userId, role);
+    if (item.status === "archived") throw new Error("Archived notifications cannot be marked as unread");
     item.status = "unread";
     item.readAt = null;
+    persistNotificationUserState(item, userId);
+    dispatchNotificationsChanged();
     return { ...item };
   },
 
-  async markAllNotificationsAsRead(userId: number, role: string): Promise<void> {
+  async markAllNotificationsAsRead(userId: number, role: UserRole): Promise<void> {
     await delay(150);
     const now = new Date().toISOString();
-    MOCK_ADMIN_NOTIFICATIONS.forEach((n) => {
-      if (
-        (n.recipientUserId === userId || n.recipientRole === role || (!n.recipientUserId && !n.recipientRole)) &&
-        n.status === "unread"
-      ) {
+    getVisibleNotifications(userId, role).forEach((n) => {
+      if (n.status === "unread") {
         n.status = "read";
         n.readAt = now;
+        persistNotificationUserState(n, userId);
       }
     });
+    dispatchNotificationsChanged();
   },
 
-  async archiveNotification(id: number): Promise<AdminNotification> {
+  async archiveNotification(id: number, userId: number, role: UserRole): Promise<AdminNotification> {
     await delay(100);
-    const item = MOCK_ADMIN_NOTIFICATIONS.find((n) => n.id === id);
-    if (!item) throw new Error("Notification not found");
+    const item = getVisibleNotificationById(id, userId, role);
     item.status = "archived";
     item.archivedAt = new Date().toISOString();
+    persistNotificationUserState(item, userId);
+    dispatchNotificationsChanged();
     return { ...item };
   },
 
-  async restoreNotification(id: number): Promise<AdminNotification> {
+  async restoreNotification(id: number, userId: number, role: UserRole): Promise<AdminNotification> {
     await delay(100);
-    const item = MOCK_ADMIN_NOTIFICATIONS.find((n) => n.id === id);
-    if (!item) throw new Error("Notification not found");
+    const item = getVisibleNotificationById(id, userId, role);
     item.status = item.readAt ? "read" : "unread";
     item.archivedAt = null;
+    persistNotificationUserState(item, userId);
+    dispatchNotificationsChanged();
     return { ...item };
   },
 
-  async deleteNotification(id: number): Promise<void> {
+  async deleteNotification(id: number, userId: number, role: UserRole): Promise<void> {
     await delay(100);
-    const idx = MOCK_ADMIN_NOTIFICATIONS.findIndex((n) => n.id === id);
-    if (idx !== -1) {
-      MOCK_ADMIN_NOTIFICATIONS.splice(idx, 1);
-    }
+    const item = getVisibleNotificationById(id, userId, role);
+    assertNotificationCanBeDeleted(item, role);
+    persistNotificationUserState(item, userId, true);
+    dispatchNotificationsChanged();
   },
 
-  async bulkMarkNotificationsAsRead(ids: number[]): Promise<void> {
+  async bulkMarkNotificationsAsRead(ids: number[], userId: number, role: UserRole): Promise<void> {
     await delay(150);
     const now = new Date().toISOString();
-    const set = new Set(ids);
-    MOCK_ADMIN_NOTIFICATIONS.forEach((n) => {
-      if (set.has(n.id)) {
-        n.status = "read";
-        n.readAt = now;
-      }
+    const items = getVisibleNotificationsByIds(ids, userId, role);
+    if (items.some((item) => item.status === "archived")) {
+      throw new Error("Archived notifications cannot be marked as read");
+    }
+    items.forEach((item) => {
+      item.status = "read";
+      item.readAt = now;
+      persistNotificationUserState(item, userId);
     });
+    dispatchNotificationsChanged();
   },
 
-  async bulkArchiveNotifications(ids: number[]): Promise<void> {
+  async bulkArchiveNotifications(ids: number[], userId: number, role: UserRole): Promise<void> {
     await delay(150);
     const now = new Date().toISOString();
-    const set = new Set(ids);
-    MOCK_ADMIN_NOTIFICATIONS.forEach((n) => {
-      if (set.has(n.id)) {
-        n.status = "archived";
-        n.archivedAt = now;
-      }
+    const items = getVisibleNotificationsByIds(ids, userId, role);
+    items.forEach((item) => {
+      item.status = "archived";
+      item.archivedAt = now;
+      persistNotificationUserState(item, userId);
     });
+    dispatchNotificationsChanged();
   },
 
-  async bulkDeleteNotifications(ids: number[]): Promise<void> {
+  async bulkDeleteNotifications(ids: number[], userId: number, role: UserRole): Promise<void> {
     await delay(150);
-    const set = new Set(ids);
-    for (let i = MOCK_ADMIN_NOTIFICATIONS.length - 1; i >= 0; i--) {
-      if (set.has(MOCK_ADMIN_NOTIFICATIONS[i].id)) {
-        MOCK_ADMIN_NOTIFICATIONS.splice(i, 1);
-      }
-    }
+    const items = getVisibleNotificationsByIds(ids, userId, role);
+    items.forEach((item) => assertNotificationCanBeDeleted(item, role));
+    items.forEach((item) => persistNotificationUserState(item, userId, true));
+    dispatchNotificationsChanged();
   },
 
   async getNotificationPreferences(userId: number): Promise<NotificationPreferences> {
@@ -1570,7 +1996,7 @@ export const adminService = {
         updatedAt: new Date().toISOString(),
       };
     }
-    return { ...MOCK_NOTIFICATION_PREFERENCES[userId] };
+    return cloneMock(MOCK_NOTIFICATION_PREFERENCES[userId]);
   },
 
   async updateNotificationPreferences(
@@ -1586,14 +2012,14 @@ export const adminService = {
       updatedAt: new Date().toISOString(),
     };
     MOCK_NOTIFICATION_PREFERENCES[userId] = updated;
-    return { ...updated };
+    return cloneMock(updated);
   },
 
   // ── Admin Audit Log & Activity History ──
 
   async getCurrentUserAuditEvents(
     userId: number,
-    role: string,
+    role: UserRole,
     scope: "my_activity" | "global" = "my_activity"
   ): Promise<AdminAuditEvent[]> {
     await delay(150);
@@ -1605,19 +2031,27 @@ export const adminService = {
       if (isGlobalAllowed) return true;
       return e.actorUserId === userId;
     })
-      .map((e) => ({ ...e }))
+      .map(cloneAuditEvent)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
-  async getAuditEventById(id: number): Promise<AdminAuditEvent | undefined> {
+  async getAuditEventById(
+    id: number,
+    userId: number,
+    role: UserRole,
+    scope: "my_activity" | "global" = "my_activity"
+  ): Promise<AdminAuditEvent | undefined> {
     await delay(100);
     const item = MOCK_ADMIN_AUDIT_EVENTS.find((e) => e.id === id);
-    return item ? { ...item } : undefined;
+    if (!item) return undefined;
+    const isGlobalAllowed = ADMIN_ROLES.includes(role) && scope === "global";
+    if (!isGlobalAllowed && item.actorUserId !== userId) return undefined;
+    return cloneAuditEvent(item);
   },
 
   async getAuditSummary(
     userId: number,
-    role: string,
+    role: UserRole,
     scope: "my_activity" | "global" = "my_activity"
   ) {
     const list = await this.getCurrentUserAuditEvents(userId, role, scope);
@@ -1646,9 +2080,7 @@ export const adminService = {
       isDemo: true,
       // Sanitize changes to ensure sensitive fields are scrubbed
       changes: eventData.changes?.map((c) => {
-        const isSens =
-          c.isSensitive ||
-          /password|token|secret|credential|apiKey|smtpPassword|recoveryCode/i.test(c.field);
+        const isSens = c.isSensitive || isSensitiveAuditName(c.field) || isSensitiveAuditName(c.label);
         if (isSens) {
           return {
             field: c.field,
@@ -1656,12 +2088,16 @@ export const adminService = {
             isSensitive: true,
           };
         }
-        return c;
+        return { ...c };
       }),
+      metadata: eventData.metadata?.map((item) => ({
+        label: item.label,
+        value: isSensitiveAuditName(item.label) ? "[MASQUÉ]" : item.value,
+      })),
     };
 
     MOCK_ADMIN_AUDIT_EVENTS.unshift(newEvent);
-    return { ...newEvent };
+    return cloneAuditEvent(newEvent);
   },
 
   // ── Admin Analytics & Reports ──

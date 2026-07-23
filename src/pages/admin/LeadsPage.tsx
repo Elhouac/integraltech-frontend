@@ -10,10 +10,12 @@ import EmptyState from "../../components/admin/shared/EmptyState";
 import LeadFilters from "../../components/admin/leads/LeadFilters";
 import LeadStatusBadge from "../../components/admin/leads/LeadStatusBadge";
 import LeadExportButton from "../../components/admin/leads/LeadExportButton";
+import { useAuth } from "../../context/AuthContext";
 import { adminService } from "../../services/adminService";
 import type { Lead, LeadStatus } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 import { safeSort } from "../../utils/sort";
+import { hasPermission } from "../../utils/permissions";
 
 const PER_PAGE = 8;
 
@@ -27,26 +29,35 @@ function formatDate(iso: string): string {
 
 export default function LeadsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const role = user?.role ?? "reader";
+  const canExport = user ? hasPermission(user.role, "leads", "export") : false;
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let active = true;
     async function fetchLeads() {
+      setIsLoading(true);
+      setLoadError(false);
       try {
-        const res = await adminService.getLeads();
+        const res = await adminService.getLeads(role);
         if (active) {
           setLeads(res);
-          setIsLoading(false);
         }
       } catch (err) {
         console.error(err);
+        if (active) setLoadError(true);
+      } finally {
+        if (active) setIsLoading(false);
       }
     }
     fetchLeads();
     return () => { active = false; };
-  }, []);
+  }, [role, reloadToken]);
 
   // ── Filters ──
   const [search, setSearch] = useState("");
@@ -151,9 +162,36 @@ export default function LeadsPage() {
         </span>
       ),
     },
+    {
+      key: "actions",
+      label: "Actions",
+      width: 80,
+      render: (lead) => (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            navigate(`/admin/leads/${lead.id}`);
+          }}
+          aria-label={`Voir le lead de ${lead.name}`}
+          style={{ border: `1px solid ${BORDER}`, borderRadius: "var(--radius-sm)", background: SURFACE, color: TEXT, padding: "5px 10px", cursor: "pointer", fontSize: 12 }}
+        >
+          Voir
+        </button>
+      ),
+    },
   ];
 
   const unreadCount = leads.filter((l) => !l.is_read).length;
+
+  if (loadError) {
+    return (
+      <div className="admin-alert admin-alert-error" role="alert">
+        <span>Impossible de charger les leads de démonstration.</span>
+        <button type="button" onClick={() => setReloadToken((value) => value + 1)}>Réessayer</button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -209,7 +247,7 @@ export default function LeadsPage() {
             Gérez les demandes de contact reçues.
           </p>
         </div>
-        <LeadExportButton leads={filteredLeads} />
+        {canExport && <LeadExportButton leads={filteredLeads} />}
       </motion.div>
 
       {/* ── Filters ── */}

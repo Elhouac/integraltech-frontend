@@ -1,27 +1,39 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { Plus, Edit2, Trash2, Folder } from "lucide-react";
 import { motion } from "framer-motion";
 import DataTable from "../../components/admin/shared/DataTable";
 import type { Column } from "../../components/admin/shared/DataTable";
 import EmptyState from "../../components/admin/shared/EmptyState";
 import ConfirmDialog from "../../components/admin/shared/ConfirmDialog";
+import { useAuth } from "../../context/AuthContext";
 import { adminService } from "../../services/adminService";
 import type { Category } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY, OVERLAY } from "../../constants";
+import { hasPermission } from "../../utils/permissions";
 
 export default function CategoriesPage() {
+  const { user } = useAuth();
+  const role = user?.role ?? "reader";
+  const canCreate = user ? hasPermission(user.role, "categories", "create") : false;
+  const canEdit = user ? hasPermission(user.role, "categories", "edit") : false;
+  const canDelete = user ? hasPermission(user.role, "categories", "delete") : false;
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(false);
     try {
-      const res = await adminService.getCategories();
+      const res = await adminService.getCategories(role);
       setCategories(res);
-      setIsLoading(false);
     } catch (err) {
       console.error(err);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [role]);
 
   useEffect(() => {
     fetchCategories();
@@ -29,6 +41,31 @@ export default function CategoriesPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    const returnTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    firstFieldRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setModalOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !modalRef.current) return;
+      const focusable = Array.from(modalRef.current.querySelectorAll<HTMLElement>("input, select, textarea, button:not([disabled])"));
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault(); last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => { document.removeEventListener("keydown", handleKeyDown); returnTarget?.focus(); };
+  }, [modalOpen]);
 
   // Form State
   const [nameFr, setNameFr] = useState("");
@@ -44,6 +81,7 @@ export default function CategoriesPage() {
   });
 
   const handleOpenCreate = () => {
+    if (!canCreate) return;
     setEditingCategory(null);
     setNameFr("");
     setNameEn("");
@@ -54,6 +92,7 @@ export default function CategoriesPage() {
   };
 
   const handleOpenEdit = (cat: Category) => {
+    if (!canEdit) return;
     setEditingCategory(cat);
     setNameFr(cat.name.fr);
     setNameEn(cat.name.en);
@@ -65,7 +104,8 @@ export default function CategoriesPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nameFr.trim()) return;
+    if (!user || !nameFr.trim()) return;
+    if ((editingCategory && !canEdit) || (!editingCategory && !canCreate)) return;
 
     const newSlug = slug.trim() || nameFr.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
@@ -76,7 +116,7 @@ export default function CategoriesPage() {
         slug: newSlug,
         order,
       };
-      await adminService.saveCategory(catPayload);
+      await adminService.saveCategory(catPayload, user.role);
       await fetchCategories();
     } catch (err) {
       console.error(err);
@@ -86,9 +126,9 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async () => {
-    if (deleteDialog.categoryId !== null) {
+    if (user && canDelete && deleteDialog.categoryId !== null) {
       try {
-        await adminService.deleteCategory(deleteDialog.categoryId);
+        await adminService.deleteCategory(deleteDialog.categoryId, user.role);
         await fetchCategories();
       } catch (err) {
         console.error(err);
@@ -134,7 +174,7 @@ export default function CategoriesPage() {
       width: 100,
       render: (cat) => (
         <div style={{ display: "flex", gap: 8 }}>
-          <button
+          {canEdit && <button
             onClick={() => handleOpenEdit(cat)}
             title="Modifier la catégorie"
             style={{
@@ -149,8 +189,8 @@ export default function CategoriesPage() {
             onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
           >
             <Edit2 size={14} />
-          </button>
-          <button
+          </button>}
+          {canDelete && <button
             onClick={() => setDeleteDialog({ open: true, categoryId: cat.id })}
             title="Supprimer la catégorie"
             style={{
@@ -165,11 +205,20 @@ export default function CategoriesPage() {
             onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
           >
             <Trash2 size={14} />
-          </button>
+          </button>}
         </div>
       ),
     },
   ];
+
+  if (loadError) {
+    return (
+      <div className="admin-alert admin-alert-error" role="alert">
+        <span>Impossible de charger les catégories de démonstration.</span>
+        <button type="button" onClick={() => void fetchCategories()}>Réessayer</button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -191,7 +240,7 @@ export default function CategoriesPage() {
             Gérez les catégories d'articles du blog.
           </p>
         </div>
-        <button
+        {canCreate && <button
           onClick={handleOpenCreate}
           style={{
             display: "inline-flex",
@@ -210,7 +259,7 @@ export default function CategoriesPage() {
         >
           <Plus size={15} />
           Ajouter une catégorie
-        </button>
+        </button>}
       </div>
 
       {/* Table */}
@@ -231,8 +280,8 @@ export default function CategoriesPage() {
               icon={Folder}
               title="Aucune catégorie"
               description="Créez une catégorie pour classer vos articles de blog."
-              actionLabel="Ajouter une catégorie"
-              onAction={handleOpenCreate}
+              actionLabel={canCreate ? "Ajouter une catégorie" : undefined}
+              onAction={canCreate ? handleOpenCreate : undefined}
             />
           }
         />
@@ -251,6 +300,7 @@ export default function CategoriesPage() {
             }}
           />
           <motion.div
+            ref={modalRef}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             style={{
@@ -267,17 +317,22 @@ export default function CategoriesPage() {
               boxShadow: "var(--shadow-xl)",
               zIndex: 999,
             }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="category-dialog-title"
           >
-            <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "var(--font-display)", color: TEXT, margin: "0 0 16px" }}>
+            <h3 id="category-dialog-title" style={{ fontSize: 16, fontWeight: 700, fontFamily: "var(--font-display)", color: TEXT, margin: "0 0 16px" }}>
               {editingCategory ? "Modifier la catégorie" : "Ajouter une catégorie"}
             </h3>
             <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {/* FR Name */}
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
+                <label htmlFor="category-name-fr" style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
                   Nom (Français) *
                 </label>
                 <input
+                  ref={firstFieldRef}
+                  id="category-name-fr"
                   type="text"
                   required
                   value={nameFr}
@@ -298,10 +353,11 @@ export default function CategoriesPage() {
 
               {/* EN Name */}
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
+                <label htmlFor="category-name-en" style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
                   Nom (Anglais)
                 </label>
                 <input
+                  id="category-name-en"
                   type="text"
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
@@ -321,10 +377,11 @@ export default function CategoriesPage() {
 
               {/* AR Name */}
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
+                <label htmlFor="category-name-ar" style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
                   Nom (Arabe)
                 </label>
                 <input
+                  id="category-name-ar"
                   type="text"
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
@@ -345,10 +402,11 @@ export default function CategoriesPage() {
 
               {/* Slug */}
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
+                <label htmlFor="category-slug" style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
                   Slug (Optionnel)
                 </label>
                 <input
+                  id="category-slug"
                   type="text"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
@@ -368,10 +426,11 @@ export default function CategoriesPage() {
 
               {/* Order */}
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
+                <label htmlFor="category-order" style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
                   Ordre d'affichage
                 </label>
                 <input
+                  id="category-order"
                   type="number"
                   min={1}
                   value={order}

@@ -61,6 +61,7 @@ interface SolutionFormProps {
 export default function SolutionForm({ mode, solution, existingSlugs }: SolutionFormProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const role = user?.role ?? "reader";
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
   const mountedRef = useRef(true);
 
@@ -69,8 +70,8 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
   // ── Available services for related-services picker ──
   const [availableServices, setAvailableServices] = useState<Service[]>([]);
   useEffect(() => {
-    adminService.getServices().then(setAvailableServices).catch(() => {});
-  }, []);
+    adminService.getServices(role).then(setAvailableServices).catch(() => {});
+  }, [role]);
 
   // ── Form state ──
   const [title, setTitle] = useState<MultiLang>(solution?.title ?? { ...EMPTY_ML });
@@ -143,6 +144,7 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
     if (!title.fr.trim()) errs.title = "Le titre français est requis.";
     if (!shortDesc.fr.trim()) errs.shortDesc = "La description courte française est requise.";
     if (!problem.fr.trim()) errs.problem = "La problématique française est requise.";
+    if (!approach.fr.trim()) errs.approach = "L'approche française est requise.";
     if (!slug.trim()) errs.slug = "Le slug est requis.";
     else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) errs.slug = "Format de slug invalide (lettres, chiffres, tirets).";
     else {
@@ -150,20 +152,29 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
       if (taken) errs.slug = "Ce slug est déjà utilisé par une autre solution.";
     }
     if (order < 1) errs.order = "L'ordre doit être un entier positif.";
-    if (imageUrl && !isValidUrl(imageUrl)) errs.imageUrl = "URL d'image invalide.";
-    if (ctaUrl && !ctaUrl.startsWith("/") && !isValidUrl(ctaUrl)) errs.ctaUrl = "URL du CTA invalide.";
+    if (imageUrl && !isSafeHttpUrl(imageUrl)) errs.imageUrl = "URL d'image invalide. Utilisez HTTP ou HTTPS.";
+    if (ctaUrl && !isSafeCtaUrl(ctaUrl)) errs.ctaUrl = "URL du CTA invalide.";
     if (accentColor && !/^#[0-9A-Fa-f]{6}$/.test(accentColor)) errs.accentColor = "Couleur hexadécimale invalide (ex: #3B82F6).";
     setErrors(errs);
     return Object.keys(errs).length === 0;
-  }, [title.fr, shortDesc.fr, problem.fr, slug, order, imageUrl, ctaUrl, accentColor, existingSlugs, solution?.slug]);
+  }, [title.fr, shortDesc.fr, problem.fr, approach.fr, slug, order, imageUrl, ctaUrl, accentColor, existingSlugs, solution?.slug]);
 
-  function isValidUrl(v: string): boolean {
-    try { new URL(v); return true; } catch { return false; }
+  function isSafeHttpUrl(v: string): boolean {
+    try {
+      const parsed = new URL(v);
+      return (parsed.protocol === "http:" || parsed.protocol === "https:") && !parsed.username && !parsed.password;
+    } catch {
+      return false;
+    }
+  }
+
+  function isSafeCtaUrl(v: string): boolean {
+    return (/^\/(?![\\/])/.test(v) && !/[\\\u0000-\u001F]/.test(v) && !/%5c/i.test(v)) || isSafeHttpUrl(v);
   }
 
   // ── Save ──
   const handleSave = async (submitStatus?: SolutionStatus) => {
-    if (!validate()) return;
+    if (!user || !validate()) return;
     setSaving(true);
     try {
       const payload = {
@@ -172,8 +183,8 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
         icon, imageUrl, imageAlt, accentColor, ctaLabel, ctaUrl,
         order, featured, status: submitStatus ?? status,
         seoTitle, seoDescription: seoDesc,
-        submittedBy: submitStatus === "pending_review" ? (user?.name ?? null) : (solution?.submittedBy ?? null),
-        submittedAt: submitStatus === "pending_review" ? new Date().toISOString() : (solution?.submittedAt ?? null),
+        submittedBy: isAdmin && submitStatus === "pending_review" ? user.name : (solution?.submittedBy ?? null),
+        submittedAt: isAdmin && submitStatus === "pending_review" ? new Date().toISOString() : (solution?.submittedAt ?? null),
         reviewedBy: solution?.reviewedBy ?? null,
         reviewedAt: solution?.reviewedAt ?? null,
         reviewNote: solution?.reviewNote ?? null,
@@ -181,9 +192,9 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
       };
 
       if (mode === "create") {
-        await adminService.createSolution(payload);
+        await adminService.createSolution(payload, user.role);
       } else if (solution) {
-        await adminService.updateSolution(solution.id, { ...payload, status: submitStatus ?? status });
+        await adminService.updateSolution(solution.id, { ...payload, status: submitStatus ?? status }, user.role);
       }
 
       showToast(mode === "create" ? "Solution créée avec succès." : "Solution mise à jour avec succès.");
@@ -198,21 +209,21 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
   // Workflow actions
   const handleApprove = async () => {
     if (!solution || !isAdmin) return;
-    await adminService.updateSolutionStatus(solution.id, "approved", { reviewedBy: user?.name });
+    await adminService.updateSolutionStatus(solution.id, "approved", user.role, { reviewedBy: user.name });
     showToast("Solution approuvée.");
     setTimeout(() => navigate("/admin/solutions"), 800);
   };
 
   const handleRequestChanges = async () => {
     if (!solution || !isAdmin || !reviewNote.trim()) return;
-    await adminService.updateSolutionStatus(solution.id, "changes_requested", { reviewedBy: user?.name, reviewNote: reviewNote.trim() });
+    await adminService.updateSolutionStatus(solution.id, "changes_requested", user.role, { reviewedBy: user.name, reviewNote: reviewNote.trim() });
     showToast("Modifications demandées.");
     setTimeout(() => navigate("/admin/solutions"), 800);
   };
 
   const handlePublish = async () => {
     if (!solution || !isAdmin) return;
-    await adminService.updateSolutionStatus(solution.id, "published", { reviewedBy: user?.name });
+    await adminService.updateSolutionStatus(solution.id, "published", user.role, { reviewedBy: user.name });
     showToast("Solution publiée.");
     setTimeout(() => navigate("/admin/solutions"), 800);
   };
@@ -237,6 +248,8 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
   const canSubmit = status === "draft" || status === "changes_requested";
   const canApprove = isAdmin && status === "pending_review";
   const canPublish = isAdmin && status === "approved";
+  const workflowStatusLocked = mode === "edit" && !isAdmin && !canSubmit;
+  const safeDraftStatus = workflowStatusLocked ? status : "draft";
 
   // ── Render list section helper ──
   const renderListSection = (
@@ -274,7 +287,7 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* ── Header ── */}
       <div>
-        <button onClick={() => {
+        <button type="button" onClick={() => {
           if (isDirty && !window.confirm("Quitter sans enregistrer ?")) return;
           navigate("/admin/solutions");
         }}
@@ -368,7 +381,10 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
               <MultiLangInput label="Problématique" value={problem} onChange={setProblem} type="textarea" required />
               {errors.problem && <div style={errStyle}>{errors.problem}</div>}
             </div>
-            <MultiLangInput label="Notre approche" value={approach} onChange={setApproach} type="textarea" />
+            <div>
+              <MultiLangInput label="Notre approche" value={approach} onChange={setApproach} type="textarea" required />
+              {errors.approach && <div style={errStyle}>{errors.approach}</div>}
+            </div>
           </div>
         </div>
       </div>
@@ -585,10 +601,10 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
         >
           Annuler
         </button>
-        <button type="button" onClick={() => handleSave("draft")} disabled={saving}
+        <button type="button" onClick={() => handleSave(safeDraftStatus)} disabled={saving}
           style={{ ...btnBase, border: `1px solid ${BORDER}`, background: SURFACE, color: TEXT, opacity: saving ? 0.6 : 1 }}
         >
-          <Save size={14} /> Enregistrer brouillon
+          <Save size={14} /> {workflowStatusLocked ? "Enregistrer les modifications" : "Enregistrer brouillon"}
         </button>
         {canSubmit && (
           <button type="button" onClick={() => handleSave("pending_review")} disabled={saving}
@@ -602,7 +618,7 @@ export default function SolutionForm({ mode, solution, existingSlugs }: Solution
       {/* Toast */}
       <AnimatePresence>
         {toast && (
-          <motion.div className="admin-settings-toast"
+          <motion.div className="admin-settings-toast" role="status" aria-live="polite"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
           >
             {toast}

@@ -39,10 +39,10 @@ function DataTableInner<T>({
   emptyContent,
 }: DataTableProps<T>) {
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
-    if (sort?.key !== columnKey) return <ArrowUpDown size={12} style={{ opacity: 0.3 }} />;
+    if (sort?.key !== columnKey) return <ArrowUpDown size={12} aria-hidden="true" style={{ opacity: 0.3 }} />;
     return sort.direction === "asc"
-      ? <ArrowUp size={12} style={{ opacity: 0.7 }} />
-      : <ArrowDown size={12} style={{ opacity: 0.7 }} />;
+      ? <ArrowUp size={12} aria-hidden="true" style={{ opacity: 0.7 }} />
+      : <ArrowDown size={12} aria-hidden="true" style={{ opacity: 0.7 }} />;
   };
 
   return (
@@ -58,35 +58,66 @@ function DataTableInner<T>({
         {/* Head */}
         <thead>
           <tr>
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
-                style={{
-                  padding: "12px 16px",
-                  textAlign: "left",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: TEXT_SECONDARY,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  borderBottom: `1px solid ${BORDER}`,
-                  background: SURFACE,
-                  whiteSpace: "nowrap",
-                  cursor: col.sortable ? "pointer" : "default",
-                  userSelect: col.sortable ? "none" : "auto",
-                  width: col.width,
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 1,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  {col.label}
-                  {col.sortable && <SortIcon columnKey={col.key} />}
-                </div>
-              </th>
-            ))}
+            {columns.map((col) => {
+              const isSortable = Boolean(col.sortable && onSort);
+              const ariaSort = isSortable
+                ? sort?.key === col.key
+                  ? sort.direction === "asc" ? "ascending" : "descending"
+                  : "none"
+                : undefined;
+
+              return (
+                <th
+                  key={col.key}
+                  scope="col"
+                  aria-sort={ariaSort}
+                  style={{
+                    padding: "12px 16px",
+                    textAlign: "left",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: TEXT_SECONDARY,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    borderBottom: `1px solid ${BORDER}`,
+                    background: SURFACE,
+                    whiteSpace: "nowrap",
+                    userSelect: isSortable ? "none" : "auto",
+                    width: col.width,
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 1,
+                  }}
+                >
+                  {isSortable ? (
+                    <button
+                      type="button"
+                      onClick={() => onSort?.(col.key)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: 0,
+                        border: "none",
+                        background: "transparent",
+                        color: "inherit",
+                        font: "inherit",
+                        textTransform: "inherit",
+                        letterSpacing: "inherit",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {col.label}
+                      <SortIcon columnKey={col.key} />
+                    </button>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      {col.label}
+                    </div>
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
 
@@ -102,13 +133,13 @@ function DataTableInner<T>({
                     style={{ padding: "14px 16px", borderBottom: `1px solid ${BORDER}` }}
                   >
                     <div
+                      className="admin-table-skeleton"
                       style={{
                         height: 14,
                         borderRadius: 4,
                         background: "var(--hover)",
-                        animation: "admin-spin 1.5s ease-in-out infinite",
                         opacity: 0.5,
-                        width: `${60 + Math.random() * 30}%`,
+                        width: `${60 + ((i + col.key.length) % 4) * 10}%`,
                       }}
                     />
                   </td>

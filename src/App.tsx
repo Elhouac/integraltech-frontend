@@ -56,6 +56,9 @@ const AdminAnalyticsPage = lazy(() => import("./pages/admin/analytics/AdminAnaly
 function AdminFallback() {
   return (
     <div
+      role="status"
+      aria-live="polite"
+      aria-label="Chargement de l'administration"
       style={{
         display: "flex",
         alignItems: "center",
@@ -65,6 +68,7 @@ function AdminFallback() {
       }}
     >
       <div
+        aria-hidden="true"
         style={{
           width: 36,
           height: 36,
@@ -184,6 +188,7 @@ export default function App() {
                     <Route path="posts/:id/edit" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="blog" action="edit"><PostEditPage /></ProtectedRoute></Suspense>} />
                     <Route path="categories" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="categories" action="view"><CategoriesPage /></ProtectedRoute></Suspense>} />
                     <Route path="users" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="users" action="view"><UsersPage /></ProtectedRoute></Suspense>} />
+                    <Route path="settings" element={<Navigate to="general" replace />} />
                     <Route path="settings/general" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="settings" action="view"><SettingsPage /></ProtectedRoute></Suspense>} />
                     <Route path="services" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="services" action="view"><AdminServicesPage /></ProtectedRoute></Suspense>} />
                     <Route path="services/create" element={<Suspense fallback={<AdminFallback />}><ProtectedRoute resource="services" action="create"><ServiceCreatePage /></ProtectedRoute></Suspense>} />

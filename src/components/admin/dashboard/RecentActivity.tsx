@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import { BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../../constants";
 
@@ -47,7 +48,8 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
         >
           Activité récente
         </h3>
-        <button
+        <Link
+          to="/admin/audit-log"
           style={{
             background: "none",
             border: "none",
@@ -55,19 +57,23 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
             fontSize: 12,
             fontWeight: 600,
             fontFamily: "var(--font-sans)",
-            cursor: "pointer",
             padding: "4px 8px",
             borderRadius: "var(--radius-sm)",
             transition: "background 0.2s",
+            textDecoration: "none",
           }}
         >
           Voir tout
-        </button>
+        </Link>
       </div>
 
       {/* Activity list */}
       <div style={{ padding: "8px 0" }}>
-        {activities.map((activity, index) => (
+        {activities.length === 0 ? (
+          <p style={{ padding: "16px 24px", margin: 0, color: TEXT_SECONDARY, fontSize: 13 }}>
+            Aucune activité autorisée à afficher.
+          </p>
+        ) : activities.map((activity, index) => (
           <motion.div
             key={activity.id}
             initial={{ opacity: 0, x: -12 }}
@@ -79,7 +85,6 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
               gap: 14,
               padding: "12px 24px",
               transition: "background 0.15s",
-              cursor: "pointer",
             }}
           >
             {/* Icon */}

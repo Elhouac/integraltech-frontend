@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, FileSpreadsheet, FileCode, Info } from "lucide-react";
 import { adminService } from "../../../services/adminService";
 import type { AdminAuditEvent } from "../../../types/admin";
+import type { UserRole } from "../../../context/AuthContext";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY, OVERLAY } from "../../../constants";
 
 interface AuditExportDialogProps {
@@ -10,9 +11,39 @@ interface AuditExportDialogProps {
   events: AdminAuditEvent[];
   userId: number;
   userDisplayName: string;
-  userRole: string;
+  userRole: UserRole;
   onClose: () => void;
   onExportSuccess: (count: number, format: "csv" | "json") => void;
+}
+
+function isSensitiveLabel(value: string): boolean {
+  const folded = value.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+  const normalized = folded.replace(/[^a-z0-9]/g, "");
+  const compactArabic = value.replace(/[\s\u0640]/g, "");
+  return /password|motdepasse|token|jeton|jetondacces|accesstoken|refreshtoken|secret|credential|identifiant|apikey|cleapi|smtppassword|motdepassesmtp|recoverycode|codederecuperation/.test(normalized)
+    || /كلم[ةه]المرور|رمزالوصول|رمزالتحديث|مفتاح(?:api|واجهة)|رمزالاسترداد|سر/.test(compactArabic);
+}
+
+function sanitizeEvent(event: AdminAuditEvent) {
+  return {
+    ...event,
+    changes: event.changes?.map((change) => {
+      if (change.isSensitive || isSensitiveLabel(change.field) || isSensitiveLabel(change.label)) {
+        return { field: change.field, label: change.label, isSensitive: true };
+      }
+      return { ...change };
+    }),
+    metadata: event.metadata?.map((item) => ({
+      label: item.label,
+      value: isSensitiveLabel(item.label) ? "[MASQUÉ]" : item.value,
+    })),
+  };
+}
+
+function escapeCsv(value: unknown): string {
+  let cell = String(value ?? "");
+  if (/^[=+\-@\t\r]/.test(cell)) cell = `'${cell}`;
+  return `"${cell.replace(/"/g, '""')}"`;
 }
 
 export default function AuditExportDialog({
@@ -26,6 +57,38 @@ export default function AuditExportDialog({
 }: AuditExportDialogProps) {
   const [format, setFormat] = useState<"csv" | "json">("csv");
   const [exporting, setExporting] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const returnTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])"));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      returnTarget?.focus();
+    };
+  }, [onClose, open]);
 
   if (!open) return null;
 
@@ -41,7 +104,7 @@ export default function AuditExportDialog({
 
       if (format === "json") {
         mimeType = "application/json;charset=utf-8;";
-        const sanitizedData = events.map((e) => ({
+        const sanitizedData = events.map(sanitizeEvent).map((e) => ({
           id: e.id,
           createdAt: e.createdAt,
           actorDisplayName: e.actorDisplayName,
@@ -62,22 +125,22 @@ export default function AuditExportDialog({
       } else {
         mimeType = "text/csv;charset=utf-8;";
         const headers = ["ID", "Date", "Acteur", "Rôle", "Action", "Ressource", "Nom Ressource", "Description", "Résultat", "Sévérité", "Source", "IP"];
-        const rows = events.map((e) => [
+        const rows = events.map(sanitizeEvent).map((e) => [
           e.id,
-          `"${e.createdAt}"`,
-          `"${e.actorDisplayName.replace(/"/g, '""')}"`,
-          `"${e.actorRole}"`,
-          `"${e.action}"`,
-          `"${e.resourceType}"`,
-          `"${e.resourceLabel.replace(/"/g, '""')}"`,
-          `"${e.description.replace(/"/g, '""')}"`,
-          `"${e.outcome}"`,
-          `"${e.severity}"`,
-          `"${e.source}"`,
-          `"${e.ipLabel}"`,
+          e.createdAt,
+          e.actorDisplayName,
+          e.actorRole,
+          e.action,
+          e.resourceType,
+          e.resourceLabel,
+          e.description,
+          e.outcome,
+          e.severity,
+          e.source,
+          e.ipLabel,
         ]);
 
-        content = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+        content = [headers, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n");
       }
 
       const blob = new Blob([content], { type: mimeType });
@@ -139,6 +202,7 @@ export default function AuditExportDialog({
         aria-labelledby="audit-export-title"
       >
         <motion.div
+          ref={dialogRef}
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -169,7 +233,13 @@ export default function AuditExportDialog({
                 Exporter le journal d'activité
               </h2>
             </div>
-            <button onClick={onClose} style={{ border: "none", background: "transparent", color: TEXT_SECONDARY, cursor: "pointer" }}>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={onClose}
+              aria-label="Fermer la boîte de dialogue d'export"
+              style={{ border: "none", background: "transparent", color: TEXT_SECONDARY, cursor: "pointer" }}
+            >
               <X size={18} />
             </button>
           </div>
@@ -223,6 +293,7 @@ export default function AuditExportDialog({
           {/* Footer */}
           <div style={{ padding: "12px 20px", borderTop: `1px solid ${BORDER}`, background: "var(--background)", display: "flex", justifyContent: "flex-end", gap: 10 }}>
             <button
+              type="button"
               onClick={onClose}
               style={{
                 padding: "8px 16px",
@@ -239,6 +310,7 @@ export default function AuditExportDialog({
               Annuler
             </button>
             <button
+              type="button"
               onClick={handleDownload}
               disabled={exporting || events.length === 0}
               style={{

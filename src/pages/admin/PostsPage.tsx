@@ -10,11 +10,13 @@ import SearchInput from "../../components/admin/shared/SearchInput";
 import StatusBadge from "../../components/admin/shared/StatusBadge";
 import EmptyState from "../../components/admin/shared/EmptyState";
 import ConfirmDialog from "../../components/admin/shared/ConfirmDialog";
+import { useAuth } from "../../context/AuthContext";
 import { MOCK_CATEGORIES, POST_STATUS_CONFIG } from "../../data/admin-mocks";
 import { adminService } from "../../services/adminService";
 import type { Post, PostStatus } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 import { safeSort, getSafeValue } from "../../utils/sort";
+import { hasPermission } from "../../utils/permissions";
 
 const PER_PAGE = 8;
 
@@ -29,18 +31,28 @@ function formatDate(iso: string | null): string {
 
 export default function PostsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const role = user?.role ?? "reader";
+  const canCreate = user ? hasPermission(user.role, "blog", "create") : false;
+  const canEdit = user ? hasPermission(user.role, "blog", "edit") : false;
+  const canDelete = user ? hasPermission(user.role, "blog", "delete") : false;
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchPosts = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(false);
     try {
-      const res = await adminService.getPosts();
+      const res = await adminService.getPosts(role);
       setPosts(res);
-      setIsLoading(false);
     } catch (err) {
       console.error(err);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [role]);
 
   useEffect(() => {
     fetchPosts();
@@ -71,9 +83,9 @@ export default function PostsPage() {
   };
 
   const handleDelete = async () => {
-    if (deleteDialog.postId !== null) {
+    if (user && canDelete && deleteDialog.postId !== null) {
       try {
-        await adminService.deletePost(deleteDialog.postId);
+        await adminService.deletePost(deleteDialog.postId, user.role);
         await fetchPosts();
       } catch (err) {
         console.error(err);
@@ -170,7 +182,7 @@ export default function PostsPage() {
       width: 100,
       render: (post) => (
         <div style={{ display: "flex", gap: 8 }} onClick={(e) => e.stopPropagation()}>
-          <button
+          {canEdit && <button
             onClick={() => navigate(`/admin/posts/${post.id}/edit`)}
             title="Modifier l'article"
             style={{
@@ -185,8 +197,8 @@ export default function PostsPage() {
             onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
           >
             <Edit size={14} />
-          </button>
-          <button
+          </button>}
+          {canDelete && <button
             onClick={() => setDeleteDialog({ open: true, postId: post.id })}
             title="Supprimer l'article"
             style={{
@@ -201,11 +213,20 @@ export default function PostsPage() {
             onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
           >
             <Trash2 size={14} />
-          </button>
+          </button>}
         </div>
       ),
     },
   ];
+
+  if (loadError) {
+    return (
+      <div className="admin-alert admin-alert-error" role="alert">
+        <span>Impossible de charger les articles de démonstration.</span>
+        <button type="button" onClick={() => void fetchPosts()}>Réessayer</button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -238,7 +259,7 @@ export default function PostsPage() {
             Gérez les publications et articles de blog.
           </p>
         </div>
-        <button
+        {canCreate && <button
           onClick={() => navigate("/admin/posts/create")}
           style={{
             display: "inline-flex",
@@ -257,7 +278,7 @@ export default function PostsPage() {
         >
           <Plus size={15} />
           Créer un article
-        </button>
+        </button>}
       </motion.div>
 
       {/* Filters bar */}
@@ -340,7 +361,7 @@ export default function PostsPage() {
           sort={sort}
           onSort={handleSort}
           getRowKey={(post) => post.id}
-          onRowClick={(post) => navigate(`/admin/posts/${post.id}/edit`)}
+          onRowClick={canEdit ? (post) => navigate(`/admin/posts/${post.id}/edit`) : undefined}
           emptyContent={
             <EmptyState
               icon={FileText}
@@ -350,8 +371,8 @@ export default function PostsPage() {
                   ? "Essayez de modifier vos filtres."
                   : "Aucun article rédigé pour le moment."
               }
-              actionLabel="Créer un article"
-              onAction={() => navigate("/admin/posts/create")}
+              actionLabel={canCreate ? "Créer un article" : undefined}
+              onAction={canCreate ? () => navigate("/admin/posts/create") : undefined}
             />
           }
         />

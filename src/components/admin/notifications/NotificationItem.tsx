@@ -75,6 +75,7 @@ export default function NotificationItem({
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -86,19 +87,20 @@ export default function NotificationItem({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setMenuOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [menuOpen]);
+
   const Icon = TYPE_ICONS[notification.type] || Info;
   const isUnread = notification.status === "unread";
   const isArchived = notification.status === "archived";
-
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent triggering if user clicked input, button, link, or menu
-    const target = e.target as HTMLElement;
-    if (target.closest("input, button, a, .notif-menu")) return;
-
-    if (isUnread) {
-      onMarkRead(notification.id);
-    }
-  };
 
   const handleActionClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -113,7 +115,6 @@ export default function NotificationItem({
   return (
     <div
       className={`admin-notif-item${isUnread ? " unread" : ""}`}
-      onClick={handleCardClick}
       style={{
         borderRadius: "var(--radius-md)",
         border: `1px solid ${selected ? ACCENT : BORDER}`,
@@ -218,6 +219,7 @@ export default function NotificationItem({
 
           {notification.actionLabel && notification.actionUrl && (
             <button
+              type="button"
               onClick={handleActionClick}
               style={{
                 display: "inline-flex",
@@ -243,8 +245,12 @@ export default function NotificationItem({
       {/* Action Menu */}
       <div ref={menuRef} className="notif-menu" style={{ position: "relative", flexShrink: 0 }}>
         <button
+          ref={menuButtonRef}
+          type="button"
           onClick={() => setMenuOpen((prev) => !prev)}
           aria-label="Actions de notification"
+          aria-expanded={menuOpen}
+          aria-controls={`notification-actions-${notification.id}`}
           style={{
             display: "flex",
             alignItems: "center",
@@ -263,6 +269,7 @@ export default function NotificationItem({
 
         {menuOpen && (
           <div
+            id={`notification-actions-${notification.id}`}
             style={{
               position: "absolute",
               right: 0,
@@ -277,8 +284,9 @@ export default function NotificationItem({
               padding: 4,
             }}
           >
-            {isUnread ? (
+            {!isArchived && (isUnread ? (
               <button
+                type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   onMarkRead(notification.id);
@@ -302,6 +310,7 @@ export default function NotificationItem({
               </button>
             ) : (
               <button
+                type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   onMarkUnread(notification.id);
@@ -323,10 +332,11 @@ export default function NotificationItem({
               >
                 <Bell size={14} /> Marquer non lu
               </button>
-            )}
+            ))}
 
             {isArchived ? (
               <button
+                type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   onRestore(notification.id);
@@ -350,6 +360,7 @@ export default function NotificationItem({
               </button>
             ) : (
               <button
+                type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   onArchive(notification.id);
@@ -375,6 +386,7 @@ export default function NotificationItem({
 
             {canDelete && (
               <button
+                type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   onDeleteRequest(notification.id);

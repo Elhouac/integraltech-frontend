@@ -34,8 +34,12 @@ export default function ForgotPasswordPage() {
     <AuthPageLayout>
       <AuthLogo
         title="Mot de passe oublié"
-        subtitle={isSent ? "Vérifiez votre boîte de réception." : "Entrez votre email pour recevoir un lien de réinitialisation."}
+        subtitle={isSent ? "Simulation terminée." : "Prévisualisez le parcours de récupération frontend."}
       />
+
+      <div className="admin-demo-notice" role="note" style={{ marginBottom: 20 }}>
+        Aucun email réel ne sera envoyé. La récupération nécessite l'intégration sécurisée du backend.
+      </div>
 
       {isSent ? (
         <motion.div
@@ -52,8 +56,8 @@ export default function ForgotPasswordPage() {
             <CheckCircle size={28} color="var(--success)" />
           </div>
           <p style={{ fontSize: 14, color: TEXT_SECONDARY, marginBottom: 24, lineHeight: 1.6 }}>
-            Si un compte est associé à <strong style={{ color: TEXT }}>{email}</strong>,
-            vous recevrez un email avec les instructions.
+            Simulation effectuée pour <strong style={{ color: TEXT }}>{email}</strong>.
+            Aucun email n'a été envoyé et aucun compte n'a été modifié.
           </p>
           <Link
             to="/admin/login"
@@ -83,7 +87,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
-            <AuthSubmit label="Envoyer le lien" icon={<Send size={15} />} isSubmitting={isSubmitting} />
+            <AuthSubmit label="Simuler l'envoi" icon={<Send size={15} />} isSubmitting={isSubmitting} />
           </form>
 
           <div style={{ textAlign: "center", marginTop: 20 }}>

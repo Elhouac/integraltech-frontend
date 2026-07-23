@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Clock, HardDrive, Wifi, Monitor, Info, Lock } from "lucide-react";
 import type { AdminAuditEvent } from "../../../types/admin";
@@ -21,13 +21,39 @@ function formatDate(iso: string): string {
 }
 
 export default function AuditEventDetailsDialog({ event, onClose }: AuditEventDetailsDialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
+    if (!event) return;
+    const returnTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      returnTarget?.focus();
+    };
+  }, [event, onClose]);
 
   if (!event) return null;
 
@@ -51,6 +77,7 @@ export default function AuditEventDetailsDialog({ event, onClose }: AuditEventDe
         aria-labelledby="audit-details-title"
       >
         <motion.div
+          ref={dialogRef}
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -106,6 +133,8 @@ export default function AuditEventDetailsDialog({ event, onClose }: AuditEventDe
               </h2>
             </div>
             <button
+              ref={closeButtonRef}
+              type="button"
               onClick={onClose}
               aria-label="Fermer"
               style={{
@@ -190,9 +219,9 @@ export default function AuditEventDetailsDialog({ event, onClose }: AuditEventDe
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontFamily: "var(--font-sans)" }}>
                     <thead>
                       <tr style={{ background: "var(--background)", textTransform: "uppercase", fontSize: 10, color: TEXT_SECONDARY }}>
-                        <th style={{ padding: "8px 12px", textAlign: "left" }}>Champ</th>
-                        <th style={{ padding: "8px 12px", textAlign: "left" }}>Avant</th>
-                        <th style={{ padding: "8px 12px", textAlign: "left" }}>Après</th>
+                        <th scope="col" style={{ padding: "8px 12px", textAlign: "left" }}>Champ</th>
+                        <th scope="col" style={{ padding: "8px 12px", textAlign: "left" }}>Avant</th>
+                        <th scope="col" style={{ padding: "8px 12px", textAlign: "left" }}>Après</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -255,6 +284,7 @@ export default function AuditEventDetailsDialog({ event, onClose }: AuditEventDe
           {/* Footer */}
           <div style={{ padding: "12px 24px", borderTop: `1px solid ${BORDER}`, background: "var(--background)", display: "flex", justifyContent: "flex-end" }}>
             <button
+              type="button"
               onClick={onClose}
               style={{
                 padding: "8px 16px",

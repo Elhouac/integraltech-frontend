@@ -25,6 +25,16 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+function isSafeMediaUrl(value: string): boolean {
+  if (/^\/(?![\\/])/.test(value) && !/[\\\u0000-\u001F]/.test(value) && !/%5c/i.test(value)) return true;
+  try {
+    const parsed = new URL(value);
+    return (parsed.protocol === "http:" || parsed.protocol === "https:") && !parsed.username && !parsed.password;
+  } catch {
+    return false;
+  }
+}
+
 const labelStyle: React.CSSProperties = { display: "block", fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: "var(--font-sans)", marginBottom: 6 };
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "10px 14px", fontSize: 14, fontFamily: "var(--font-sans)", color: TEXT,
@@ -53,6 +63,8 @@ export default function MediaEditPage() {
   const [asset, setAsset] = useState<MediaAsset | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -70,26 +82,44 @@ export default function MediaEditPage() {
 
   // Load
   useEffect(() => {
+    let active = true;
     const load = async () => {
+      setPageLoading(true);
+      setLoadError(false);
+      setNotFound(false);
+      setAsset(null);
       const numId = Number(id);
-      if (!numId || isNaN(numId)) { setNotFound(true); setPageLoading(false); return; }
-      const a = await adminService.getMediaAssetById(numId);
-      if (!a) { setNotFound(true); } else {
-        setAsset(a);
-        setName(a.name);
-        setTitle(JSON.parse(JSON.stringify(a.title)));
-        setAltText(JSON.parse(JSON.stringify(a.altText)));
-        setCaption(JSON.parse(JSON.stringify(a.caption)));
-        setDescription(JSON.parse(JSON.stringify(a.description)));
-        setFolder(a.folder);
-        setTagsInput(a.tags.join(", "));
-        setThumbnailUrl(a.thumbnailUrl);
-        setStatus(a.status);
+      if (!numId || isNaN(numId)) {
+        if (active) setNotFound(true);
+        if (active) setPageLoading(false);
+        return;
       }
-      setPageLoading(false);
+      try {
+        const a = await adminService.getMediaAssetById(numId, role);
+        if (!active) return;
+        if (!a) {
+          setNotFound(true);
+        } else {
+          setAsset(a);
+          setName(a.name);
+          setTitle(JSON.parse(JSON.stringify(a.title)));
+          setAltText(JSON.parse(JSON.stringify(a.altText)));
+          setCaption(JSON.parse(JSON.stringify(a.caption)));
+          setDescription(JSON.parse(JSON.stringify(a.description)));
+          setFolder(a.folder);
+          setTagsInput(a.tags.join(", "));
+          setThumbnailUrl(a.thumbnailUrl);
+          setStatus(a.status);
+        }
+      } catch {
+        if (active) setLoadError(true);
+      } finally {
+        if (active) setPageLoading(false);
+      }
     };
     load();
-  }, [id]);
+    return () => { active = false; };
+  }, [id, role, reloadToken]);
 
   // Dirty tracking
   const initialRef = useRef("");
@@ -112,8 +142,8 @@ export default function MediaEditPage() {
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = "Le nom est requis.";
-    if (thumbnailUrl.trim()) {
-      try { new URL(thumbnailUrl); } catch { errs.thumbnailUrl = "URL de miniature invalide."; }
+    if (thumbnailUrl.trim() && !isSafeMediaUrl(thumbnailUrl.trim())) {
+      errs.thumbnailUrl = "URL de miniature invalide. Utilisez un chemin local sûr ou HTTP(S).";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -132,7 +162,7 @@ export default function MediaEditPage() {
         tags: uniqueTags,
         thumbnailUrl: thumbnailUrl.trim(),
         status,
-      });
+      }, role);
       setToast("Média mis à jour avec succès.");
       setTimeout(() => navigate("/admin/media"), 800);
     } catch (err) {
@@ -145,8 +175,17 @@ export default function MediaEditPage() {
   // Loading
   if (pageLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 300 }}>
+      <div role="status" aria-live="polite" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 300 }}>
         <div style={{ fontSize: 14, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>Chargement…</div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="admin-alert admin-alert-error" role="alert">
+        <span>Impossible de charger ce média de démonstration.</span>
+        <button type="button" onClick={() => setReloadToken((value) => value + 1)}>Réessayer</button>
       </div>
     );
   }
@@ -158,7 +197,7 @@ export default function MediaEditPage() {
         <div style={{ width: 64, height: 64, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: `${ACCENT}15`, fontSize: 28, color: ACCENT }}>?</div>
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, fontFamily: "var(--font-display)", color: TEXT }}>Média introuvable</h2>
         <p style={{ margin: 0, fontSize: 14, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)", maxWidth: 400 }}>Le média demandé n'existe pas ou a été supprimé.</p>
-        <button onClick={() => navigate("/admin/media")} style={{ marginTop: 8, padding: "10px 24px", borderRadius: "var(--radius-md)", border: `1px solid ${BORDER}`, background: "transparent", color: TEXT, fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Retour à la médiathèque</button>
+        <button type="button" onClick={() => navigate("/admin/media")} style={{ marginTop: 8, padding: "10px 24px", borderRadius: "var(--radius-md)", border: `1px solid ${BORDER}`, background: "transparent", color: TEXT, fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Retour à la médiathèque</button>
       </div>
     );
   }
@@ -170,7 +209,7 @@ export default function MediaEditPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header */}
       <div>
-        <button onClick={() => { if (isDirty && !window.confirm("Quitter sans enregistrer ?")) return; navigate("/admin/media"); }}
+        <button type="button" onClick={() => { if (isDirty && !window.confirm("Quitter sans enregistrer ?")) return; navigate("/admin/media"); }}
           style={{ ...btnBase, border: "none", background: "transparent", color: TEXT_SECONDARY, padding: "6px 0", marginBottom: 8 }}
         >
           <ArrowLeft size={16} /> Retour à la médiathèque
@@ -314,7 +353,7 @@ export default function MediaEditPage() {
               <label style={labelStyle} htmlFor="edit-thumb-url">URL de la miniature</label>
               <input id="edit-thumb-url" type="url" value={thumbnailUrl} disabled={!canEdit}
                 onChange={(e) => { setThumbnailUrl(e.target.value); setErrors((p) => ({ ...p, thumbnailUrl: "" })); }}
-                placeholder="https://..." style={{ ...inputStyle, ...(errors.thumbnailUrl ? { borderColor: DANGER } : {}), ...(!canEdit ? readOnlyStyle : {}) }}
+                placeholder="/image.webp ou https://..." style={{ ...inputStyle, ...(errors.thumbnailUrl ? { borderColor: DANGER } : {}), ...(!canEdit ? readOnlyStyle : {}) }}
               />
               {errors.thumbnailUrl && <div style={errStyle}>{errors.thumbnailUrl}</div>}
             </div>
@@ -366,13 +405,13 @@ export default function MediaEditPage() {
 
       {/* Action Bar */}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, flexWrap: "wrap", paddingBottom: 32 }}>
-        <button onClick={() => { if (isDirty && !window.confirm("Quitter sans enregistrer ?")) return; navigate("/admin/media"); }}
+        <button type="button" onClick={() => { if (isDirty && !window.confirm("Quitter sans enregistrer ?")) return; navigate("/admin/media"); }}
           style={{ ...btnBase, border: `1px solid ${BORDER}`, background: SURFACE, color: TEXT }}
         >
           Annuler
         </button>
         {canEdit && (
-          <button onClick={handleSave} disabled={saving}
+          <button type="button" onClick={handleSave} disabled={saving}
             style={{ ...btnBase, border: "none", background: ACCENT, color: "#fff", opacity: saving ? 0.6 : 1 }}
           >
             <Save size={14} /> Enregistrer
@@ -383,7 +422,7 @@ export default function MediaEditPage() {
       {/* Toast */}
       <AnimatePresence>
         {toast && (
-          <motion.div className="admin-settings-toast"
+          <motion.div className="admin-settings-toast" role="status" aria-live="polite"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
           >
             {toast}

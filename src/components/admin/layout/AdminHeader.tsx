@@ -5,14 +5,15 @@ import { Menu, Bell, User, LogOut, ChevronDown } from "lucide-react";
 import AdminBreadcrumb from "./AdminBreadcrumb";
 import NotificationCenterPanel from "../notifications/NotificationCenterPanel";
 import { useAuth } from "../../../context/AuthContext";
-import { adminService } from "../../../services/adminService";
+import { adminService, ADMIN_NOTIFICATIONS_CHANGED_EVENT } from "../../../services/adminService";
 import { ACCENT, BORDER, TEXT, TEXT_SECONDARY, SURFACE } from "../../../constants";
 
 interface AdminHeaderProps {
   onToggleSidebar: () => void;
+  sidebarExpanded: boolean;
 }
 
-export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
+export default function AdminHeader({ onToggleSidebar, sidebarExpanded }: AdminHeaderProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -21,6 +22,8 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
 
   const menuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const userMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const notificationButtonRef = useRef<HTMLButtonElement>(null);
 
   const userId = user?.id || 1;
   const role = user?.role || "reader";
@@ -38,6 +41,12 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
     fetchUnread();
   }, [fetchUnread]);
 
+  useEffect(() => {
+    const refresh = () => void fetchUnread();
+    window.addEventListener(ADMIN_NOTIFICATIONS_CHANGED_EVENT, refresh);
+    return () => window.removeEventListener(ADMIN_NOTIFICATIONS_CHANGED_EVENT, refresh);
+  }, [fetchUnread]);
+
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -51,6 +60,23 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    if (!userMenuOpen && !notifPanelOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (notifPanelOpen) {
+        setNotifPanelOpen(false);
+        notificationButtonRef.current?.focus();
+      }
+      if (userMenuOpen) {
+        setUserMenuOpen(false);
+        userMenuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [notifPanelOpen, userMenuOpen]);
 
 
   return (
@@ -70,10 +96,12 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
       }}
     >
       {/* Left: Toggle + Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      <div className="admin-header-left" style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <button
+          type="button"
           onClick={onToggleSidebar}
-          aria-label="Toggle navigation"
+          aria-label={sidebarExpanded ? "Réduire la navigation" : "Ouvrir la navigation"}
+          aria-expanded={sidebarExpanded}
           style={{
             display: "flex",
             alignItems: "center",
@@ -94,17 +122,20 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
       </div>
 
       {/* Right: Notifications + User */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div className="admin-header-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {/* Notification bell */}
         <div ref={notifRef} style={{ position: "relative" }}>
           <button
+            ref={notificationButtonRef}
+            type="button"
             onClick={() => {
               setNotifPanelOpen((prev) => !prev);
+              setUserMenuOpen(false);
               fetchUnread();
             }}
             aria-label="Notifications"
             aria-expanded={notifPanelOpen}
-            aria-haspopup="true"
+            aria-controls="admin-notification-panel"
             style={{
               display: "flex",
               alignItems: "center",
@@ -144,9 +175,14 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
         {/* User dropdown */}
         <div ref={menuRef} style={{ position: "relative" }}>
           <button
-            onClick={() => setUserMenuOpen((prev) => !prev)}
+            ref={userMenuButtonRef}
+            type="button"
+            onClick={() => {
+              setUserMenuOpen((prev) => !prev);
+              setNotifPanelOpen(false);
+            }}
             aria-expanded={userMenuOpen}
-            aria-haspopup="true"
+            aria-controls="admin-user-menu"
             style={{
               display: "flex",
               alignItems: "center",
@@ -192,6 +228,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
           <AnimatePresence>
             {userMenuOpen && (
               <motion.div
+                id="admin-user-menu"
                 initial={{ opacity: 0, y: -8, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.96 }}
@@ -210,6 +247,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                 }}
               >
                 <button
+                  type="button"
                   onClick={() => {
                     setUserMenuOpen(false);
                     navigate("/admin/profile");
@@ -234,6 +272,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                 </button>
                 <div style={{ height: 1, background: BORDER }} />
                 <button
+                  type="button"
                   onClick={() => {
                     setUserMenuOpen(false);
                     logout();

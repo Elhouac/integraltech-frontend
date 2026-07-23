@@ -25,6 +25,9 @@ export default function ProtectedRoute({
   if (isLoading) {
     return (
       <div
+        role="status"
+        aria-live="polite"
+        aria-label="Vérification de la session de démonstration"
         style={{
           display: "flex",
           alignItems: "center",
@@ -34,6 +37,7 @@ export default function ProtectedRoute({
         }}
       >
         <div
+          aria-hidden="true"
           style={{
             width: 36,
             height: 36,

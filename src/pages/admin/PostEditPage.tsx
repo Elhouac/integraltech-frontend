@@ -6,13 +6,19 @@ import { MOCK_CATEGORIES, POST_STATUS_CONFIG } from "../../data/admin-mocks";
 import { adminService } from "../../services/adminService";
 import type { Post, PostStatus } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
+import { useAuth } from "../../context/AuthContext";
 
 export default function PostEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const role = user?.role ?? "reader";
+  const canPublish = user?.role === "super_admin" || user?.role === "admin";
 
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   // Multilingual values
   const [title, setTitle] = useState({ fr: "", en: "", ar: "" });
@@ -34,8 +40,10 @@ export default function PostEditPage() {
   useEffect(() => {
     let active = true;
     async function loadPost() {
+      setIsLoading(true);
+      setLoadError(false);
       try {
-        const posts = await adminService.getPosts();
+        const posts = await adminService.getPosts(role);
         const res = posts.find((p) => p.id === Number(id));
         if (active) {
           if (res) {
@@ -51,18 +59,29 @@ export default function PostEditPage() {
             setSeoDescription(res.seo_description ?? "");
             setTags(res.tags);
           }
-          setIsLoading(false);
         }
       } catch (err) {
         console.error(err);
+        if (active) setLoadError(true);
+      } finally {
+        if (active) setIsLoading(false);
       }
     }
     loadPost();
     return () => { active = false; };
-  }, [id]);
+  }, [id, canPublish, role, reloadToken]);
 
   if (isLoading) {
-    return <div style={{ padding: 40, color: TEXT_SECONDARY }}>Chargement de l'article...</div>;
+    return <div role="status" aria-live="polite" style={{ padding: 40, color: TEXT_SECONDARY }}>Chargement de l'article...</div>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="admin-alert admin-alert-error" role="alert">
+        <span>Impossible de charger cet article de démonstration.</span>
+        <button type="button" onClick={() => setReloadToken((value) => value + 1)}>Réessayer</button>
+      </div>
+    );
   }
 
   if (!post) {
@@ -75,6 +94,7 @@ export default function PostEditPage() {
           L'article demandé n'existe pas ou a été supprimé.
         </p>
         <button
+          type="button"
           onClick={() => navigate("/admin/posts")}
           style={{
             marginTop: 16,
@@ -95,6 +115,8 @@ export default function PostEditPage() {
     );
   }
 
+  const workflowLocked = !canPublish && post.status === "published";
+
   const handleAddTag = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
@@ -112,7 +134,11 @@ export default function PostEditPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.fr.trim()) return;
+    if (!user || !title.fr.trim()) return;
+
+    const safeStatus: PostStatus = workflowLocked
+      ? post.status
+      : canPublish || status !== "published" ? status : "draft";
 
     try {
       const updatedPostData = {
@@ -125,13 +151,14 @@ export default function PostEditPage() {
         cover_image: coverImage || null,
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
-        status,
-        published_at: status === "published" ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString()) : null,
+        status: safeStatus,
+        published_at: workflowLocked
+          ? post.published_at
+          : safeStatus === "published" ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString()) : null,
         tags,
       };
 
-      await adminService.savePost(updatedPostData);
-      console.log("Saving updated post:", updatedPostData);
+      await adminService.savePost(updatedPostData, user.role);
       navigate("/admin/posts");
     } catch (err) {
       console.error(err);
@@ -267,6 +294,8 @@ export default function PostEditPage() {
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as PostStatus)}
+                disabled={workflowLocked}
+                aria-describedby={workflowLocked ? "post-workflow-lock-note" : undefined}
                 style={{
                   width: "100%",
                   padding: "8px 12px",
@@ -278,12 +307,19 @@ export default function PostEditPage() {
                   outline: "none",
                 }}
               >
-                {Object.entries(POST_STATUS_CONFIG).map(([key, config]) => (
-                  <option key={key} value={key}>
-                    {config.label}
-                  </option>
-                ))}
+                {Object.entries(POST_STATUS_CONFIG)
+                  .filter(([key]) => canPublish || key !== "published" || status === "published")
+                  .map(([key, config]) => (
+                    <option key={key} value={key}>
+                      {config.label}
+                    </option>
+                  ))}
               </select>
+              {workflowLocked && (
+                <p id="post-workflow-lock-note" style={{ margin: "6px 0 0", fontSize: 11, color: TEXT_SECONDARY }}>
+                  Seul un administrateur peut modifier le statut ou les informations de publication d'un article publié.
+                </p>
+              )}
             </div>
 
             {/* Category Select */}
@@ -322,6 +358,7 @@ export default function PostEditPage() {
                 type="datetime-local"
                 value={publishedAt}
                 onChange={(e) => setPublishedAt(e.target.value)}
+                disabled={!canPublish}
                 style={{
                   width: "100%",
                   padding: "8px 12px",

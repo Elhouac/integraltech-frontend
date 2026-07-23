@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ACCENT, BORDER, TEXT, TEXT_SECONDARY, SURFACE } from "../../../constants";
 
@@ -15,11 +15,17 @@ interface PaginationProps {
 
 function PaginationComponent({ meta, onPageChange }: PaginationProps) {
   const { page, perPage, total } = meta;
-  const totalPages = Math.ceil(total / perPage);
+  const totalPages = perPage > 0 ? Math.ceil(total / perPage) : 0;
+  const safePage = totalPages > 0 ? Math.min(Math.max(page, 1), totalPages) : 1;
+
+  useEffect(() => {
+    if (page !== safePage) onPageChange(safePage);
+  }, [onPageChange, page, safePage]);
+
   if (totalPages <= 1) return null;
 
-  const from = (page - 1) * perPage + 1;
-  const to = Math.min(page * perPage, total);
+  const from = (safePage - 1) * perPage + 1;
+  const to = Math.min(safePage * perPage, total);
 
   // Generate page numbers with ellipsis
   const getPages = (): (number | "...")[] => {
@@ -28,11 +34,11 @@ function PaginationComponent({ meta, onPageChange }: PaginationProps) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
-      if (page > 3) pages.push("...");
-      for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+      if (safePage > 3) pages.push("...");
+      for (let i = Math.max(2, safePage - 1); i <= Math.min(totalPages - 1, safePage + 1); i++) {
         pages.push(i);
       }
-      if (page < totalPages - 2) pages.push("...");
+      if (safePage < totalPages - 2) pages.push("...");
       pages.push(totalPages);
     }
     return pages;
@@ -76,13 +82,14 @@ function PaginationComponent({ meta, onPageChange }: PaginationProps) {
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
         {/* Prev */}
         <button
-          onClick={() => onPageChange(page - 1)}
-          disabled={page === 1}
+          type="button"
+          onClick={() => onPageChange(safePage - 1)}
+          disabled={safePage === 1}
           aria-label="Page précédente"
           style={{
             ...buttonBase,
-            opacity: page === 1 ? 0.4 : 1,
-            cursor: page === 1 ? "not-allowed" : "pointer",
+            opacity: safePage === 1 ? 0.4 : 1,
+            cursor: safePage === 1 ? "not-allowed" : "pointer",
           }}
         >
           <ChevronLeft size={14} />
@@ -99,15 +106,16 @@ function PaginationComponent({ meta, onPageChange }: PaginationProps) {
             </span>
           ) : (
             <button
+              type="button"
               key={p}
               onClick={() => onPageChange(p)}
-              aria-current={p === page ? "page" : undefined}
+              aria-current={p === safePage ? "page" : undefined}
               style={{
                 ...buttonBase,
-                background: p === page ? ACCENT : SURFACE,
-                color: p === page ? "#fff" : TEXT,
-                borderColor: p === page ? ACCENT : BORDER,
-                fontWeight: p === page ? 700 : 500,
+                background: p === safePage ? ACCENT : SURFACE,
+                color: p === safePage ? "#fff" : TEXT,
+                borderColor: p === safePage ? ACCENT : BORDER,
+                fontWeight: p === safePage ? 700 : 500,
               }}
             >
               {p}
@@ -117,13 +125,14 @@ function PaginationComponent({ meta, onPageChange }: PaginationProps) {
 
         {/* Next */}
         <button
-          onClick={() => onPageChange(page + 1)}
-          disabled={page === totalPages}
+          type="button"
+          onClick={() => onPageChange(safePage + 1)}
+          disabled={safePage === totalPages}
           aria-label="Page suivante"
           style={{
             ...buttonBase,
-            opacity: page === totalPages ? 0.4 : 1,
-            cursor: page === totalPages ? "not-allowed" : "pointer",
+            opacity: safePage === totalPages ? 0.4 : 1,
+            cursor: safePage === totalPages ? "not-allowed" : "pointer",
           }}
         >
           <ChevronRight size={14} />

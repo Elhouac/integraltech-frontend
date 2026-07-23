@@ -36,13 +36,13 @@ export default function AuditEventList({ events, onViewDetails, showActor = true
       <table className="admin-audit-table">
         <thead>
           <tr>
-            <th>Événement</th>
-            {showActor && <th>Acteur</th>}
-            <th>Action</th>
-            <th>Ressource</th>
-            <th>Résultat & Sévérité</th>
-            <th>Source</th>
-            <th style={{ textAlign: "right" }}>Détails</th>
+            <th scope="col">Événement</th>
+            {showActor && <th scope="col">Acteur</th>}
+            <th scope="col">Action</th>
+            <th scope="col">Ressource</th>
+            <th scope="col">Résultat & Sévérité</th>
+            <th scope="col">Source</th>
+            <th scope="col" style={{ textAlign: "right" }}>Détails</th>
           </tr>
         </thead>
         <tbody>

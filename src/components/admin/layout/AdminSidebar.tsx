@@ -122,6 +122,7 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
         {/* Mobile close button */}
         {mobileOpen && (
           <button
+            type="button"
             onClick={onCloseMobile}
             aria-label="Fermer le menu"
             style={{
@@ -163,7 +164,7 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
           <>
             <SectionLabel label="Gestion" collapsed={collapsed} />
             {showLeads && (
-              <SidebarLink to="/admin/leads" label="Leads" icon={Inbox} badge={3} collapsed={collapsed} onClick={onCloseMobile} />
+              <SidebarLink to="/admin/leads" label="Leads" icon={Inbox} collapsed={collapsed} onClick={onCloseMobile} />
             )}
             {showSubscribers && (
               <SidebarLink to="/admin/subscribers" label="Newsletter" icon={Mail} collapsed={collapsed} onClick={onCloseMobile} />
@@ -281,6 +282,7 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
         <>
           <motion.div
             className="admin-sidebar-overlay"
+            aria-hidden="true"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -294,6 +296,7 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
           />
           <motion.aside
             className="admin-sidebar-mobile"
+            aria-label="Navigation Admin mobile"
             initial={{ x: -280 }}
             animate={{ x: 0 }}
             exit={{ x: -280 }}

@@ -45,19 +45,25 @@ export default function ProfileAvatarEditor({ avatarUrl, initials, onAvatarChang
     const url = URL.createObjectURL(file);
     setObjectUrl(url);
     setImgBroken(false);
-    onAvatarChange(url);
-  }, [objectUrl, onAvatarChange]);
+  }, [objectUrl]);
 
   const handleUrlSubmit = () => {
     if (!urlInput.trim()) return;
     try {
-      new URL(urlInput);
+      const parsed = new URL(urlInput);
+      if ((parsed.protocol !== "http:" && parsed.protocol !== "https:") || parsed.username || parsed.password) {
+        throw new Error("unsafe URL");
+      }
     } catch {
       setError("URL invalide.");
       return;
     }
     setError("");
     setImgBroken(false);
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      setObjectUrl(null);
+    }
     onAvatarChange(urlInput.trim());
     setShowUrlInput(false);
     setUrlInput("");
@@ -69,7 +75,7 @@ export default function ProfileAvatarEditor({ avatarUrl, initials, onAvatarChang
     onAvatarRemove();
   };
 
-  const currentSrc = avatarUrl || null;
+  const currentSrc = objectUrl || avatarUrl || null;
   const showImage = currentSrc && !imgBroken;
 
   const btnStyle: React.CSSProperties = {
@@ -97,14 +103,14 @@ export default function ProfileAvatarEditor({ avatarUrl, initials, onAvatarChang
               style={{ display: "none" }}
               onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
             />
-            <button onClick={() => fileRef.current?.click()} style={btnStyle}>
+            <button type="button" onClick={() => fileRef.current?.click()} style={btnStyle}>
               <Upload size={13} /> Choisir un fichier
             </button>
-            <button onClick={() => setShowUrlInput((v) => !v)} style={btnStyle}>
+            <button type="button" onClick={() => setShowUrlInput((v) => !v)} style={btnStyle}>
               <Link2 size={13} /> URL externe
             </button>
-            {avatarUrl && (
-              <button onClick={handleRemove} style={{ ...btnStyle, color: DANGER, borderColor: DANGER }}>
+            {(avatarUrl || objectUrl) && (
+              <button type="button" onClick={handleRemove} style={{ ...btnStyle, color: DANGER, borderColor: DANGER }}>
                 <Trash2 size={13} /> Supprimer
               </button>
             )}
@@ -126,10 +132,10 @@ export default function ProfileAvatarEditor({ avatarUrl, initials, onAvatarChang
             }}
             onKeyDown={(e) => { if (e.key === "Enter") handleUrlSubmit(); }}
           />
-          <button onClick={handleUrlSubmit} style={{ ...btnStyle, background: ACCENT, color: "#fff", borderColor: ACCENT }}>
+          <button type="button" onClick={handleUrlSubmit} style={{ ...btnStyle, background: ACCENT, color: "#fff", borderColor: ACCENT }}>
             Appliquer
           </button>
-          <button onClick={() => { setShowUrlInput(false); setUrlInput(""); }} style={btnStyle}>
+          <button type="button" onClick={() => { setShowUrlInput(false); setUrlInput(""); }} aria-label="Fermer le champ URL" style={btnStyle}>
             <X size={13} />
           </button>
         </div>
@@ -139,7 +145,7 @@ export default function ProfileAvatarEditor({ avatarUrl, initials, onAvatarChang
         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px", borderRadius: "var(--radius-md)", background: `${ACCENT}08`, border: `1px solid ${ACCENT}30` }}>
           <Info size={14} style={{ flexShrink: 0, marginTop: 2, color: ACCENT }} />
           <span style={{ fontSize: 12, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>
-            Mode démonstration : la photo n'est pas envoyée au serveur et sera réinitialisée après actualisation.
+            Mode démonstration : un fichier local sert uniquement d'aperçu et n'est ni envoyé ni enregistré. Seule une URL HTTP(S) reste temporairement dans les données mock jusqu'au rechargement.
           </span>
         </div>
       </div>

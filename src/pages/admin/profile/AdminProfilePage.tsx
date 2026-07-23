@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { User, Settings2, Shield, Monitor, Info } from "lucide-react";
 import ProfilePersonalForm from "../../../components/admin/profile/ProfilePersonalForm";
@@ -23,25 +23,61 @@ export default function AdminProfilePage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const fetchProfile = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setLoadError(false);
     try {
       const p = await adminService.getCurrentAdminProfile(user.id);
-      if (p) setProfile(p);
-    } catch { /* */ }
-    setLoading(false);
+      setProfile(p ?? null);
+      setAvatarFailed(false);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
-  const handleProfileUpdated = (p: AdminProfile) => setProfile(p);
+  const handleProfileUpdated = (p: AdminProfile) => {
+    setProfile(p);
+    setAvatarFailed(false);
+  };
+
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex = index;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % TABS.length;
+    else if (event.key === "ArrowLeft") nextIndex = (index - 1 + TABS.length) % TABS.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = TABS.length - 1;
+    else return;
+    event.preventDefault();
+    setActiveTab(TABS[nextIndex].key);
+    tabRefs.current[nextIndex]?.focus();
+  };
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 300 }}>
+      <div role="status" aria-live="polite" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 300 }}>
         <div style={{ fontSize: 14, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>Chargement du profil…</div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="admin-alert admin-alert-error" role="alert">
+        <span>Impossible de charger le profil de démonstration.</span>
+        <button type="button" onClick={() => void fetchProfile()}>Réessayer</button>
       </div>
     );
   }
@@ -67,9 +103,9 @@ export default function AdminProfilePage() {
         style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}
       >
         <div className="admin-profile-avatar-circle" style={{ width: 56, height: 56, fontSize: 22 }}>
-          {profile.avatarUrl ? (
+          {profile.avatarUrl && !avatarFailed ? (
             <img src={profile.avatarUrl} alt={`Photo de ${profile.displayName}`}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              onError={() => setAvatarFailed(true)}
             />
           ) : (
             <span>{initials}</span>
@@ -93,16 +129,21 @@ export default function AdminProfilePage() {
 
       {/* Tabs */}
       <div className="admin-profile-tabs" role="tablist" aria-label="Sections du profil">
-        {TABS.map((tab) => {
+        {TABS.map((tab, index) => {
           const Icon = tab.icon;
           return (
-            <button key={tab.key}
+            <button
+              key={tab.key}
+              ref={(element) => { tabRefs.current[index] = element; }}
+              type="button"
               className={`admin-profile-tab${activeTab === tab.key ? " active" : ""}`}
               onClick={() => setActiveTab(tab.key)}
+              onKeyDown={(event) => handleTabKeyDown(event, index)}
               role="tab"
               aria-selected={activeTab === tab.key}
               aria-controls={`panel-${tab.key}`}
               id={`tab-${tab.key}`}
+              tabIndex={activeTab === tab.key ? 0 : -1}
             >
               <Icon size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
               {tab.label}

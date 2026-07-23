@@ -7,9 +7,12 @@ import { MOCK_CATEGORIES, MOCK_TAGS, POST_STATUS_CONFIG } from "../../data/admin
 import { adminService } from "../../services/adminService";
 import type { Post, PostStatus } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
+import { useAuth } from "../../context/AuthContext";
 
 export default function PostCreatePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canPublish = user?.role === "super_admin" || user?.role === "admin";
 
   // Multilingual values
   const [title, setTitle] = useState({ fr: "", en: "", ar: "" });
@@ -45,25 +48,26 @@ export default function PostCreatePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.fr.trim()) return;
+    if (!user || !title.fr.trim()) return;
+
+    const safeStatus: PostStatus = canPublish || status !== "published" ? status : "draft";
 
     const newPostData = {
       title,
       excerpt,
       content,
       category_id: categoryId,
-      author: "Super Admin",
+      author: user.name,
       cover_image: coverImage || null,
       seo_title: seoTitle || null,
       seo_description: seoDescription || null,
-      status,
-      published_at: status === "published" ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString()) : null,
+      status: safeStatus,
+      published_at: safeStatus === "published" ? (publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString()) : null,
       tags,
     };
 
     try {
-      await adminService.savePost(newPostData);
-      console.log("Saving new post:", newPostData);
+      await adminService.savePost(newPostData, user.role);
       navigate("/admin/posts");
     } catch (err) {
       console.error(err);
@@ -210,11 +214,13 @@ export default function PostCreatePage() {
                   outline: "none",
                 }}
               >
-                {Object.entries(POST_STATUS_CONFIG).map(([key, config]) => (
-                  <option key={key} value={key}>
-                    {config.label}
-                  </option>
-                ))}
+                {Object.entries(POST_STATUS_CONFIG)
+                  .filter(([key]) => canPublish || key !== "published")
+                  .map(([key, config]) => (
+                    <option key={key} value={key}>
+                      {config.label}
+                    </option>
+                  ))}
               </select>
             </div>
 

@@ -4,10 +4,12 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Mail, Phone, Calendar, User, Tag } from "lucide-react";
 import LeadStatusBadge from "../../components/admin/leads/LeadStatusBadge";
 import LeadNotes from "../../components/admin/leads/LeadNotes";
+import { useAuth } from "../../context/AuthContext";
 import { adminService } from "../../services/adminService";
 import type { LeadStatus, LeadNote, Lead } from "../../types/admin";
 import { LEAD_STATUS_CONFIG } from "../../data/admin-mocks";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
+import { hasPermission } from "../../utils/permissions";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", {
@@ -22,52 +24,63 @@ function formatDate(iso: string): string {
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const role = user?.role ?? "reader";
+  const canEdit = user ? hasPermission(user.role, "leads", "edit") : false;
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [status, setStatus] = useState<LeadStatus>("new");
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let active = true;
     async function loadLeadData() {
+      setIsLoading(true);
+      setLoadError(false);
       try {
         const leadId = Number(id);
         const [leadRes, notesRes] = await Promise.all([
-          adminService.getLeadById(leadId),
-          adminService.getLeadNotes(leadId),
+          adminService.getLeadById(leadId, role),
+          adminService.getLeadNotes(leadId, role),
         ]);
         if (active) {
           if (leadRes) {
             setLead(leadRes);
             setStatus(leadRes.status);
             setNotes(notesRes);
-            if (!leadRes.is_read) {
-              await adminService.markLeadAsRead(leadId);
+            if (!leadRes.is_read && user && canEdit) {
+              await adminService.markLeadAsRead(leadId, user.role);
             }
           }
-          setIsLoading(false);
         }
       } catch (err) {
         console.error(err);
+        if (active) setLoadError(true);
+      } finally {
+        if (active) setIsLoading(false);
       }
     }
     loadLeadData();
     return () => { active = false; };
-  }, [id]);
+  }, [id, user, canEdit, role, reloadToken]);
 
   const handleStatusChange = async (newStatus: LeadStatus) => {
+    if (!user || !canEdit) return;
     try {
       setStatus(newStatus);
-      await adminService.updateLeadStatus(Number(id), newStatus);
+      await adminService.updateLeadStatus(Number(id), newStatus, user.role);
     } catch (err) {
       console.error(err);
     }
   };
 
   const handleAddNote = async (content: string) => {
+    if (!user || !canEdit) return;
     try {
-      const newNote = await adminService.addLeadNote(Number(id), "Super Admin", content);
+      const newNote = await adminService.addLeadNote(Number(id), user.name, content, user.role);
       setNotes((prev) => [...prev, newNote]);
     } catch (err) {
       console.error(err);
@@ -75,7 +88,16 @@ export default function LeadDetailPage() {
   };
 
   if (isLoading) {
-    return <div style={{ padding: 40, color: TEXT_SECONDARY }}>Chargement du lead...</div>;
+    return <div role="status" aria-live="polite" style={{ padding: 40, color: TEXT_SECONDARY }}>Chargement du lead...</div>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="admin-alert admin-alert-error" role="alert">
+        <span>Impossible de charger ce lead de démonstration.</span>
+        <button type="button" onClick={() => setReloadToken((value) => value + 1)}>Réessayer</button>
+      </div>
+    );
   }
 
   if (!lead) {
@@ -165,30 +187,32 @@ export default function LeadDetailPage() {
           {/* Status change */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <LeadStatusBadge status={status} />
-            <select
-              value={status}
-              onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
-              aria-label="Changer le statut"
-              style={{
-                padding: "6px 28px 6px 10px",
-                border: `1px solid ${BORDER}`,
-                borderRadius: "var(--radius-sm)",
-                background: SURFACE,
-                color: TEXT,
-                fontSize: 12,
-                fontFamily: "var(--font-sans)",
-                cursor: "pointer",
-                outline: "none",
-                appearance: "none",
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 8px center",
-              }}
-            >
-              {Object.entries(LEAD_STATUS_CONFIG).map(([key, config]) => (
-                <option key={key} value={key}>{config.label}</option>
-              ))}
-            </select>
+            {canEdit && (
+              <select
+                value={status}
+                onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
+                aria-label="Changer le statut"
+                style={{
+                  padding: "6px 28px 6px 10px",
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: "var(--radius-sm)",
+                  background: SURFACE,
+                  color: TEXT,
+                  fontSize: 12,
+                  fontFamily: "var(--font-sans)",
+                  cursor: "pointer",
+                  outline: "none",
+                  appearance: "none",
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 8px center",
+                }}
+              >
+                {Object.entries(LEAD_STATUS_CONFIG).map(([key, config]) => (
+                  <option key={key} value={key}>{config.label}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </motion.div>
@@ -260,13 +284,15 @@ export default function LeadDetailPage() {
       </motion.div>
 
       {/* ── Notes ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-      >
-        <LeadNotes notes={notes} onAddNote={handleAddNote} />
-      </motion.div>
+      {canEdit && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <LeadNotes notes={notes} onAddNote={handleAddNote} />
+        </motion.div>
+      )}
     </div>
   );
 }

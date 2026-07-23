@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { X, ExternalLink, Image as ImageIcon, FileText, Video, Link2, Tag } from "lucide-react";
 import type { MediaAsset } from "../../../types/admin";
 import { MEDIA_STATUS_CONFIG, MEDIA_TYPE_CONFIG } from "../../../data/admin-mocks";
@@ -19,23 +19,60 @@ function formatDuration(seconds: number): string {
 
 const mediaIcons = { image: ImageIcon, document: FileText, video: Video };
 
+function isSafeMediaUrl(value: string): boolean {
+  if (/^\/(?![\\/])/.test(value) && !/[\\\u0000-\u001F]/.test(value) && !/%5c/i.test(value)) return true;
+  try {
+    const parsed = new URL(value);
+    return (parsed.protocol === "http:" || parsed.protocol === "https:") && !parsed.username && !parsed.password;
+  } catch {
+    return false;
+  }
+}
+
 interface MediaPreviewDialogProps {
   asset: MediaAsset | null;
   onClose: () => void;
 }
 
 export default function MediaPreviewDialog({ asset, onClose }: MediaPreviewDialogProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === "Escape") onClose();
+    if (e.key === "Escape") {
+      e.preventDefault();
+      onClose();
+      return;
+    }
+    if (e.key !== "Tab" || !panelRef.current) return;
+    const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), video[controls], [tabindex]:not([tabindex='-1'])"));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }, [onClose]);
 
   useEffect(() => {
     if (!asset) return;
+    const returnTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setImageFailed(false);
+    setCopyFeedback(null);
     document.addEventListener("keydown", handleKeyDown);
     document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      returnTarget?.focus();
     };
   }, [asset, handleKeyDown]);
 
@@ -43,6 +80,18 @@ export default function MediaPreviewDialog({ asset, onClose }: MediaPreviewDialo
 
   const Icon = mediaIcons[asset.mediaType];
   const typeCfg = MEDIA_TYPE_CONFIG[asset.mediaType];
+  const hasSafeUrl = Boolean(asset.url && isSafeMediaUrl(asset.url));
+
+  const handleCopyUrl = async () => {
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    try {
+      await navigator.clipboard.writeText(asset.url);
+      setCopyFeedback("URL copiée.");
+    } catch {
+      setCopyFeedback("Impossible de copier l'URL. Copiez-la manuellement.");
+    }
+    copyTimerRef.current = setTimeout(() => setCopyFeedback(null), 3000);
+  };
 
   const metaRows: { label: string; value: string }[] = [
     { label: "Nom", value: asset.name },
@@ -59,13 +108,13 @@ export default function MediaPreviewDialog({ asset, onClose }: MediaPreviewDialo
 
   return (
     <div className="admin-media-preview-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Aperçu : ${asset.name}`}>
-      <div className="admin-media-preview-panel" onClick={(e) => e.stopPropagation()}>
+      <div ref={panelRef} className="admin-media-preview-panel" onClick={(e) => e.stopPropagation()}>
         <div className="admin-media-preview-header">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Icon size={18} style={{ color: typeCfg.color }} />
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, fontFamily: "var(--font-display)", color: TEXT }}>{asset.name}</h2>
           </div>
-          <button onClick={onClose} aria-label="Fermer l'aperçu"
+          <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Fermer l'aperçu"
             style={{ display: "inline-flex", padding: 6, border: "none", background: "transparent", cursor: "pointer", color: TEXT_SECONDARY, borderRadius: "var(--radius-sm)" }}
           >
             <X size={20} />
@@ -74,11 +123,11 @@ export default function MediaPreviewDialog({ asset, onClose }: MediaPreviewDialo
 
         <div className="admin-media-preview-body">
           {/* Preview area */}
-          {asset.mediaType === "image" && asset.url ? (
+          {asset.mediaType === "image" && hasSafeUrl && !imageFailed ? (
             <img src={asset.url} alt={asset.altText.fr || asset.name} className="admin-media-preview-image"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              onError={() => setImageFailed(true)}
             />
-          ) : asset.mediaType === "video" && asset.url ? (
+          ) : asset.mediaType === "video" && hasSafeUrl ? (
             <video controls style={{ width: "100%", maxHeight: 400, borderRadius: "var(--radius-md)", background: "var(--background)" }}>
               <source src={asset.url} type={asset.mimeType} />
               Votre navigateur ne supporte pas la lecture vidéo.
@@ -89,7 +138,7 @@ export default function MediaPreviewDialog({ asset, onClose }: MediaPreviewDialo
               <span style={{ fontSize: 14, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>
                 {asset.mediaType === "video" ? "Aperçu vidéo non disponible (fichier mock)" : "Aperçu non disponible"}
               </span>
-              {asset.url && (
+              {hasSafeUrl && (
                 <a href={asset.url} target="_blank" rel="noopener noreferrer"
                   style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: ACCENT, textDecoration: "none", fontFamily: "var(--font-sans)" }}
                 >
@@ -160,13 +209,14 @@ export default function MediaPreviewDialog({ asset, onClose }: MediaPreviewDialo
           )}
 
           {/* Copy URL */}
-          {asset.url && (
+          {hasSafeUrl && (
             <div style={{ marginTop: 16 }}>
-              <button onClick={() => { navigator.clipboard.writeText(asset.url); }}
+              <button type="button" onClick={() => void handleCopyUrl()}
                 style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: "var(--radius-md)", border: `1px solid ${BORDER}`, background: SURFACE, color: TEXT, fontSize: 13, fontFamily: "var(--font-sans)", fontWeight: 600, cursor: "pointer" }}
               >
                 <Link2 size={14} /> Copier l'URL
               </button>
+              {copyFeedback && <span role="status" aria-live="polite" style={{ display: "block", marginTop: 6, fontSize: 12, color: TEXT_SECONDARY }}>{copyFeedback}</span>}
             </div>
           )}
         </div>

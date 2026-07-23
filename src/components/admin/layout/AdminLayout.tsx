@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, MotionConfig } from "framer-motion";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import { BACKGROUND } from "../../../constants";
@@ -24,6 +24,15 @@ export default function AdminLayout() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [mobileOpen]);
+
   // ── Close mobile menu on route change would be handled by SidebarLink onClick ──
 
   const toggleSidebar = () => {
@@ -37,41 +46,52 @@ export default function AdminLayout() {
   const sidebarWidth = isMobile ? 0 : collapsed ? 72 : 260;
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: BACKGROUND,
-        fontFamily: "var(--font-sans)",
-      }}
-    >
-      {/* Sidebar */}
-      <AdminSidebar
-        collapsed={isMobile ? false : collapsed}
-        mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
-
-      {/* Main content area */}
-      <motion.div
-        animate={{ marginLeft: sidebarWidth }}
-        transition={{ duration: 0.2, ease: "easeInOut" }}
-        style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
+    <MotionConfig reducedMotion="user">
+      <div
+        className="admin-layout"
+        style={{
+          minHeight: "100vh",
+          background: BACKGROUND,
+          fontFamily: "var(--font-sans)",
+        }}
       >
-        <AdminHeader onToggleSidebar={toggleSidebar} />
+        <a className="admin-skip-link" href="#admin-content">
+          Aller au contenu principal
+        </a>
 
-        <main
-          id="admin-content"
-          style={{
-            flex: 1,
-            padding: "24px",
-            maxWidth: 1400,
-            width: "100%",
-            margin: "0 auto",
-          }}
+        {/* Sidebar */}
+        <AdminSidebar
+          collapsed={isMobile ? false : collapsed}
+          mobileOpen={mobileOpen}
+          onCloseMobile={() => setMobileOpen(false)}
+        />
+
+        {/* Main content area */}
+        <motion.div
+          animate={{ marginLeft: sidebarWidth }}
+          transition={{ duration: 0.2, ease: "easeInOut" }}
+          style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
         >
-          <Outlet />
-        </main>
-      </motion.div>
-    </div>
+          <AdminHeader
+            onToggleSidebar={toggleSidebar}
+            sidebarExpanded={isMobile ? mobileOpen : !collapsed}
+          />
+
+          <main
+            id="admin-content"
+            tabIndex={-1}
+            style={{
+              flex: 1,
+              padding: "24px",
+              maxWidth: 1400,
+              width: "100%",
+              margin: "0 auto",
+            }}
+          >
+            <Outlet />
+          </main>
+        </motion.div>
+      </div>
+    </MotionConfig>
   );
 }

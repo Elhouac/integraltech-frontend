@@ -50,6 +50,7 @@ export default function MediaCreatePage() {
   const [mode, setMode] = useState<CreateMode>("file");
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // File mode state
@@ -115,18 +116,30 @@ export default function MediaCreatePage() {
     if (mode === "url") {
       if (!externalUrl.trim()) errs.url = "L'URL est requise.";
       else {
-        try { new URL(externalUrl); } catch { errs.url = "URL invalide."; }
+        if (!isSafeHttpUrl(externalUrl)) errs.url = "URL invalide. Utilisez HTTP ou HTTPS.";
       }
     }
     if (externalThumbnailUrl.trim() && mode === "url") {
-      try { new URL(externalThumbnailUrl); } catch { errs.thumbnailUrl = "URL de miniature invalide."; }
+      if (!isSafeHttpUrl(externalThumbnailUrl)) errs.thumbnailUrl = "URL de miniature invalide. Utilisez HTTP ou HTTPS.";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
+  const isSafeHttpUrl = (value: string): boolean => {
+    try {
+      const parsed = new URL(value);
+      return (parsed.protocol === "http:" || parsed.protocol === "https:")
+        && !parsed.username
+        && !parsed.password;
+    } catch {
+      return false;
+    }
+  };
+
   const handleCreate = async () => {
-    if (!validate()) return;
+    if (!user || !validate()) return;
+    setSubmitError(null);
     setSaving(true);
     try {
       const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
@@ -140,8 +153,8 @@ export default function MediaCreatePage() {
           originalName: selectedFile.name,
           mediaType,
           mimeType: selectedFile.type,
-          url: filePreviewUrl ?? "",
-          thumbnailUrl: filePreviewUrl ?? "",
+          url: "",
+          thumbnailUrl: "",
           source: "local_mock" as MediaSource,
           title, altText,
           caption: { ...EMPTY_ML },
@@ -152,8 +165,8 @@ export default function MediaCreatePage() {
           width: null, height: null, durationSeconds: null,
           status: "active",
           usageReferences: [],
-          uploadedBy: user?.name ?? "Admin",
-        });
+          uploadedBy: user.name,
+        }, user.role);
       } else {
         await adminService.createMediaAsset({
           name: externalName.trim(),
@@ -172,14 +185,14 @@ export default function MediaCreatePage() {
           width: null, height: null, durationSeconds: null,
           status: "active",
           usageReferences: [],
-          uploadedBy: user?.name ?? "Admin",
-        });
+          uploadedBy: user.name,
+        }, user.role);
       }
 
       setToast("Média créé avec succès.");
       setTimeout(() => navigate("/admin/media"), 800);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      setSubmitError("Impossible de créer ce média. Vérifiez les informations puis réessayez.");
     } finally {
       setSaving(false);
     }
@@ -191,7 +204,7 @@ export default function MediaCreatePage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header */}
       <div>
-        <button onClick={() => navigate("/admin/media")}
+        <button type="button" onClick={() => navigate("/admin/media")}
           style={{ ...btnBase, border: "none", background: "transparent", color: TEXT_SECONDARY, padding: "6px 0", marginBottom: 8 }}
         >
           <ArrowLeft size={16} /> Retour à la médiathèque
@@ -211,12 +224,12 @@ export default function MediaCreatePage() {
 
       {/* Mode toggle */}
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={() => setMode("file")}
+        <button type="button" onClick={() => setMode("file")}
           style={{ ...btnBase, border: `1px solid ${mode === "file" ? ACCENT : BORDER}`, background: mode === "file" ? `${ACCENT}15` : SURFACE, color: mode === "file" ? ACCENT : TEXT }}
         >
           <Upload size={14} /> Fichier local (mock)
         </button>
-        <button onClick={() => setMode("url")}
+        <button type="button" onClick={() => setMode("url")}
           style={{ ...btnBase, border: `1px solid ${mode === "url" ? ACCENT : BORDER}`, background: mode === "url" ? `${ACCENT}15` : SURFACE, color: mode === "url" ? ACCENT : TEXT }}
         >
           <Link2 size={14} /> URL externe
@@ -252,7 +265,7 @@ export default function MediaCreatePage() {
                   <div style={{ fontSize: 12, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>
                     {selectedFile.type} · {formatBytes(selectedFile.size)}
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); setSelectedFile(null); if (filePreviewUrl) { URL.revokeObjectURL(filePreviewUrl); setFilePreviewUrl(null); } }}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedFile(null); if (filePreviewUrl) { URL.revokeObjectURL(filePreviewUrl); setFilePreviewUrl(null); } }}
                     style={{ ...btnBase, border: `1px solid ${BORDER}`, background: SURFACE, color: TEXT_SECONDARY, marginTop: 4 }}
                   >
                     <X size={14} /> Changer de fichier
@@ -369,14 +382,20 @@ export default function MediaCreatePage() {
         </div>
       </div>
 
+      {submitError && (
+        <div className="admin-alert admin-alert-error" role="alert">
+          {submitError}
+        </div>
+      )}
+
       {/* Action Bar */}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, flexWrap: "wrap", paddingBottom: 32 }}>
-        <button onClick={() => navigate("/admin/media")}
+        <button type="button" onClick={() => navigate("/admin/media")}
           style={{ ...btnBase, border: `1px solid ${BORDER}`, background: SURFACE, color: TEXT }}
         >
           Annuler
         </button>
-        <button onClick={handleCreate} disabled={saving}
+        <button type="button" onClick={handleCreate} disabled={saving}
           style={{ ...btnBase, border: "none", background: ACCENT, color: "#fff", opacity: saving ? 0.6 : 1 }}
         >
           <Upload size={14} /> Créer le média
@@ -386,7 +405,7 @@ export default function MediaCreatePage() {
       {/* Toast */}
       <AnimatePresence>
         {toast && (
-          <motion.div className="admin-settings-toast"
+          <motion.div className="admin-settings-toast" role="status" aria-live="polite"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
           >
             {toast}

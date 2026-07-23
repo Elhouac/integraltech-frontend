@@ -30,25 +30,31 @@ export default function AdminSolutionsPage() {
   const role = user?.role ?? "viewer";
   const isAdmin = role === "super_admin" || role === "admin";
   const canCreate = hasPermission(role, "solutions", "create");
+  const canEdit = hasPermission(role, "solutions", "edit");
   const canDelete = hasPermission(role, "solutions", "delete");
 
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(false);
     try {
       const [sols, svcs] = await Promise.all([
-        adminService.getSolutions(),
-        adminService.getServices(),
+        adminService.getSolutions(role),
+        adminService.getServices(role),
       ]);
       setSolutions(sols);
       setServices(svcs);
-      setIsLoading(false);
     } catch (err) {
       console.error(err);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [role]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -126,9 +132,9 @@ export default function AdminSolutionsPage() {
 
   // Actions
   const handleDelete = async () => {
-    if (deleteDialog.solutionId !== null) {
+    if (user && canDelete && deleteDialog.solutionId !== null) {
       try {
-        await adminService.deleteSolution(deleteDialog.solutionId);
+        await adminService.deleteSolution(deleteDialog.solutionId, user.role);
         await fetchData();
       } catch (err) { console.error(err); }
       setDeleteDialog({ open: false, solutionId: null });
@@ -136,15 +142,17 @@ export default function AdminSolutionsPage() {
   };
 
   const handleDuplicate = async (id: number) => {
+    if (!user || !canCreate) return;
     try {
-      await adminService.duplicateSolution(id);
+      await adminService.duplicateSolution(id, user.role);
       await fetchData();
     } catch (err) { console.error(err); }
   };
 
   const handleArchive = async (id: number) => {
+    if (!user || !isAdmin || !canEdit) return;
     try {
-      await adminService.archiveSolution(id);
+      await adminService.archiveSolution(id, user.role);
       await fetchData();
     } catch (err) { console.error(err); }
   };
@@ -156,7 +164,7 @@ export default function AdminSolutionsPage() {
   };
 
   const canArchiveSolution = (s: Solution) => {
-    if (!isAdmin) return false;
+    if (!isAdmin || !canEdit) return false;
     return s.status === "published";
   };
 
@@ -238,8 +246,8 @@ export default function AdminSolutionsPage() {
       width: 140,
       render: (s) => (
         <div style={{ display: "flex", gap: 6 }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => navigate(`/admin/solutions/${s.id}/edit`)} title="Modifier" style={actionBtnStyle}><Edit size={14} /></button>
-          <button onClick={() => handleDuplicate(s.id)} title="Dupliquer" style={actionBtnStyle}><Copy size={14} /></button>
+          {canEdit && <button onClick={() => navigate(`/admin/solutions/${s.id}/edit`)} title="Modifier" style={actionBtnStyle}><Edit size={14} /></button>}
+          {canCreate && <button onClick={() => handleDuplicate(s.id)} title="Dupliquer" style={actionBtnStyle}><Copy size={14} /></button>}
           {canArchiveSolution(s) && (
             <button onClick={() => handleArchive(s.id)} title="Archiver" style={{ ...actionBtnStyle, color: "#F59E0B" }}><Archive size={14} /></button>
           )}
@@ -312,26 +320,35 @@ export default function AdminSolutionsPage() {
         )}
       </div>
 
-      {/* Data Table */}
-      <DataTable<Solution>
-        columns={columns}
-        data={paginatedData}
-        loading={isLoading}
-        sort={sort}
-        onSort={handleSort}
-        getRowKey={(s) => s.id}
-        onRowClick={(s) => navigate(`/admin/solutions/${s.id}/edit`)}
-        emptyContent={
-          <EmptyState
-            icon={Lightbulb}
-            title="Aucune solution trouvée"
-            description={search || statusFilter !== "all" || serviceFilter !== "all" ? "Essayez de modifier vos filtres." : "Commencez par créer une nouvelle solution."}
+      {loadError ? (
+        <div className="admin-alert admin-alert-error" role="alert">
+          <span>Impossible de charger les solutions de démonstration.</span>
+          <button type="button" onClick={() => void fetchData()}>Réessayer</button>
+        </div>
+      ) : (
+        <>
+          {/* Data Table */}
+          <DataTable<Solution>
+            columns={columns}
+            data={paginatedData}
+            loading={isLoading}
+            sort={sort}
+            onSort={handleSort}
+            getRowKey={(s) => s.id}
+            onRowClick={canEdit ? (s) => navigate(`/admin/solutions/${s.id}/edit`) : undefined}
+            emptyContent={
+              <EmptyState
+                icon={Lightbulb}
+                title="Aucune solution trouvée"
+                description={search || statusFilter !== "all" || serviceFilter !== "all" ? "Essayez de modifier vos filtres." : "Commencez par créer une nouvelle solution."}
+              />
+            }
           />
-        }
-      />
 
-      {/* Pagination */}
-      <Pagination meta={paginationMeta} onPageChange={setPage} />
+          {/* Pagination */}
+          <Pagination meta={paginationMeta} onPageChange={setPage} />
+        </>
+      )}
 
       {/* Delete Confirm */}
       <ConfirmDialog

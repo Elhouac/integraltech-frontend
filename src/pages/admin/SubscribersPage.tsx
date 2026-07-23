@@ -9,10 +9,12 @@ import SearchInput from "../../components/admin/shared/SearchInput";
 import StatusBadge from "../../components/admin/shared/StatusBadge";
 import EmptyState from "../../components/admin/shared/EmptyState";
 import ConfirmDialog from "../../components/admin/shared/ConfirmDialog";
+import { useAuth } from "../../context/AuthContext";
 import { adminService } from "../../services/adminService";
 import type { Subscriber } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../constants";
 import { safeSort } from "../../utils/sort";
+import { hasPermission } from "../../utils/permissions";
 
 const PER_PAGE = 10;
 
@@ -30,23 +32,36 @@ function formatDate(iso: string): string {
 }
 
 function escapeCsv(val: unknown): string {
-  const str = String(val ?? "").replace(/"/g, '""');
+  let raw = String(val ?? "");
+  if (/^[=+\-@\t\r]/.test(raw)) raw = `'${raw}`;
+  const str = raw.replace(/"/g, '""');
   return `"${str}"`;
 }
 
 export default function SubscribersPage() {
+  const { user } = useAuth();
+  const role = user?.role ?? "reader";
+  const canEdit = user ? hasPermission(user.role, "subscribers", "edit") : false;
+  const canDelete = user ? hasPermission(user.role, "subscribers", "delete") : false;
+  const canExport = user ? hasPermission(user.role, "subscribers", "export") : false;
+  const canSelect = canEdit || canDelete;
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchSubscribers = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(false);
     try {
-      const res = await adminService.getSubscribers();
+      const res = await adminService.getSubscribers(role);
       setSubscribers(res);
-      setIsLoading(false);
     } catch (err) {
       console.error(err);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [role]);
 
   useEffect(() => {
     fetchSubscribers();
@@ -106,6 +121,7 @@ export default function SubscribersPage() {
   const allPageSelected = paged.length > 0 && paged.every((s) => selected.has(s.id));
 
   const toggleAll = () => {
+    if (!canSelect) return;
     if (allPageSelected) {
       setSelected((prev) => {
         const next = new Set(prev);
@@ -122,6 +138,7 @@ export default function SubscribersPage() {
   };
 
   const toggleOne = (id: number) => {
+    if (!canSelect) return;
     setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -131,13 +148,16 @@ export default function SubscribersPage() {
 
   // ── Bulk actions ──
   const executeBulkAction = useCallback(async () => {
+    if (!user) return;
+    const isDelete = confirmDialog.action === "delete";
+    if ((isDelete && !canDelete) || (!isDelete && !canEdit)) return;
     const ids = Array.from(selected);
     try {
-      if (confirmDialog.action === "delete") {
-        await adminService.deleteSubscribers(ids);
+      if (isDelete) {
+        await adminService.deleteSubscribers(ids, user.role);
       } else {
         const active = confirmDialog.action === "activate";
-        await adminService.updateSubscriberStatus(ids, active);
+        await adminService.updateSubscriberStatus(ids, active, user.role);
       }
       await fetchSubscribers();
     } catch (err) {
@@ -145,10 +165,11 @@ export default function SubscribersPage() {
     }
     setSelected(new Set());
     setConfirmDialog({ open: false, action: "delete" });
-  }, [selected, confirmDialog.action, fetchSubscribers]);
+  }, [selected, confirmDialog.action, fetchSubscribers, user, canDelete, canEdit]);
 
   // ── CSV Export ──
   const handleExport = () => {
+    if (!canExport) return;
     const activeEmails = filtered.filter((s) => s.is_active);
     const headers = ["Email", "Statut", "Date d'inscription"];
     const rows = activeEmails.map((s) => [s.email, "Actif", formatDate(s.subscribed_at)]);
@@ -170,11 +191,11 @@ export default function SubscribersPage() {
 
   // ── Columns ──
   const columns: Column<Subscriber>[] = [
-    {
+    ...(canSelect ? [{
       key: "checkbox",
       label: "",
       width: 40,
-      render: (sub) => (
+      render: (sub: Subscriber) => (
         <input
           type="checkbox"
           checked={selected.has(sub.id)}
@@ -184,7 +205,7 @@ export default function SubscribersPage() {
           style={{ accentColor: ACCENT, width: 15, height: 15, cursor: "pointer" }}
         />
       ),
-    },
+    }] : []),
     {
       key: "email",
       label: "Email",
@@ -231,6 +252,15 @@ export default function SubscribersPage() {
   ];
 
   const activeCount = subscribers.filter((s) => s.is_active).length;
+
+  if (loadError) {
+    return (
+      <div className="admin-alert admin-alert-error" role="alert">
+        <span>Impossible de charger les abonnés de démonstration.</span>
+        <button type="button" onClick={() => void fetchSubscribers()}>Réessayer</button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -284,7 +314,7 @@ export default function SubscribersPage() {
             Gérez les abonnés à la newsletter du site.
           </p>
         </div>
-        <button
+        {canExport && <button
           onClick={handleExport}
           aria-label="Exporter les emails actifs en CSV"
           style={{
@@ -306,7 +336,7 @@ export default function SubscribersPage() {
         >
           <Download size={14} />
           Export CSV
-        </button>
+        </button>}
       </motion.div>
 
       {/* ── Filters + Bulk Actions ── */}
@@ -344,12 +374,12 @@ export default function SubscribersPage() {
         </select>
 
         {/* Bulk action buttons */}
-        {selected.size > 0 && (
+        {canSelect && selected.size > 0 && (
           <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
             <span style={{ fontSize: 12, fontWeight: 600, color: ACCENT, alignSelf: "center", marginRight: 4 }}>
               {selected.size} sélectionné{selected.size > 1 ? "s" : ""}
             </span>
-            <button
+            {canEdit && <button
               onClick={() => setConfirmDialog({ open: true, action: "activate" })}
               title="Activer"
               style={{
@@ -368,8 +398,8 @@ export default function SubscribersPage() {
               }}
             >
               <UserCheck size={13} /> Activer
-            </button>
-            <button
+            </button>}
+            {canEdit && <button
               onClick={() => setConfirmDialog({ open: true, action: "deactivate" })}
               title="Désactiver"
               style={{
@@ -388,8 +418,8 @@ export default function SubscribersPage() {
               }}
             >
               <UserX size={13} /> Désactiver
-            </button>
-            <button
+            </button>}
+            {canDelete && <button
               onClick={() => setConfirmDialog({ open: true, action: "delete" })}
               title="Supprimer"
               style={{
@@ -408,7 +438,7 @@ export default function SubscribersPage() {
               }}
             >
               <Trash2 size={13} /> Supprimer
-            </button>
+            </button>}
           </div>
         )}
       </div>
@@ -423,7 +453,7 @@ export default function SubscribersPage() {
         }}
       >
         {/* Select all header */}
-        {paged.length > 0 && (
+        {canSelect && paged.length > 0 && (
           <div
             style={{
               padding: "8px 16px",

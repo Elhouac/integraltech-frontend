@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, Phone, Share2, Mail, Bell, Info, Check } from "lucide-react";
 import GeneralSettings from "../../components/admin/settings/GeneralSettings";
@@ -29,11 +29,21 @@ export default function SettingsPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [pendingTab, setPendingTab] = useState<TabId | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogReturnTabRef = useRef<TabId>("general");
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* ── Toast ── */
   const showToast = useCallback((message = "Paramètres enregistrés avec succès.") => {
     setToast(message);
-    setTimeout(() => setToast(null), 3000);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
   }, []);
 
   /* ── Tab switching with dirty guard ── */
@@ -41,6 +51,7 @@ export default function SettingsPage() {
     (tab: TabId) => {
       if (tab === activeTab) return;
       if (isDirty) {
+        dialogReturnTabRef.current = activeTab;
         setPendingTab(tab);
       } else {
         setActiveTab(tab);
@@ -51,13 +62,59 @@ export default function SettingsPage() {
 
   const confirmLeave = useCallback(() => {
     if (pendingTab) {
+      dialogReturnTabRef.current = pendingTab;
       setActiveTab(pendingTab);
       setPendingTab(null);
       setIsDirty(false);
     }
   }, [pendingTab]);
 
-  const cancelLeave = useCallback(() => setPendingTab(null), []);
+  const cancelLeave = useCallback(() => {
+    dialogReturnTabRef.current = activeTab;
+    setPendingTab(null);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!pendingTab) return;
+    cancelButtonRef.current?.focus();
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelLeave();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled])"));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleDialogKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleDialogKeyDown);
+      const returnIndex = TABS.findIndex((tab) => tab.id === dialogReturnTabRef.current);
+      tabRefs.current[returnIndex]?.focus();
+    };
+  }, [cancelLeave, pendingTab]);
+
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex = index;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % TABS.length;
+    else if (event.key === "ArrowLeft") nextIndex = (index - 1 + TABS.length) % TABS.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = TABS.length - 1;
+    else return;
+    event.preventDefault();
+    handleTabChange(TABS[nextIndex].id);
+    if (!isDirty) tabRefs.current[nextIndex]?.focus();
+  };
 
   /* ── Tab renderer ── */
   const tabProps: SettingsTabProps = { onDirtyChange: setIsDirty, onSaveSuccess: showToast };
@@ -107,25 +164,30 @@ export default function SettingsPage() {
       {/* ── Demo notice ── */}
       <div className="admin-settings-demo-notice" role="status">
         <Info size={16} style={{ flexShrink: 0, marginTop: 1, color: ACCENT }} />
-        <span>Mode démonstration : les paramètres seront connectés au backend Laravel lors de l'intégration.</span>
+        <span>Mode démonstration : aucune donnée n'est enregistrée dans une base et les changements sont réinitialisés au rechargement. L'intégration backend reste requise.</span>
       </div>
 
       {/* ── Tab bar ── */}
       <div className="admin-settings-tabs" role="tablist" aria-label="Paramètres">
-        {TABS.map((tab) => {
+        {TABS.map((tab, index) => {
           const active = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               role="tab"
               id={`settings-tab-${tab.id}`}
+              ref={(element) => { tabRefs.current[index] = element; }}
+              type="button"
               aria-selected={active}
               aria-controls={`settings-panel-${tab.id}`}
+              aria-label={tab.label}
+              tabIndex={active ? 0 : -1}
               data-active={active}
               className="admin-settings-tab"
               onClick={() => handleTabChange(tab.id)}
+              onKeyDown={(event) => handleTabKeyDown(event, index)}
             >
-              <tab.icon size={16} />
+              <tab.icon size={16} aria-hidden="true" />
               <span>{tab.label}</span>
             </button>
           );
@@ -158,18 +220,26 @@ export default function SettingsPage() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             onClick={cancelLeave}
+            role="presentation"
           >
             <motion.div
+              ref={dialogRef}
               className="admin-settings-unsaved-card"
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="settings-unsaved-title"
+              aria-describedby="settings-unsaved-description"
             >
-              <h3>Modifications non enregistrées</h3>
-              <p>Voulez-vous quitter cet onglet sans enregistrer vos modifications ?</p>
+              <h3 id="settings-unsaved-title">Modifications non enregistrées</h3>
+              <p id="settings-unsaved-description">Voulez-vous quitter cet onglet sans enregistrer vos modifications ?</p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
                 <button
+                  ref={cancelButtonRef}
+                  type="button"
                   onClick={cancelLeave}
                   style={{
                     padding: "9px 20px",
@@ -186,6 +256,7 @@ export default function SettingsPage() {
                   Rester
                 </button>
                 <button
+                  type="button"
                   onClick={confirmLeave}
                   style={{
                     padding: "9px 20px",
@@ -212,6 +283,8 @@ export default function SettingsPage() {
         {toast && (
           <motion.div
             className="admin-settings-toast"
+            role="status"
+            aria-live="polite"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}

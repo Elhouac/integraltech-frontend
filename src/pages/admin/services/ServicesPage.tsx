@@ -24,26 +24,32 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
 
-export default function ServicesPage() {
+export default function AdminServicesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const role = user?.role ?? "viewer";
   const isAdmin = role === "super_admin" || role === "admin";
   const canCreate = hasPermission(role, "services", "create");
+  const canEdit = hasPermission(role, "services", "edit");
   const canDelete = hasPermission(role, "services", "delete");
 
   const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchServices = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(false);
     try {
-      const res = await adminService.getServices();
+      const res = await adminService.getServices(role);
       setServices(res);
-      setIsLoading(false);
     } catch (err) {
       console.error(err);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [role]);
 
   useEffect(() => { fetchServices(); }, [fetchServices]);
 
@@ -109,9 +115,9 @@ export default function ServicesPage() {
 
   // Actions
   const handleDelete = async () => {
-    if (deleteDialog.serviceId !== null) {
+    if (user && canDelete && deleteDialog.serviceId !== null) {
       try {
-        await adminService.deleteService(deleteDialog.serviceId);
+        await adminService.deleteService(deleteDialog.serviceId, user.role);
         await fetchServices();
       } catch (err) { console.error(err); }
       setDeleteDialog({ open: false, serviceId: null });
@@ -119,15 +125,17 @@ export default function ServicesPage() {
   };
 
   const handleDuplicate = async (id: number) => {
+    if (!user || !canCreate) return;
     try {
-      await adminService.duplicateService(id);
+      await adminService.duplicateService(id, user.role);
       await fetchServices();
     } catch (err) { console.error(err); }
   };
 
   const handleArchive = async (id: number) => {
+    if (!user || !isAdmin || !canEdit) return;
     try {
-      await adminService.archiveService(id);
+      await adminService.archiveService(id, user.role);
       await fetchServices();
     } catch (err) { console.error(err); }
   };
@@ -140,7 +148,7 @@ export default function ServicesPage() {
   };
 
   const canArchiveService = (s: Service) => {
-    if (!isAdmin) return false;
+    if (!isAdmin || !canEdit) return false;
     return s.status === "published";
   };
 
@@ -200,12 +208,12 @@ export default function ServicesPage() {
       width: 140,
       render: (s) => (
         <div style={{ display: "flex", gap: 6 }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => navigate(`/admin/services/${s.id}/edit`)} title="Modifier"
+          {canEdit && <button onClick={() => navigate(`/admin/services/${s.id}/edit`)} title="Modifier"
             style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: "var(--radius-sm)", border: `1px solid ${BORDER}`, background: "transparent", cursor: "pointer", color: TEXT_SECONDARY }}
-          ><Edit size={14} /></button>
-          <button onClick={() => handleDuplicate(s.id)} title="Dupliquer"
+          ><Edit size={14} /></button>}
+          {canCreate && <button onClick={() => handleDuplicate(s.id)} title="Dupliquer"
             style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: "var(--radius-sm)", border: `1px solid ${BORDER}`, background: "transparent", cursor: "pointer", color: TEXT_SECONDARY }}
-          ><Copy size={14} /></button>
+          ><Copy size={14} /></button>}
           {canArchiveService(s) && (
             <button onClick={() => handleArchive(s.id)} title="Archiver"
               style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: "var(--radius-sm)", border: `1px solid ${BORDER}`, background: "transparent", cursor: "pointer", color: "#F59E0B" }}
@@ -270,26 +278,35 @@ export default function ServicesPage() {
         </select>
       </div>
 
-      {/* Data Table */}
-      <DataTable<Service>
-        columns={columns}
-        data={paginatedData}
-        loading={isLoading}
-        sort={sort}
-        onSort={handleSort}
-        getRowKey={(s) => s.id}
-        onRowClick={(s) => navigate(`/admin/services/${s.id}/edit`)}
-        emptyContent={
-          <EmptyState
-            icon={Wrench}
-            title="Aucun service trouvé"
-            description={search || statusFilter !== "all" ? "Essayez de modifier vos filtres." : "Commencez par créer un nouveau service."}
+      {loadError ? (
+        <div className="admin-alert admin-alert-error" role="alert">
+          <span>Impossible de charger les services de démonstration.</span>
+          <button type="button" onClick={() => void fetchServices()}>Réessayer</button>
+        </div>
+      ) : (
+        <>
+          {/* Data Table */}
+          <DataTable<Service>
+            columns={columns}
+            data={paginatedData}
+            loading={isLoading}
+            sort={sort}
+            onSort={handleSort}
+            getRowKey={(s) => s.id}
+            onRowClick={canEdit ? (s) => navigate(`/admin/services/${s.id}/edit`) : undefined}
+            emptyContent={
+              <EmptyState
+                icon={Wrench}
+                title="Aucun service trouvé"
+                description={search || statusFilter !== "all" ? "Essayez de modifier vos filtres." : "Commencez par créer un nouveau service."}
+              />
+            }
           />
-        }
-      />
 
-      {/* Pagination */}
-      <Pagination meta={paginationMeta} onPageChange={setPage} />
+          {/* Pagination */}
+          <Pagination meta={paginationMeta} onPageChange={setPage} />
+        </>
+      )}
 
       {/* Delete Confirm */}
       <ConfirmDialog

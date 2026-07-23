@@ -9,7 +9,9 @@ interface LeadExportButtonProps {
 export default function LeadExportButton({ leads }: LeadExportButtonProps) {
   const handleExport = () => {
     const escapeCsv = (val: unknown): string => {
-      const str = String(val ?? "").replace(/"/g, '""');
+      let raw = String(val ?? "");
+      if (/^[=+\-@\t\r]/.test(raw)) raw = `'${raw}`;
+      const str = raw.replace(/"/g, '""');
       return `"${str}"`;
     };
 
@@ -36,6 +38,7 @@ export default function LeadExportButton({ leads }: LeadExportButtonProps) {
 
   return (
     <button
+      type="button"
       onClick={handleExport}
       aria-label="Exporter en CSV"
       style={{

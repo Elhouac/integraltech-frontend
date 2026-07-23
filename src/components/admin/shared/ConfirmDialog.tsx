@@ -27,16 +27,17 @@ export default function ConfirmDialog({
   const confirmRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
 
-  // Focus confirm button when opened
-  useEffect(() => {
-    if (open) confirmRef.current?.focus();
-  }, [open]);
-
-  // Close on Escape + focus trap
+  // Focus the safe action, close on Escape, trap focus, then restore the caller.
   useEffect(() => {
     if (!open) return;
+    const returnTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusFrame = window.requestAnimationFrame(() => cancelRef.current?.focus());
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onCancel(); return; }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onCancel();
+        return;
+      }
       if (e.key === "Tab") {
         const focusable = [cancelRef.current, confirmRef.current].filter(Boolean) as HTMLElement[];
         if (focusable.length === 0) return;
@@ -52,7 +53,11 @@ export default function ConfirmDialog({
       }
     };
     document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", handler);
+      returnTarget?.focus();
+    };
   }, [open, onCancel]);
 
   const confirmBg = variant === "danger" ? "var(--danger)" : variant === "warning" ? "var(--warning)" : ACCENT;
@@ -147,6 +152,7 @@ export default function ConfirmDialog({
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button
                 ref={cancelRef}
+                type="button"
                 onClick={onCancel}
                 style={{
                   padding: "8px 16px",
@@ -165,6 +171,7 @@ export default function ConfirmDialog({
               </button>
               <button
                 ref={confirmRef}
+                type="button"
                 onClick={onConfirm}
                 style={{
                   padding: "8px 16px",

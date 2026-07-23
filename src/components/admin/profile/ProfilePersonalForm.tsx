@@ -89,6 +89,16 @@ export default function ProfilePersonalForm({ profile, onUpdated }: ProfilePerso
     if (firstName.trim().length > 100) e.firstName = "Trop long (max 100).";
     if (lastName.trim().length > 100) e.lastName = "Trop long (max 100).";
     if (displayName.trim().length > 100) e.displayName = "Trop long (max 100).";
+    if (avatarUrl) {
+      try {
+        const parsed = new URL(avatarUrl);
+        if ((parsed.protocol !== "http:" && parsed.protocol !== "https:") || parsed.username || parsed.password) {
+          e.avatarUrl = "URL de photo invalide ou contenant des identifiants.";
+        }
+      } catch {
+        e.avatarUrl = "URL de photo invalide.";
+      }
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -97,15 +107,23 @@ export default function ProfilePersonalForm({ profile, onUpdated }: ProfilePerso
     if (!validate()) return;
     setSaving(true);
     try {
-      const updated = await adminService.updateCurrentAdminProfile(profile.userId, {
+      let updated = await adminService.updateCurrentAdminProfile(profile.userId, {
         firstName: firstName.trim(), lastName: lastName.trim(), displayName: displayName.trim(),
         contactEmail: contactEmail.trim(), phone: phone.trim(), jobTitle: jobTitle.trim(),
-        department: department.trim(), bio: bio.trim(), avatarUrl,
+        department: department.trim(), bio: bio.trim(),
       });
+      if (avatarUrl !== profile.avatarUrl) {
+        updated = avatarUrl
+          ? await adminService.updateAdminProfileAvatar(profile.userId, avatarUrl)
+          : await adminService.removeAdminProfileAvatar(profile.userId);
+      }
       onUpdated(updated);
       setToast("Informations personnelles enregistrées.");
       setTimeout(() => setToast(null), 3000);
-    } catch { /* */ }
+    } catch {
+      setToast("Impossible d'enregistrer toutes les modifications de démonstration.");
+      setTimeout(() => setToast(null), 3000);
+    }
     setSaving(false);
   };
 
@@ -135,6 +153,7 @@ export default function ProfilePersonalForm({ profile, onUpdated }: ProfilePerso
           onAvatarChange={(url) => setAvatarUrl(url)}
           onAvatarRemove={() => setAvatarUrl("")}
         />
+        {errors.avatarUrl && <div style={{ ...errStyle, padding: "0 20px 16px" }}>{errors.avatarUrl}</div>}
       </div>
 
       {/* Personal fields */}
@@ -260,7 +279,7 @@ export default function ProfilePersonalForm({ profile, onUpdated }: ProfilePerso
       {/* Toast */}
       <AnimatePresence>
         {toast && (
-          <motion.div className="admin-settings-toast"
+          <motion.div className="admin-settings-toast" role="status" aria-live="polite"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
           >
             {toast}

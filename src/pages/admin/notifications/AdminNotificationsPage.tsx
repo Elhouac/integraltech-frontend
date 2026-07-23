@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, CheckCheck, Archive, Trash2, Info, Settings2 } from "lucide-react";
 import NotificationItem from "../../../components/admin/notifications/NotificationItem";
@@ -24,7 +24,10 @@ export default function AdminNotificationsPage() {
   const [activeTab, setActiveTab] = useState<PageTab>("list");
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const tabRefs = useRef<Record<PageTab, HTMLButtonElement | null>>({ list: null, preferences: null });
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Filters State
   const [search, setSearch] = useState("");
@@ -44,11 +47,12 @@ export default function AdminNotificationsPage() {
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const data = await adminService.getCurrentUserNotifications(userId, role);
       setNotifications(data);
     } catch {
-      /* ignore */
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -58,9 +62,26 @@ export default function AdminNotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  const showToast = (msg: string) => {
+  const showToast = useCallback((msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
+
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, tab: PageTab) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const nextTab: PageTab = event.key === "Home"
+      ? "list"
+      : event.key === "End"
+        ? "preferences"
+        : tab === "list" ? "preferences" : "list";
+    setActiveTab(nextTab);
+    tabRefs.current[nextTab]?.focus();
   };
 
   // Permission logic for deletion
@@ -196,53 +217,53 @@ export default function AdminNotificationsPage() {
   // Single Item Actions
   const handleMarkRead = async (id: number) => {
     try {
-      await adminService.markNotificationAsRead(id);
+      await adminService.markNotificationAsRead(id, userId, role);
       await fetchNotifications();
       showToast("Notification marquée comme lue.");
     } catch {
-      /* ignore */
+      showToast("Impossible de modifier cette notification.");
     }
   };
 
   const handleMarkUnread = async (id: number) => {
     try {
-      await adminService.markNotificationAsUnread(id);
+      await adminService.markNotificationAsUnread(id, userId, role);
       await fetchNotifications();
       showToast("Notification marquée comme non lue.");
     } catch {
-      /* ignore */
+      showToast("Impossible de modifier cette notification.");
     }
   };
 
   const handleArchive = async (id: number) => {
     try {
-      await adminService.archiveNotification(id);
+      await adminService.archiveNotification(id, userId, role);
       await fetchNotifications();
       showToast("Notification archivée.");
     } catch {
-      /* ignore */
+      showToast("Impossible d'archiver cette notification.");
     }
   };
 
   const handleRestore = async (id: number) => {
     try {
-      await adminService.restoreNotification(id);
+      await adminService.restoreNotification(id, userId, role);
       await fetchNotifications();
       showToast("Notification restaurée.");
     } catch {
-      /* ignore */
+      showToast("Impossible de restaurer cette notification.");
     }
   };
 
   const handleDeleteSingle = async () => {
     if (singleDeleteId === null) return;
     try {
-      await adminService.deleteNotification(singleDeleteId);
+      await adminService.deleteNotification(singleDeleteId, userId, role);
       await fetchNotifications();
       setSelectedIds((prev) => prev.filter((i) => i !== singleDeleteId));
       showToast("Notification supprimée.");
     } catch {
-      /* ignore */
+      showToast("Impossible de supprimer cette notification.");
     } finally {
       setSingleDeleteId(null);
     }
@@ -269,29 +290,32 @@ export default function AdminNotificationsPage() {
   const isAllCurrentPageSelected =
     paginatedNotifications.length > 0 &&
     paginatedNotifications.every((n) => selectedIds.includes(n.id));
+  const selectedHasArchived = notifications.some(
+    (notification) => selectedIds.includes(notification.id) && notification.status === "archived"
+  );
 
   // Bulk Actions
   const handleBulkMarkRead = async () => {
     if (selectedIds.length === 0) return;
     try {
-      await adminService.bulkMarkNotificationsAsRead(selectedIds);
+      await adminService.bulkMarkNotificationsAsRead(selectedIds, userId, role);
       await fetchNotifications();
       showToast(`${selectedIds.length} notification(s) marquée(s) comme lue(s).`);
       setSelectedIds([]);
     } catch {
-      /* ignore */
+      showToast("Impossible de modifier les notifications sélectionnées.");
     }
   };
 
   const handleBulkArchive = async () => {
     if (selectedIds.length === 0) return;
     try {
-      await adminService.bulkArchiveNotifications(selectedIds);
+      await adminService.bulkArchiveNotifications(selectedIds, userId, role);
       await fetchNotifications();
       showToast(`${selectedIds.length} notification(s) archivée(s).`);
       setSelectedIds([]);
     } catch {
-      /* ignore */
+      showToast("Impossible d'archiver les notifications sélectionnées.");
     }
   };
 
@@ -310,12 +334,12 @@ export default function AdminNotificationsPage() {
     }
 
     try {
-      await adminService.bulkDeleteNotifications(deletableIds);
+      await adminService.bulkDeleteNotifications(deletableIds, userId, role);
       await fetchNotifications();
       showToast(`${deletableIds.length} notification(s) supprimée(s).`);
       setSelectedIds([]);
     } catch {
-      /* ignore */
+      showToast("Impossible de supprimer les notifications sélectionnées.");
     } finally {
       setBulkDeleteConfirmOpen(false);
     }
@@ -327,7 +351,7 @@ export default function AdminNotificationsPage() {
       await fetchNotifications();
       showToast("Toutes les notifications ont été marquées comme lues.");
     } catch {
-      /* ignore */
+      showToast("Impossible de marquer toutes les notifications comme lues.");
     }
   };
 
@@ -347,6 +371,7 @@ export default function AdminNotificationsPage() {
         {/* Action Header Button */}
         {unreadCount > 0 && activeTab === "list" && (
           <button
+            type="button"
             onClick={handleMarkAllReadGlobal}
             style={{
               display: "inline-flex",
@@ -420,21 +445,33 @@ export default function AdminNotificationsPage() {
       </div>
 
       {/* Page Main Navigation Tabs */}
-      <div className="admin-profile-tabs" role="tablist">
+      <div className="admin-profile-tabs" role="tablist" aria-label="Sections des notifications">
         <button
+          ref={(element) => { tabRefs.current.list = element; }}
+          type="button"
           className={`admin-profile-tab${activeTab === "list" ? " active" : ""}`}
           onClick={() => setActiveTab("list")}
+          onKeyDown={(event) => handleTabKeyDown(event, "list")}
           role="tab"
           aria-selected={activeTab === "list"}
+          aria-controls="notifications-panel-list"
+          id="notifications-tab-list"
+          tabIndex={activeTab === "list" ? 0 : -1}
         >
           <Bell size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
           Centre de notifications
         </button>
         <button
+          ref={(element) => { tabRefs.current.preferences = element; }}
+          type="button"
           className={`admin-profile-tab${activeTab === "preferences" ? " active" : ""}`}
           onClick={() => setActiveTab("preferences")}
+          onKeyDown={(event) => handleTabKeyDown(event, "preferences")}
           role="tab"
           aria-selected={activeTab === "preferences"}
+          aria-controls="notifications-panel-preferences"
+          id="notifications-tab-preferences"
+          tabIndex={activeTab === "preferences" ? 0 : -1}
         >
           <Settings2 size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
           Préférences de notification
@@ -443,7 +480,12 @@ export default function AdminNotificationsPage() {
 
       {/* Tab 1: Notification List View */}
       {activeTab === "list" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div
+          role="tabpanel"
+          id="notifications-panel-list"
+          aria-labelledby="notifications-tab-list"
+          style={{ display: "flex", flexDirection: "column", gap: 16 }}
+        >
           {/* Filters Bar */}
           <NotificationFilters
             search={search}
@@ -493,7 +535,10 @@ export default function AdminNotificationsPage() {
 
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <button
+                  type="button"
                   onClick={handleBulkMarkRead}
+                  disabled={selectedHasArchived}
+                  title={selectedHasArchived ? "Restaurez d'abord les notifications archivées." : "Marquer la sélection comme lue"}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -506,12 +551,14 @@ export default function AdminNotificationsPage() {
                     fontSize: 12,
                     fontWeight: 600,
                     fontFamily: "var(--font-sans)",
-                    cursor: "pointer",
+                    cursor: selectedHasArchived ? "not-allowed" : "pointer",
+                    opacity: selectedHasArchived ? 0.55 : 1,
                   }}
                 >
                   <CheckCheck size={14} /> Marquer lues
                 </button>
                 <button
+                  type="button"
                   onClick={handleBulkArchive}
                   style={{
                     display: "inline-flex",
@@ -532,6 +579,7 @@ export default function AdminNotificationsPage() {
                 </button>
                 {(role === "super_admin" || role === "admin" || role === "editor") && (
                   <button
+                    type="button"
                     onClick={() => setBulkDeleteConfirmOpen(true)}
                     style={{
                       display: "inline-flex",
@@ -552,6 +600,7 @@ export default function AdminNotificationsPage() {
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={() => setSelectedIds([])}
                   style={{
                     padding: "6px 12px",
@@ -571,8 +620,13 @@ export default function AdminNotificationsPage() {
 
           {/* List Content */}
           {loading ? (
-            <div style={{ padding: 48, textAlign: "center", fontSize: 14, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>
+            <div role="status" aria-live="polite" style={{ padding: 48, textAlign: "center", fontSize: 14, color: TEXT_SECONDARY, fontFamily: "var(--font-sans)" }}>
               Chargement des notifications...
+            </div>
+          ) : loadError ? (
+            <div className="admin-alert admin-alert-error" role="alert">
+              <span>Impossible de charger les notifications de démonstration.</span>
+              <button type="button" onClick={() => void fetchNotifications()}>Réessayer</button>
             </div>
           ) : paginatedNotifications.length === 0 ? (
             <div
@@ -595,6 +649,7 @@ export default function AdminNotificationsPage() {
               </p>
               {isFiltered && (
                 <button
+                  type="button"
                   onClick={handleResetFilters}
                   style={{
                     padding: "8px 16px",
@@ -645,7 +700,11 @@ export default function AdminNotificationsPage() {
       )}
 
       {/* Tab 2: Preferences View */}
-      {activeTab === "preferences" && <NotificationPreferencesPanel userId={userId} />}
+      {activeTab === "preferences" && (
+        <div role="tabpanel" id="notifications-panel-preferences" aria-labelledby="notifications-tab-preferences">
+          <NotificationPreferencesPanel userId={userId} />
+        </div>
+      )}
 
       {/* Confirm Dialogs */}
       <ConfirmDialog
@@ -671,6 +730,8 @@ export default function AdminNotificationsPage() {
         {toast && (
           <motion.div
             className="admin-settings-toast"
+            role="status"
+            aria-live="polite"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}

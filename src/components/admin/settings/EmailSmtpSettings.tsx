@@ -278,7 +278,6 @@ export default function EmailSmtpSettings({ onDirtyChange, onSaveSuccess }: Sett
               />
               <button
                 type="button"
-                tabIndex={-1}
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 style={{

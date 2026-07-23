@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { UserRole } from "../context/AuthContext";
+import type { Action, Resource } from "../utils/permissions";
 
 export interface KpiData {
   icon: LucideIcon;
@@ -7,6 +8,7 @@ export interface KpiData {
   iconBg: string;
   label: string;
   value: string | number;
+  resource: Resource;
   trend?: {
     value: string;
     direction: "up" | "down" | "neutral";
@@ -21,6 +23,7 @@ export interface ActivityData {
   title: string;
   description: string;
   time: string;
+  resource: Resource;
 }
 
 export interface QuickActionData {
@@ -30,6 +33,8 @@ export interface QuickActionData {
   to: string;
   color: string;
   bg: string;
+  resource: Resource;
+  action: Action;
 }
 
 export type LeadStatus = "new" | "in_progress" | "resolved" | "archived";
@@ -246,7 +251,7 @@ export interface AdminProfile {
   department: string;
   bio: string;
   avatarUrl: string;
-  role: string;
+  role: UserRole;
   language: InterfaceLanguage;
   theme: InterfaceTheme;
   interfaceDensity: InterfaceDensity;
@@ -298,7 +303,7 @@ export interface NotificationRelatedResource {
 export interface AdminNotification {
   id: number;
   recipientUserId?: number;
-  recipientRole?: string;
+  recipientRole?: UserRole;
   type: NotificationType;
   priority: NotificationPriority;
   title: string;
@@ -395,7 +400,7 @@ export interface AdminAuditEvent {
   id: number;
   actorUserId: number;
   actorDisplayName: string;
-  actorRole: string;
+  actorRole: UserRole;
   action: AuditAction;
   resourceType: AuditResourceType;
   resourceId?: number;
@@ -526,4 +531,3 @@ export interface AnalyticsExportReport {
   rows: AnalyticsExportRow[];
   isDemo: true;
 }
-

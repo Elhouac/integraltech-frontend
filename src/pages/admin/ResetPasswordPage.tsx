@@ -33,6 +33,8 @@ export default function ResetPasswordPage() {
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsSubmitting(false);
+    setPassword("");
+    setConfirmPassword("");
     setIsReset(true);
   };
 
@@ -99,8 +101,12 @@ export default function ResetPasswordPage() {
     <AuthPageLayout>
       <AuthLogo
         title="Nouveau mot de passe"
-        subtitle={isReset ? "Votre mot de passe a été réinitialisé." : "Choisissez un nouveau mot de passe sécurisé."}
+        subtitle={isReset ? "Simulation terminée." : "Prévisualisez le formulaire de réinitialisation frontend."}
       />
+
+      <div className="admin-demo-notice" role="note" style={{ marginBottom: 20 }}>
+        Aucun mot de passe réel ne sera modifié. Cette fonction nécessite une validation de jeton et une mise à jour sécurisée côté backend.
+      </div>
 
       {isReset ? (
         <motion.div
@@ -117,7 +123,7 @@ export default function ResetPasswordPage() {
             <CheckCircle size={28} color="var(--success)" />
           </div>
           <p style={{ fontSize: 14, color: TEXT_SECONDARY, marginBottom: 24 }}>
-            Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.
+            Les champs ont été effacés. Les identifiants mock de développement restent inchangés.
           </p>
           <Link
             to="/admin/login"
@@ -182,7 +188,7 @@ export default function ResetPasswordPage() {
               />
             </div>
 
-            <AuthSubmit label="Réinitialiser" icon={<ShieldCheck size={15} />} isSubmitting={isSubmitting} />
+            <AuthSubmit label="Simuler la réinitialisation" icon={<ShieldCheck size={15} />} isSubmitting={isSubmitting} />
           </form>
 
           <div style={{ textAlign: "center", marginTop: 20 }}>

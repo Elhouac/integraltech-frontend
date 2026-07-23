@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { Plus, Edit2, Trash2, Shield, User, UserX, UserCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -15,6 +15,7 @@ import { adminService } from "../../services/adminService";
 import type { SystemUser } from "../../types/admin";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY, OVERLAY } from "../../constants";
 import { safeSort } from "../../utils/sort";
+import { hasPermission } from "../../utils/permissions";
 
 const PER_PAGE = 5;
 
@@ -23,7 +24,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   admin: "Administrateur",
   editor: "Éditeur",
   support: "Support",
-  viewer: "Lecteur (Viewer)",
+  viewer: "Observateur (Viewer)",
   reader: "Lecteur (Reader)",
 };
 
@@ -45,18 +46,27 @@ function formatLastLogin(iso: string | null): string {
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
+  const currentRole = currentUser?.role ?? "reader";
+  const canCreate = hasPermission(currentRole, "users", "create");
+  const canEdit = hasPermission(currentRole, "users", "edit");
+  const canDelete = hasPermission(currentRole, "users", "delete");
   const [users, setUsers] = useState<SystemUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(false);
     try {
-      const res = await adminService.getSystemUsers();
+      const res = await adminService.getSystemUsers(currentRole);
       setUsers(res);
-      setIsLoading(false);
     } catch (err) {
       console.error(err);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [currentRole]);
 
   useEffect(() => {
     fetchUsers();
@@ -74,6 +84,31 @@ export default function UsersPage() {
   // Modal Dialogs
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<SystemUser | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    const returnTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    firstFieldRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setModalOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !modalRef.current) return;
+      const focusable = Array.from(modalRef.current.querySelectorAll<HTMLElement>("input, select, textarea, button:not([disabled])"));
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault(); last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => { document.removeEventListener("keydown", handleKeyDown); returnTarget?.focus(); };
+  }, [modalOpen]);
 
   // Form Fields
   const [name, setName] = useState("");
@@ -97,6 +132,7 @@ export default function UsersPage() {
   };
 
   const handleOpenCreate = () => {
+    if (!canCreate) return;
     setEditingUser(null);
     setName("");
     setEmail("");
@@ -106,6 +142,7 @@ export default function UsersPage() {
   };
 
   const handleOpenEdit = (u: SystemUser) => {
+    if (!canEdit) return;
     setEditingUser(u);
     setName(u.name);
     setEmail(u.email);
@@ -116,18 +153,20 @@ export default function UsersPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
+    if (!currentUser || !name.trim() || !email.trim()) return;
+    if ((editingUser && !canEdit) || (!editingUser && !canCreate)) return;
 
     try {
-      const finalActiveStatus = editingUser && editingUser.id === currentUser?.id ? true : isActive;
+      const isSelf = editingUser?.id === currentUser.id;
+      const finalActiveStatus = isSelf ? true : isActive;
       const userPayload = {
         id: editingUser?.id,
         name: name.trim(),
-        email: email.trim(),
-        role,
+        email: isSelf && editingUser ? editingUser.email : email.trim(),
+        role: isSelf && editingUser ? editingUser.role : role,
         is_active: finalActiveStatus,
       };
-      await adminService.saveSystemUser(userPayload);
+      await adminService.saveSystemUser(userPayload, { id: currentUser.id, role: currentUser.role });
       await fetchUsers();
     } catch (err) {
       console.error(err);
@@ -137,13 +176,13 @@ export default function UsersPage() {
   };
 
   const handleDelete = async () => {
-    if (deleteDialog.userId !== null) {
+    if (currentUser && canDelete && deleteDialog.userId !== null) {
       if (deleteDialog.userId === currentUser?.id) {
         setDeleteDialog({ open: false, userId: null });
         return;
       }
       try {
-        await adminService.deleteSystemUser(deleteDialog.userId);
+        await adminService.deleteSystemUser(deleteDialog.userId, { id: currentUser.id, role: currentUser.role });
         await fetchUsers();
       } catch (err) {
         console.error(err);
@@ -153,9 +192,9 @@ export default function UsersPage() {
   };
 
   const toggleUserStatus = async (u: SystemUser) => {
-    if (u.id === currentUser?.id) return;
+    if (!currentUser || !canEdit || u.id === currentUser.id) return;
     try {
-      await adminService.toggleSystemUserStatus(u.id);
+      await adminService.toggleSystemUserStatus(u.id, { id: currentUser.id, role: currentUser.role });
       await fetchUsers();
     } catch (err) {
       console.error(err);
@@ -269,7 +308,7 @@ export default function UsersPage() {
         return (
           <div style={{ display: "flex", gap: 6 }} onClick={(e) => e.stopPropagation()}>
             {/* Status toggle */}
-            <button
+            {canEdit && <button
               disabled={isSelf}
               onClick={() => toggleUserStatus(u)}
               title={u.is_active ? "Suspendre l'utilisateur" : "Activer l'utilisateur"}
@@ -286,10 +325,10 @@ export default function UsersPage() {
               onMouseLeave={(e) => { if (!isSelf) e.currentTarget.style.background = "none"; }}
             >
               {u.is_active ? <UserX size={14} /> : <UserCheck size={14} />}
-            </button>
+            </button>}
 
             {/* Edit */}
-            <button
+            {canEdit && <button
               onClick={() => handleOpenEdit(u)}
               title="Modifier l'utilisateur"
               style={{
@@ -304,10 +343,10 @@ export default function UsersPage() {
               onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
             >
               <Edit2 size={14} />
-            </button>
+            </button>}
 
             {/* Delete */}
-            <button
+            {canDelete && <button
               disabled={isSelf}
               onClick={() => setDeleteDialog({ open: true, userId: u.id })}
               title="Supprimer l'utilisateur"
@@ -324,12 +363,21 @@ export default function UsersPage() {
               onMouseLeave={(e) => { if (!isSelf) e.currentTarget.style.background = "none"; }}
             >
               <Trash2 size={14} />
-            </button>
+            </button>}
           </div>
         );
       },
     },
   ];
+
+  if (loadError) {
+    return (
+      <div className="admin-alert admin-alert-error" role="alert">
+        <span>Impossible de charger les utilisateurs de démonstration.</span>
+        <button type="button" onClick={() => void fetchUsers()}>Réessayer</button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -351,7 +399,7 @@ export default function UsersPage() {
             Gérez les rôles et permissions des comptes d'administration.
           </p>
         </div>
-        <button
+        {canCreate && <button
           onClick={handleOpenCreate}
           style={{
             display: "inline-flex",
@@ -370,7 +418,7 @@ export default function UsersPage() {
         >
           <Plus size={15} />
           Ajouter un utilisateur
-        </button>
+        </button>}
       </div>
 
       {/* Filters bar */}
@@ -405,7 +453,8 @@ export default function UsersPage() {
           <option value="admin">Administrateur</option>
           <option value="editor">Éditeur</option>
           <option value="support">Support</option>
-          <option value="viewer">Lecteur (Viewer)</option>
+          <option value="viewer">Observateur (Viewer)</option>
+          <option value="reader">Lecteur (Reader)</option>
         </select>
 
         {/* Status filter */}
@@ -450,14 +499,14 @@ export default function UsersPage() {
           sort={sort}
           onSort={handleSort}
           getRowKey={(u) => u.id}
-          onRowClick={(u) => handleOpenEdit(u)}
+          onRowClick={canEdit ? (u) => handleOpenEdit(u) : undefined}
           emptyContent={
             <EmptyState
               icon={Shield}
               title="Aucun utilisateur trouvé"
               description="Essayez de modifier vos filtres de recherche."
-              actionLabel="Ajouter un utilisateur"
-              onAction={handleOpenCreate}
+              actionLabel={canCreate ? "Ajouter un utilisateur" : undefined}
+              onAction={canCreate ? handleOpenCreate : undefined}
             />
           }
         />
@@ -480,6 +529,7 @@ export default function UsersPage() {
             }}
           />
           <motion.div
+            ref={modalRef}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             style={{
@@ -496,17 +546,22 @@ export default function UsersPage() {
               boxShadow: "var(--shadow-xl)",
               zIndex: 999,
             }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="user-dialog-title"
           >
-            <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "var(--font-display)", color: TEXT, margin: "0 0 16px" }}>
+            <h3 id="user-dialog-title" style={{ fontSize: 16, fontWeight: 700, fontFamily: "var(--font-display)", color: TEXT, margin: "0 0 16px" }}>
               {editingUser ? "Modifier l'utilisateur" : "Ajouter un utilisateur"}
             </h3>
             <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {/* Name */}
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
+                <label htmlFor="user-name" style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
                   Nom complet *
                 </label>
                 <input
+                  ref={firstFieldRef}
+                  id="user-name"
                   type="text"
                   required
                   value={name}
@@ -527,13 +582,15 @@ export default function UsersPage() {
 
               {/* Email */}
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
+                <label htmlFor="user-email" style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
                   Adresse email *
                 </label>
                 <input
+                  id="user-email"
                   type="email"
                   required
                   value={email}
+                  disabled={editingUser?.id === currentUser?.id}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ex: driss@integraltech.ma"
                   style={{
@@ -551,11 +608,13 @@ export default function UsersPage() {
 
               {/* Role */}
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
+                <label htmlFor="user-role" style={{ display: "block", fontSize: 12, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 4 }}>
                   Rôle
                 </label>
                 <select
+                  id="user-role"
                   value={role}
+                  disabled={editingUser?.id === currentUser?.id}
                   onChange={(e) => setRole(e.target.value as UserRole)}
                   style={{
                     width: "100%",
@@ -572,7 +631,8 @@ export default function UsersPage() {
                   <option value="admin">Administrateur</option>
                   <option value="editor">Éditeur</option>
                   <option value="support">Support</option>
-                  <option value="viewer">Lecteur (Viewer)</option>
+                  <option value="viewer">Observateur (Viewer)</option>
+                  <option value="reader">Lecteur (Reader)</option>
                 </select>
               </div>
 
