@@ -29,32 +29,43 @@ export default function TrustedBy() {
         />
       </div>
 
-      <ul className="trustedby-logo-grid">
-        {partners.map((partner) => (
-          <li key={partner.name}>
-            <a
-              className="trustedby-logo-card"
-              href={partner.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Visit ${partner.name} official website`}
+      <div className="trustedby-logo-marquee">
+        <div className="trustedby-logo-track">
+          {[false, true].map((isDuplicate) => (
+            <ul
+              className="trustedby-logo-group"
+              key={isDuplicate ? "duplicate" : "original"}
+              aria-hidden={isDuplicate ? "true" : undefined}
             >
-              <img
-                className={`trustedby-logo-image${
-                  partner.name === "IMPEPACK"
-                    ? " trustedby-logo-image--inverted"
-                    : partner.name === "STI"
-                      ? " trustedby-logo-image--darken"
-                      : ""
-                }`}
-                src={partner.logo}
-                alt={`${partner.name} logo`}
-                loading="lazy"
-              />
-            </a>
-          </li>
-        ))}
-      </ul>
+              {partners.map((partner) => (
+                <li key={partner.name}>
+                  <a
+                    className="trustedby-logo-card"
+                    href={partner.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Visit ${partner.name} official website`}
+                    tabIndex={isDuplicate ? -1 : undefined}
+                  >
+                    <img
+                      className={`trustedby-logo-image${
+                        partner.name === "IMPEPACK"
+                          ? " trustedby-logo-image--inverted"
+                          : partner.name === "STI"
+                            ? " trustedby-logo-image--darken"
+                            : ""
+                      }`}
+                      src={partner.logo}
+                      alt={isDuplicate ? "" : `${partner.name} logo`}
+                      loading="lazy"
+                    />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

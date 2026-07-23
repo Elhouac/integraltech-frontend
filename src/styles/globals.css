@@ -300,25 +300,59 @@ img {
 }
 
 .trustedby-heading,
-.trustedby-logo-grid {
+.trustedby-logo-marquee {
   width: 90%;
   max-width: 1320px;
   margin-left: auto;
   margin-right: auto;
 }
 
-.trustedby-logo-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 20px;
+.trustedby-logo-marquee {
+  --trustedby-card-width: clamp(180px, 15vw, 220px);
+  --trustedby-gap: 16px;
+  --trustedby-half-gap: 8px;
+  --trustedby-duration: 30s;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.trustedby-logo-track {
+  display: flex;
+  width: max-content;
+  gap: var(--trustedby-gap);
+  animation: trustedby-marquee var(--trustedby-duration) linear infinite;
+  will-change: transform;
+}
+
+.trustedby-logo-marquee:hover .trustedby-logo-track,
+.trustedby-logo-marquee:focus-within .trustedby-logo-track {
+  animation-play-state: paused;
+}
+
+.trustedby-logo-group {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--trustedby-gap);
   margin-top: 0;
   margin-bottom: 0;
   padding: 0;
   list-style: none;
 }
 
-.trustedby-logo-grid > li {
+.trustedby-logo-group > li {
+  flex: 0 0 var(--trustedby-card-width);
+  width: var(--trustedby-card-width);
   min-width: 0;
+}
+
+.trustedby-logo-group[aria-hidden="true"] a {
+  pointer-events: none;
+}
+
+@keyframes trustedby-marquee {
+  to {
+    transform: translate3d(calc(-50% - var(--trustedby-half-gap)), 0, 0);
+  }
 }
 
 .trustedby-logo-card {
@@ -808,9 +842,9 @@ a:focus-visible,
     padding: 64px 40px 56px !important;
   }
 
-  .trustedby-logo-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+  .trustedby-logo-marquee {
+    --trustedby-card-width: clamp(190px, 24vw, 240px);
+    --trustedby-duration: 32s;
   }
 }
 
@@ -845,6 +879,12 @@ a:focus-visible,
     padding: 24px 0 32px;
   }
 
+  .trustedby-logo-marquee {
+    --trustedby-card-width: clamp(160px, 42vw, 280px);
+    --trustedby-gap: 12px;
+    --trustedby-half-gap: 6px;
+    --trustedby-duration: 34s;
+  }
 }
 
 @media (max-width: 640px) {
@@ -868,13 +908,15 @@ a:focus-visible,
   }
 
   .trustedby-heading,
-  .trustedby-logo-grid {
+  .trustedby-logo-marquee {
     width: 100%;
   }
 
-  .trustedby-logo-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+  .trustedby-logo-marquee {
+    --trustedby-card-width: clamp(145px, 46vw, 280px);
+    --trustedby-gap: 10px;
+    --trustedby-half-gap: 5px;
+    --trustedby-duration: 30s;
   }
 
   .trustedby-logo-card {
@@ -1172,10 +1214,6 @@ a:focus-visible,
   padding: 32px 20px !important;
 }
 
-.trustedby-logo-grid {
-  gap: 16px;
-}
-
 .trustedby-logo-card {
   height: 116px;
   padding: 16px;
@@ -1337,10 +1375,6 @@ a:focus-visible,
     padding: 28px 18px !important;
   }
 
-  .trustedby-logo-grid {
-    gap: 10px;
-  }
-
   .trustedby-logo-card {
     height: 100px;
     padding: 12px;
@@ -1365,6 +1399,25 @@ a:focus-visible,
 
   .cta-text {
     margin-bottom: 28px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trustedby-logo-marquee {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    touch-action: auto;
+  }
+
+  .trustedby-logo-track {
+    animation: none;
+    transform: none;
+    will-change: auto;
+  }
+
+  .trustedby-logo-group[aria-hidden="true"] {
+    display: none;
   }
 }
 
@@ -2732,3 +2785,5 @@ a:focus-visible,
 .admin-audit-table tr:hover td {
   background: var(--hover);
 }
+
+
