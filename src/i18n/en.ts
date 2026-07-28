@@ -332,46 +332,26 @@ export const en = {
 
   // Solutions Page details
   solutionsPage: {
-    seoTitle: "Our IT & Digitalization Solutions",
-    seoDesc: "Explore our expertise: advanced cybersecurity, modern Cloud architecture, custom ERP deployment, robust IT infrastructure, and strategic consulting.",
-    badge: "OUR SOLUTIONS",
-    title: "Customized IT solutions for your business",
-    desc: "Cybersecurity, Cloud, ERP, Infrastructure, Digital Transformation and Consulting — IntegralTech covers all your technology needs.",
-    demoBtn: "Request a demo",
-    ctaTitle: "Need a specific solution?",
-    ctaDesc: "Our experts analyze your context and propose a personalized approach.",
+    seoTitle: "Integrated ERP Solutions | IntegralTech",
+    seoDesc: "Discover IntegralTech's integrated ERP solutions designed to meet the needs of businesses, industries, transportation, educational institutions and organizations.",
+    badge: "THE ERP THAT ADAPTS TO YOUR NEEDS",
+    title: "Choose the solution tailored to your business",
+    desc: "Integrated solutions designed to centralize your operations, streamline your processes and support your organization's growth.",
+    ctaLabel: "Explore the solution",
+    ctaTitle: "Need a tailored solution?",
+    ctaDesc: "Our experts analyze your context and recommend the integrated solution best suited to your business.",
     ctaBtn: "Contact an expert",
-    
-    // 6 solutions details
-    cybersecurityBadge: "CYBERSECURITY",
-    cybersecurityTitle: "Protect your business against cyber threats",
-    cybersecurityDesc: "In a world where cyberattacks are constantly increasing, IntegralTech offers you complete protection of your information system. Our multi-layered approach covers security audits, intrusion detection, team training and incident response.",
-    cybersecurityPoints: ["Security audit and diagnosis", "24/7 Managed SOC", "Training and awareness", "Identity and access management (IAM)", "Data protection (DLP)"],
-    
-    cloudBadge: "CLOUD",
-    cloudTitle: "Migrate to the cloud with confidence",
-    cloudDesc: "Our cloud expertise guides you from strategy to production. Whether you opt for public, private or hybrid cloud, our certified teams (AWS, Azure, Google Cloud) orchestrate your migration with minimal impact on your activity.",
-    cloudPoints: ["Cloud audit and strategy", "Application migration", "Cloud cost optimization", "Hybrid and multi-cloud", "Managed services and monitoring"],
-    
-    infraBadge: "IT INFRASTRUCTURE",
-    infraTitle: "A robust and scalable infrastructure",
-    infraDesc: "We design, deploy, and maintain high-performance IT infrastructures adapted to your growth. From virtualization to hyperconvergence, network, and storage, our solutions guarantee availability and performance.",
-    infraPoints: ["Virtualization and hyperconvergence", "LAN/WAN and Wi-Fi networks", "SAN/NAS storage", "Datacenter and colocation", "Proactive monitoring and supervision"],
-    
-    erpBadge: "ERP",
-    erpTitle: "Optimize your business processes with a custom ERP",
-    erpDesc: "ERP implementation is a strategic project. IntegralTech supports you in choosing, configuring, and deploying your ERP solution (Microsoft Dynamics, SAP, Odoo) to digitize and optimize all your operational processes.",
-    erpPoints: ["Needs analysis and scoping", "ERP deployment (Microsoft Dynamics, Odoo, SAP)", "Data migration", "User training", "Support and evolutionary maintenance"],
-    
-    transformBadge: "DIGITAL TRANSFORMATION",
-    transformTitle: "Accelerate your digital transformation",
-    transformDesc: "Digital transformation is more than a technological project, it's a cultural and organizational evolution. We guide you through this shift by aligning technology, processes, and people to create a sustainable competitive advantage.",
-    transformPoints: ["Digital maturity diagnostic", "Roadmap definition", "Process automation (RPA)", "Innovation and technology watch", "Change management"],
-    
-    consultingBadge: "CONSULTING & AUDIT",
-    consultingTitle: "Strategic consulting for your IT decisions",
-    consultingDesc: "Our senior consultants bring you an objective and expert look at your information system. We carry out technical audits, define IT strategies, and accompany you in governance and change management.",
-    consultingPoints: ["Complete IS audit", "IT master plan", "IT governance (COBIT, ITIL)", "Management of complex IT projects", "IT spending optimization (FinOps)"]
+
+    // 9 IntegralTech integrated solutions
+    businessDesc: "IntegralTech Business is an all-in-one solution that lets you manage sales, purchases and inventory from a single intuitive interface. Designed to meet the needs of businesses of all sizes, it helps you centralize operations and optimize your daily performance.",
+    factoryDesc: "IntegralTech Factory enables you to efficiently manage production, maintenance and inventory within your industrial unit. With an intuitive interface and advanced features, it helps reduce downtime, optimize workflows and improve real-time productivity.",
+    materioDesc: "IntegralTech Matério addresses the specific needs of building-materials manufacturers. From dimension management to cutting and variant tracking, this solution supports you in mastering your operations.",
+    tmsDesc: "IntegralTech TMS is a comprehensive solution designed for transport and logistics companies. From fleet and parcel management to driver and expense tracking, everything is unified to optimize operations and ensure real-time traceability.",
+    marcheDesc: "IntegralTech Marché is specially designed for companies managing projects subject to complex administrative procedures. Whether you handle public or private contracts, this solution centralizes your data and helps you meet regulatory requirements with confidence.",
+    zbtpDesc: "IntegralTech ZBTP is specially designed for the building and public-works sector. This solution lets you plan, monitor and optimize your construction sites while controlling costs, supply chains and contractual commitments.",
+    financeDesc: "IntegralTech Finance is built for companies that want to better manage their finances without complexity. From general accounting to specific operations, it helps centralize financial data, automate repetitive tasks and make informed decisions.",
+    financePlusDesc: "IntegralTech Finance+ is designed for companies that want to go further in financial analysis. It lets you structure your data, control expenses and optimize forecasts with powerful analytical accounting and budget-tracking tools.",
+    eduDesc: "IntegralTech Edu is designed for educational institutions looking to modernize their daily management. From administration to exchanges between teachers, students and parents, the solution centralizes data, automates tasks and improves communication among all school stakeholders.",
   },
 
   // Services Page

@@ -1,282 +1,110 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Link } from "react-router-dom";
 import SEO from "../components/seo/SEO";
-import { ShieldCheck, Cloud, Server, Layers, Zap, BarChart3, ArrowRight } from "lucide-react";
-import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
+import { ArrowRight, ExternalLink } from "lucide-react";
+import { NAVY, ORANGE, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
 import { useTranslation } from "../context/LanguageContext";
+import { integratedSolutions } from "../data/integratedSolutionsData";
+import type { IntegratedSolution } from "../data/integratedSolutionsData";
 
 gsap.registerPlugin(ScrollTrigger);
 
-function ensureVisible(elements: HTMLElement[]) {
-  elements.forEach((element) => {
-    element.style.opacity = "1";
-    element.style.transform = "none";
-    element.style.removeProperty("translate");
-    element.style.removeProperty("rotate");
-    element.style.removeProperty("scale");
-  });
-}
+// ── Logo with fallback ────────────────────────────────────
 
-interface SolutionItem {
-  id: string;
-  Icon: any;
-  badge: string;
-  title: string;
-  desc: string;
-  points: readonly string[];
-  gradient: string;
-  accent: string;
-}
+function SolutionLogo({ solution }: { solution: IntegratedSolution }) {
+  const [hasError, setHasError] = useState(false);
+  const FallbackIcon = solution.icon;
 
-function SolutionCard({ s, index }: { s: SolutionItem; index: number }) {
-  const t = useTranslation();
-  const ref = useRef<HTMLDivElement>(null);
-  const isEven = index % 2 === 0;
+  const handleError = useCallback(() => {
+    setHasError(true);
+  }, []);
 
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const visual = el.querySelector<HTMLElement>(".sol-visual");
-    const content = el.querySelector<HTMLElement>(".sol-content");
-    const points = Array.from(el.querySelectorAll<HTMLElement>(".sol-point"));
-    if (!visual || !content) return;
-
-    const targets = [visual, content, ...points];
-    const completeReveal = () => ensureVisible(targets);
-    const media = gsap.matchMedia();
-
-    try {
-      media.add(
-        {
-          compact: "(max-width: 1024px) and (prefers-reduced-motion: no-preference)",
-          desktop: "(min-width: 1025px) and (prefers-reduced-motion: no-preference)",
-          reduceMotion: "(prefers-reduced-motion: reduce)",
-        },
-        (context) => {
-          const conditions = context.conditions as {
-            compact: boolean;
-            desktop: boolean;
-            reduceMotion: boolean;
-          };
-
-          if (conditions.reduceMotion) {
-            completeReveal();
-            return;
-          }
-
-          const primaryFrom = conditions.compact
-            ? { opacity: 0, x: 0, y: 24 }
-            : { opacity: 0, x: isEven ? -50 : 50, y: 0 };
-          const pointFrom = conditions.compact
-            ? { opacity: 0, x: 0, y: 12 }
-            : { opacity: 0, x: -20, y: 0 };
-
-          const timeline = gsap.timeline({
-            scrollTrigger: {
-              trigger: el,
-              start: "top 78%",
-              once: true,
-              onLeave: (self) => {
-                self.animation?.progress(1);
-                completeReveal();
-              },
-              onRefresh: (self) => {
-                if (self.progress === 1) {
-                  self.animation?.progress(1);
-                  completeReveal();
-                }
-              },
-            },
-            defaults: { ease: "power3.out" },
-            onComplete: completeReveal,
-            onInterrupt: completeReveal,
-          });
-
-          timeline
-            .fromTo(visual, primaryFrom, { opacity: 1, x: 0, y: 0, duration: 0.9 })
-            .fromTo(content, primaryFrom, { opacity: 1, x: 0, y: 0, duration: 0.9 }, "<0.15")
-            .fromTo(points, pointFrom, { opacity: 1, x: 0, y: 0, duration: 0.5, stagger: 0.08 }, "<0.3");
-        },
-      );
-    } catch {
-      completeReveal();
-    }
-
-    return () => {
-      media.revert();
-      completeReveal();
-    };
-  }, [isEven]);
+  if (hasError) {
+    return (
+      <div
+        className="integrated-solution-logo-fallback"
+        role="img"
+        aria-label={`Logo ${solution.officialName}`}
+      >
+        <FallbackIcon size={36} strokeWidth={1.4} aria-hidden="true" />
+        <span>{solution.shortName}</span>
+      </div>
+    );
+  }
 
   return (
-    <div
-      id={s.id}
-      ref={ref}
-      style={{
-        display: "flex",
-        flexDirection: isEven ? "row" : "row-reverse",
-        gap: 72,
-        alignItems: "center",
-        marginBottom: 96,
-      }}
-      className="solution-card-row"
+    <img
+      src={solution.logo}
+      alt={`Logo ${solution.officialName}`}
+      loading="lazy"
+      onError={handleError}
+      className="integrated-solution-logo-img"
+    />
+  );
+}
+
+// ── Solution card ─────────────────────────────────────────
+
+function IntegratedSolutionCard({
+  solution,
+  ctaLabel,
+}: {
+  solution: IntegratedSolution;
+  ctaLabel: string;
+}) {
+  const t = useTranslation();
+  const desc = (t.solutionsPage as Record<string, string>)[solution.descKey] || "";
+
+  return (
+    <article
+      className="integrated-solution-card"
+      id={solution.id}
+      aria-labelledby={`${solution.id}-title`}
     >
-      {/* Visual */}
-      <div
-        className="sol-visual"
-        style={{
-          flex: "0 0 420px",
-          height: 320,
-          borderRadius: 22,
-          background: s.gradient,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 24px 56px rgba(0,0,0,0.15)",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div style={{
-          position: "absolute", inset: 0, opacity: 0.06,
-          backgroundImage: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)",
-        }} />
-        <s.Icon size={72} color={s.accent} strokeWidth={1.2} />
+      {/* Logo container */}
+      <div className="integrated-solution-logo">
+        <SolutionLogo solution={solution} />
       </div>
 
       {/* Content */}
-      <div className="sol-content" style={{ flex: 1 }}>
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: 8,
-          background: `${ORANGE}0D`, border: `1px solid ${ORANGE}1A`,
-          padding: "5px 14px", borderRadius: "99px",
-          color: ORANGE, fontWeight: 600, fontSize: 11, fontFamily: "Outfit, sans-serif",
-          textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 16,
-        }}>
-          {s.badge}
-        </div>
-        <h2 style={{
-          fontFamily: "Outfit, sans-serif", fontWeight: 800,
-          fontSize: "clamp(22px, 2.5vw, 30px)", color: DARK,
-          lineHeight: 1.25, margin: "0 0 16px", letterSpacing: "-0.3px",
-        }}>
-          {s.title}
-        </h2>
-        <p style={{
-          fontFamily: "Open Sans, sans-serif", color: BODY_TEXT,
-          fontSize: 15, lineHeight: 1.8, margin: "0 0 24px",
-        }}>
-          {s.desc}
-        </p>
-        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
-          {s.points.map((pt) => (
-            <li key={pt} className="sol-point" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{
-                width: 6, height: 6, borderRadius: "50%", background: ORANGE,
-                flexShrink: 0, display: "inline-block",
-              }} />
-              <span style={{ fontFamily: "Open Sans, sans-serif", color: DARK, fontSize: 14 }}>{pt}</span>
-            </li>
-          ))}
-        </ul>
-        <Link
-          to="/contact"
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: ORANGE, color: "#fff",
-            fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 14,
-            padding: "13px 26px", borderRadius: 10, textDecoration: "none",
-            boxShadow: "0 4px 14px rgba(249,115,22,0.2)",
-            transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "0 6px 18px rgba(249,115,22,0.35)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "none";
-            e.currentTarget.style.boxShadow = "0 4px 14px rgba(249,115,22,0.2)";
-          }}
+      <div className="integrated-solution-content">
+        <h3
+          id={`${solution.id}-title`}
+          className="integrated-solution-name"
         >
-          {t.solutionsPage.demoBtn}
-          <ArrowRight size={15} />
-        </Link>
+          {solution.officialName}
+        </h3>
+        <p className="integrated-solution-desc">{desc}</p>
       </div>
-    </div>
+
+      {/* CTA */}
+      <div className="integrated-solution-cta-wrap">
+        <a
+          href={solution.detailUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="integrated-solution-cta"
+        >
+          {ctaLabel}
+          <ExternalLink size={14} aria-hidden="true" />
+        </a>
+      </div>
+    </article>
   );
 }
+
+// ── Solutions Page ────────────────────────────────────────
 
 export default function SolutionsPage() {
   const t = useTranslation();
   usePageTransitionEffect();
   const heroRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  const solutions: SolutionItem[] = [
-    {
-      id: "cybersecurite",
-      Icon: ShieldCheck,
-      badge: t.solutionsPage.cybersecurityBadge,
-      title: t.solutionsPage.cybersecurityTitle,
-      desc: t.solutionsPage.cybersecurityDesc,
-      points: t.solutionsPage.cybersecurityPoints,
-      gradient: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 100%)`,
-      accent: ORANGE,
-    },
-    {
-      id: "cloud",
-      Icon: Cloud,
-      badge: t.solutionsPage.cloudBadge,
-      title: t.solutionsPage.cloudTitle,
-      desc: t.solutionsPage.cloudDesc,
-      points: t.solutionsPage.cloudPoints,
-      gradient: `linear-gradient(135deg, #0f2744 0%, #1e3a5f 100%)`,
-      accent: "#4FC3F7",
-    },
-    {
-      id: "infrastructure",
-      Icon: Server,
-      badge: t.solutionsPage.infraBadge,
-      title: t.solutionsPage.infraTitle,
-      desc: t.solutionsPage.infraDesc,
-      points: t.solutionsPage.infraPoints,
-      gradient: `linear-gradient(135deg, #0f2744 0%, #223355 100%)`,
-      accent: "#81C784",
-    },
-    {
-      id: "erp",
-      Icon: Layers,
-      badge: t.solutionsPage.erpBadge,
-      title: t.solutionsPage.erpTitle,
-      desc: t.solutionsPage.erpDesc,
-      points: t.solutionsPage.erpPoints,
-      gradient: `linear-gradient(135deg, #1a2a3a 0%, #2c3e50 100%)`,
-      accent: "#CE93D8",
-    },
-    {
-      id: "transformation",
-      Icon: Zap,
-      badge: t.solutionsPage.transformBadge,
-      title: t.solutionsPage.transformTitle,
-      desc: t.solutionsPage.transformDesc,
-      points: t.solutionsPage.transformPoints,
-      gradient: `linear-gradient(135deg, #0f2744 0%, #1f3456 100%)`,
-      accent: "#FFB74D",
-    },
-    {
-      id: "consulting",
-      Icon: BarChart3,
-      badge: t.solutionsPage.consultingBadge,
-      title: t.solutionsPage.consultingTitle,
-      desc: t.solutionsPage.consultingDesc,
-      points: t.solutionsPage.consultingPoints,
-      gradient: `linear-gradient(135deg, #14243b 0%, #1d3050 100%)`,
-      accent: "#4DB6AC",
-    },
-  ];
-
+  // Hero animation
   useLayoutEffect(() => {
     const el = heroRef.current;
     if (!el) return;
@@ -293,6 +121,38 @@ export default function SolutionsPage() {
     return () => ctx.revert();
   }, []);
 
+  // Grid stagger animation
+  useLayoutEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    const cards = Array.from(el.querySelectorAll<HTMLElement>(".integrated-solution-card"));
+    if (cards.length === 0) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 32 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          stagger: 0.08,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 80%",
+            once: true,
+          },
+        },
+      );
+    }, el);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <div id="solutions">
       <SEO
@@ -300,15 +160,16 @@ export default function SolutionsPage() {
         description={t.solutionsPage.seoDesc}
         path="/solutions"
       />
+
       {/* ── Hero ── */}
       <div
         ref={heroRef}
+        className="solutions-hero"
         style={{
           background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 50%, #1a2a5e 100%)`,
           color: "#fff", padding: "120px 0 96px", textAlign: "center",
           position: "relative", overflow: "hidden",
         }}
-        className="solutions-hero"
       >
         <div style={{
           position: "absolute", top: "20%", left: "50%", transform: "translate(-50%, -50%)",
@@ -340,9 +201,9 @@ export default function SolutionsPage() {
             {t.solutionsPage.desc}
           </p>
 
-          {/* Anchor nav */}
+          {/* Anchor nav chips */}
           <div data-hero style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
-            {solutions.map((s) => (
+            {integratedSolutions.map((s) => (
               <a
                 key={s.id}
                 href={`#${s.id}`}
@@ -365,19 +226,28 @@ export default function SolutionsPage() {
                   e.currentTarget.style.background = "rgba(255,255,255,0.05)";
                 }}
               >
-                {s.badge}
+                {s.shortName}
               </a>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── Solution cards ── */}
-      <div style={{ background: CARD_BG, padding: "100px 0 16px" }} className="solutions-body">
+      {/* ── Solutions Grid ── */}
+      <div style={{ background: CARD_BG, padding: "80px 0 96px" }} className="solutions-body">
         <div style={{ width: "90%", maxWidth: 1200, margin: "0 auto" }}>
-          {solutions.map((s, i) => (
-            <SolutionCard key={s.id} s={s} index={i} />
-          ))}
+          <div
+            ref={gridRef}
+            className="integrated-solutions-grid"
+          >
+            {integratedSolutions.map((s) => (
+              <IntegratedSolutionCard
+                key={s.id}
+                solution={s}
+                ctaLabel={t.solutionsPage.ctaLabel}
+              />
+            ))}
+          </div>
         </div>
       </div>
 

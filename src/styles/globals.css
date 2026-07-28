@@ -199,6 +199,49 @@ img {
   min-width: 0;
 }
 
+.services-section {
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 70% 52% at 50% -8%, rgba(49, 91, 146, 0.24), transparent 72%),
+    linear-gradient(145deg, #06101d 0%, #091a2d 48%, #071321 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(148, 163, 184, 0.08),
+    inset 0 -1px 0 rgba(148, 163, 184, 0.06);
+}
+
+.services-section::before,
+.services-section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.services-section::before {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent);
+  opacity: 0.62;
+}
+
+.services-section::after {
+  background:
+    radial-gradient(circle at 84% 24%, rgba(249, 115, 22, 0.12), transparent 27%),
+    radial-gradient(circle at 12% 82%, rgba(37, 99, 235, 0.1), transparent 30%);
+}
+
+.services-section .section-header > h2 {
+  color: #f8fafc !important;
+}
+
+.services-section .section-header > p {
+  color: rgba(226, 232, 240, 0.78) !important;
+}
+
 .hero-section {
   min-width: 0;
   width: 100%;
@@ -809,6 +852,17 @@ a:focus-visible,
   .solutions-home-grid,
   .trust-grid {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .services-section::before {
+    background-size: 44px 44px;
+    opacity: 0.48;
+  }
+
+  .services-section::after {
+    background:
+      radial-gradient(circle at 88% 18%, rgba(249, 115, 22, 0.1), transparent 24%),
+      radial-gradient(circle at 8% 88%, rgba(37, 99, 235, 0.08), transparent 26%);
   }
 }
 
@@ -2786,4 +2840,168 @@ a:focus-visible,
   background: var(--hover);
 }
 
+/* ────────────────────────────────────────────────────────────
+   Integrated Solutions — Grid & Card System
+   ──────────────────────────────────────────────────────────── */
 
+.integrated-solutions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+@media (max-width: 1024px) {
+  .integrated-solutions-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .integrated-solutions-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* ── Card ── */
+
+.integrated-solution-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  will-change: transform;
+}
+
+.integrated-solution-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--accent);
+}
+
+.integrated-solution-card:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Logo area ── */
+
+.integrated-solution-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 18px;
+  min-height: 76px;
+  background: rgba(248, 250, 252, 0.6);
+  border-bottom: 1px solid var(--border);
+}
+
+[data-theme='dark'] .integrated-solution-logo {
+  background: rgba(245, 247, 250, 0.06);
+}
+
+.integrated-solution-logo-img {
+  display: block;
+  max-width: 75%;
+  max-height: 58px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.integrated-solution-logo-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* ── Content ── */
+
+.integrated-solution-content {
+  flex: 1;
+  padding: 20px 22px 16px;
+}
+
+.integrated-solution-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--text);
+  margin: 0 0 10px;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+
+.integrated-solution-desc {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── CTA ── */
+
+.integrated-solution-cta-wrap {
+  padding: 0 22px 20px;
+  margin-top: auto;
+}
+
+.integrated-solution-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: gap 0.2s ease, color 0.2s ease;
+}
+
+.integrated-solution-cta:hover {
+  gap: 10px;
+}
+
+.integrated-solution-cta:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* ── Responsive adjustments for hero anchor chips ── */
+
+@media (max-width: 640px) {
+  .solutions-hero [data-hero] {
+    font-size: 11px !important;
+  }
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .integrated-solution-card {
+    transition: none;
+  }
+
+  .integrated-solution-cta {
+    transition: none;
+  }
+}
