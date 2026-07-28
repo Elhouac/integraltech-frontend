@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
+import { apiClient, ApiError } from "../api/client";
 
 // ── Types ──
 
@@ -17,8 +18,8 @@ interface AuthContextType {
   user: AdminUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string, remember?: boolean) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   hasRole: (minimumRole: UserRole) => boolean;
 }
 
@@ -32,32 +33,6 @@ const ROLE_LEVELS: Record<UserRole, number> = {
   super_admin: 4,
 };
 
-// ── Mock credentials (replaced by API in Phase 2) ──
-const MOCK_USERS: { email: string; password: string; user: AdminUser }[] = [
-  {
-    email: "admin@integraltech.ma",
-    password: "admin123",
-    user: { id: 1, name: "Super Admin", email: "admin@integraltech.ma", role: "super_admin" },
-  },
-  {
-    email: "editor@integraltech.ma",
-    password: "editor123",
-    user: { id: 2, name: "Éditeur", email: "editor@integraltech.ma", role: "editor" },
-  },
-  {
-    email: "support@integraltech.ma",
-    password: "support123",
-    user: { id: 3, name: "Support Agent", email: "support@integraltech.ma", role: "support" },
-  },
-  {
-    email: "viewer@integraltech.ma",
-    password: "viewer123",
-    user: { id: 4, name: "Simple Observateur", email: "viewer@integraltech.ma", role: "viewer" },
-  },
-];
-
-const AUTH_STORAGE_KEY = "integraltech_admin_auth";
-
 // ── Context ──
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,56 +41,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ── Restore session on mount ──
+  // ── Restore session on mount via SPA cookie ──
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as AdminUser;
-        if (parsed && parsed.id && parsed.email && parsed.role) {
-          setUser(parsed);
+    let isMounted = true;
+    const fetchMe = async () => {
+      try {
+        const response = await apiClient.get<{ user: AdminUser }>("/auth/me");
+        if (isMounted && response.data?.user) {
+          setUser(response.data.user);
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
-    } catch {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    fetchMe();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // ── Login ──
-  const login = useCallback(async (email: string, password: string, remember = false): Promise<{ success: boolean; error?: string }> => {
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const match = MOCK_USERS.find((u) => u.email === email && u.password === password);
-    if (!match) {
-      return { success: false, error: "Email ou mot de passe incorrect." };
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await apiClient.getCsrfCookie();
+      const response = await apiClient.post<{ user: AdminUser }>("/auth/login", { email, password });
+      
+      if (response.data?.user) {
+        setUser(response.data.user);
+        return { success: true };
+      }
+      return { success: false, error: response.message || "Erreur de connexion" };
+    } catch (err: any) {
+      const errorMessage = err instanceof ApiError ? err.message : "Identifiants invalides ou erreur serveur";
+      return { success: false, error: errorMessage };
     }
-
-    setUser(match.user);
-
-    if (remember) {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(match.user));
-    } else {
-      // Session-only: store in sessionStorage instead
-      sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(match.user));
-    }
-
-    return { success: true };
   }, []);
 
   // ── Logout ──
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  const logout = useCallback(async () => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch {
+      // Ignore logout errors
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   // ── Role check ──
   const hasRole = useCallback((minimumRole: UserRole): boolean => {
     if (!user) return false;
-    return ROLE_LEVELS[user.role] >= ROLE_LEVELS[minimumRole];
+    return (ROLE_LEVELS[user.role] || 0) >= (ROLE_LEVELS[minimumRole] || 0);
   }, [user]);
 
   return (

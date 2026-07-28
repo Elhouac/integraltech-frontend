@@ -6,6 +6,7 @@ import SEO from "../components/seo/SEO";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
 import { useLanguage, useTranslation } from "../context/LanguageContext";
+import { publicApi } from "../api/publicApi";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -70,6 +71,8 @@ function ContactFormFull() {
   const [form, setForm] = useState<FormData>({ name: "", email: "", phone: "", subject: "", message: "" });
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const validate = (): boolean => {
@@ -83,12 +86,29 @@ function ContactFormFull() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-    setStatus("success");
-    setForm({ name: "", email: "", phone: "", subject: "", message: "" });
-    setTimeout(() => setStatus("idle"), 5000);
+    if (!validate() || submitting) return;
+    setSubmitting(true);
+    setStatus("idle");
+    setErrorMessage(null);
+    try {
+      await publicApi.submitLead({
+        name: form.name,
+        email: form.email,
+        phone: form.phone || undefined,
+        subject: form.subject || undefined,
+        message: form.message,
+      });
+      setStatus("success");
+      setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+      setTimeout(() => setStatus("idle"), 5000);
+    } catch (err: any) {
+      setStatus("error");
+      setErrorMessage(err.message || t.contact.formError);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const inputStyle = (hasError: boolean) => ({
@@ -181,26 +201,29 @@ function ContactFormFull() {
           borderRadius: 12, padding: "16px 20px",
           fontFamily: "Open Sans, sans-serif", color: "#EF4444", fontSize: 14,
         }}>
-          {t.contact.formError}
+          {errorMessage || t.contact.formError}
         </div>
       )}
 
       <button
         type="submit"
+        disabled={submitting}
         style={{
           display: "inline-flex", alignItems: "center", gap: 8,
           padding: "15px 32px", background: ORANGE, color: "#fff", border: "none",
           borderRadius: 12, fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 15,
-          cursor: "pointer", alignSelf: "flex-start",
+          cursor: submitting ? "not-allowed" : "pointer", alignSelf: "flex-start",
           boxShadow: "0 4px 14px rgba(249,115,22,0.2)",
+          opacity: submitting ? 0.7 : 1,
           transition: "all 0.2s ease",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 6px 18px rgba(249,115,22,0.35)";
+          if (!submitting) {
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow = "0 6px 18px rgba(249,115,22,0.35)";
+          }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "none";
           e.currentTarget.style.boxShadow = "0 4px 14px rgba(249,115,22,0.2)";
         }}
       >

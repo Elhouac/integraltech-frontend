@@ -4,6 +4,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Mail, CheckCircle, ArrowRight } from "lucide-react";
 import { ORANGE, NAVY, DARK, BODY_TEXT, BORDER, CARD_BG } from "../../constants";
 import { useLanguage, useTranslation } from "../../context/LanguageContext";
+import { publicApi } from "../../api/publicApi";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -12,6 +13,7 @@ export default function Newsletter() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { language } = useLanguage();
   const t = useTranslation();
 
@@ -36,14 +38,23 @@ export default function Newsletter() {
     return () => ctx.revert();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = email.trim();
-    if (!trimmed) { setErrorMsg(t.newsletter.emailRequired); setStatus("error"); return; }
+    if (!trimmed || submitting) { setErrorMsg(t.newsletter.emailRequired); setStatus("error"); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) { setErrorMsg(t.newsletter.emailInvalid); setStatus("error"); return; }
-    setStatus("success");
-    setEmail("");
-    setErrorMsg("");
+    setSubmitting(true);
+    try {
+      await publicApi.subscribeNewsletter(trimmed);
+      setStatus("success");
+      setEmail("");
+      setErrorMsg("");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Erreur d'inscription");
+      setStatus("error");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

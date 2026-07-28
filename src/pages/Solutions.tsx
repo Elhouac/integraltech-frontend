@@ -1,14 +1,15 @@
-import { useLayoutEffect, useRef, useState, useCallback } from "react";
+import { useLayoutEffect, useRef, useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import SEO from "../components/seo/SEO";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, Loader2 } from "lucide-react";
 import { NAVY, ORANGE, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
-import { useTranslation } from "../context/LanguageContext";
+import { useLanguage, useTranslation } from "../context/LanguageContext";
 import { integratedSolutions } from "../data/integratedSolutionsData";
 import type { IntegratedSolution } from "../data/integratedSolutionsData";
+import { publicApi, SolutionDto } from "../api/publicApi";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -51,12 +52,14 @@ function SolutionLogo({ solution }: { solution: IntegratedSolution }) {
 function IntegratedSolutionCard({
   solution,
   ctaLabel,
+  customDesc,
 }: {
   solution: IntegratedSolution;
   ctaLabel: string;
+  customDesc?: string;
 }) {
   const t = useTranslation();
-  const desc = (t.solutionsPage as Record<string, string>)[solution.descKey] || "";
+  const desc = customDesc || (t.solutionsPage as Record<string, string>)[solution.descKey] || "";
 
   return (
     <article
@@ -100,9 +103,40 @@ function IntegratedSolutionCard({
 
 export default function SolutionsPage() {
   const t = useTranslation();
+  const { language } = useLanguage();
   usePageTransitionEffect();
   const heroRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [apiSolutions, setApiSolutions] = useState<SolutionDto[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    publicApi.fetchSolutions()
+      .then((res) => {
+        if (active && res.data) {
+          setApiSolutions(res.data);
+        }
+      })
+      .catch(() => {
+        // Fallback gracefully on network error
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
+  // Merge API data with official solutions
+  const mergedSolutions: { solution: IntegratedSolution; customDesc?: string }[] = integratedSolutions.map((item) => {
+    const match = apiSolutions.find((apiItem) => apiItem.slug === item.id || apiItem.slug.includes(item.id));
+    let customDesc: string | undefined = undefined;
+    if (match) {
+      customDesc = match.shortDescription?.[language] || match.shortDescription?.fr;
+    }
+    return { solution: item, customDesc };
+  });
 
   // Hero animation
   useLayoutEffect(() => {
@@ -151,7 +185,7 @@ export default function SolutionsPage() {
     }, el);
 
     return () => ctx.revert();
-  }, []);
+  }, [loading]);
 
   return (
     <div id="solutions">
@@ -218,7 +252,7 @@ export default function SolutionsPage() {
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = ORANGE;
                   e.currentTarget.style.color = ORANGE;
-                  e.currentTarget.style.background = "rgba(249,115,22,0.08)";
+                  e.currentTarget.style.background = "rgba(249, 115, 22, 0.1)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
@@ -233,29 +267,46 @@ export default function SolutionsPage() {
         </div>
       </div>
 
-      {/* ── Solutions Grid ── */}
-      <div style={{ background: CARD_BG, padding: "80px 0 96px" }} className="solutions-body">
-        <div style={{ width: "90%", maxWidth: 1200, margin: "0 auto" }}>
-          <div
-            ref={gridRef}
-            className="integrated-solutions-grid"
-          >
-            {integratedSolutions.map((s) => (
-              <IntegratedSolutionCard
-                key={s.id}
-                solution={s}
-                ctaLabel={t.solutionsPage.ctaLabel}
-              />
-            ))}
+      {/* ── Main Grid Section ── */}
+      <section className="integrated-solutions-section">
+        <div className="integrated-solutions-container">
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <h2 className="integrated-solutions-grid-title">
+              {t.solutionsPage.gridTitle}
+            </h2>
+            <p className="integrated-solutions-grid-desc">
+              {t.solutionsPage.gridDesc}
+            </p>
           </div>
-        </div>
-      </div>
 
-      {/* ── CTA ── */}
-      <div style={{
-        background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 100%)`,
-        padding: "96px 0", textAlign: "center", position: "relative", overflow: "hidden",
-      }}>
+          {loading ? (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "60px 0", gap: 12 }}>
+              <Loader2 size={24} className="animate-spin" color={ORANGE} />
+              <span style={{ fontFamily: "Open Sans, sans-serif" }}>Chargement des solutions...</span>
+            </div>
+          ) : (
+            <div ref={gridRef} className="integrated-solutions-grid">
+              {mergedSolutions.map(({ solution, customDesc }) => (
+                <IntegratedSolutionCard
+                  key={solution.id}
+                  solution={solution}
+                  ctaLabel={t.solutionsPage.discoverBtn}
+                  customDesc={customDesc}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Bottom CTA ── */}
+      <section
+        style={{
+          background: `linear-gradient(135deg, ${NAVY} 0%, #0f1b3d 100%)`,
+          padding: "96px 0", textAlign: "center", position: "relative",
+          overflow: "hidden",
+        }}
+      >
         <div style={{
           position: "absolute", top: "40%", left: "50%", transform: "translate(-50%, -50%)",
           width: 500, height: 300, borderRadius: "50%",
@@ -296,10 +347,10 @@ export default function SolutionsPage() {
             }}
           >
             {t.solutionsPage.ctaBtn}
-            <ArrowRight size={16} />
+            <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

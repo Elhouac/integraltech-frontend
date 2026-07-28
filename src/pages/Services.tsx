@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link } from "react-router-dom";
@@ -6,11 +6,12 @@ import SEO from "../components/seo/SEO";
 import {
   ShieldCheck, Cloud, Layers, Wrench, BarChart3, Handshake,
   Network, Globe, Settings, Headphones, Lock, Database,
-  ArrowRight,
+  ArrowRight, Loader2, AlertCircle
 } from "lucide-react";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
-import { useTranslation } from "../context/LanguageContext";
+import { useLanguage, useTranslation } from "../context/LanguageContext";
+import { publicApi, ServiceDto } from "../api/publicApi";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -31,6 +32,16 @@ interface ServiceItem {
   subtitle: string;
   desc: string;
   features: readonly string[];
+}
+
+const ICON_MAP: Record<string, any> = {
+  ShieldCheck, Cloud, Layers, Wrench, BarChart3, Handshake,
+  Network, Globe, Settings, Headphones, Lock, Database,
+};
+
+function getIconByName(name?: string): any {
+  if (name && ICON_MAP[name]) return ICON_MAP[name];
+  return Layers;
 }
 
 function ServiceCard({ s, index }: { s: ServiceItem; index: number }) {
@@ -54,7 +65,6 @@ function ServiceCard({ s, index }: { s: ServiceItem; index: number }) {
         scrollTrigger: { trigger: el, start: "top 85%", once: true },
       });
 
-      // hover
       const onEnter = () =>
         gsap.to(el, { y: -6, boxShadow: `0 20px 48px rgba(249,115,22,0.15)`, duration: 0.35, ease: "power2.out" });
       const onLeave = () =>
@@ -92,12 +102,14 @@ function ServiceCard({ s, index }: { s: ServiceItem; index: number }) {
       }}>
         <s.Icon size={24} color={ORANGE} />
       </div>
-      <div style={{
-        color: ORANGE, fontWeight: 700, fontSize: 11, letterSpacing: 2,
-        textTransform: "uppercase", marginBottom: 6, fontFamily: "Outfit, sans-serif",
-      }}>
-        {s.subtitle}
-      </div>
+      {s.subtitle && (
+        <div style={{
+          color: ORANGE, fontWeight: 700, fontSize: 11, letterSpacing: 2,
+          textTransform: "uppercase", marginBottom: 6, fontFamily: "Outfit, sans-serif",
+        }}>
+          {s.subtitle}
+        </div>
+      )}
       <h3 style={{
         fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: 20,
         color: DARK, marginBottom: 12, lineHeight: 1.3, margin: "0 0 12px",
@@ -111,7 +123,7 @@ function ServiceCard({ s, index }: { s: ServiceItem; index: number }) {
         {s.desc}
       </p>
 
-      {expanded && (
+      {expanded && s.features && s.features.length > 0 && (
         <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px", display: "flex", flexDirection: "column", gap: 8 }}>
           {s.features.map((f) => (
             <li key={f} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -123,23 +135,25 @@ function ServiceCard({ s, index }: { s: ServiceItem; index: number }) {
       )}
 
       <div style={{ display: "flex", gap: 12, marginTop: "auto", flexWrap: "wrap" }}>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          style={{
-            background: "none", border: `1px solid ${ORANGE}`, color: ORANGE,
-            fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 13,
-            padding: "8px 18px", borderRadius: 10, cursor: "pointer",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = `${ORANGE}0D`;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "none";
-          }}
-        >
-          {expanded ? t.servicesPage.reduce : t.servicesPage.learnMore}
-        </button>
+        {s.features && s.features.length > 0 && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              background: "none", border: `1px solid ${ORANGE}`, color: ORANGE,
+              fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 13,
+              padding: "8px 18px", borderRadius: 10, cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = `${ORANGE}0D`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "none";
+            }}
+          >
+            {expanded ? t.servicesPage.reduce : t.servicesPage.learnMore}
+          </button>
+        )}
         <Link
           to="/contact"
           style={{
@@ -166,10 +180,15 @@ function ServiceCard({ s, index }: { s: ServiceItem; index: number }) {
 
 export default function ServicesPage() {
   const t = useTranslation();
+  const { language } = useLanguage();
   usePageTransitionEffect();
   const heroRef = useRef<HTMLDivElement>(null);
 
-  const services: ServiceItem[] = [
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [apiServices, setApiServices] = useState<ServiceDto[]>([]);
+
+  const defaultServices: ServiceItem[] = [
     {
       id: "cybersecurite",
       Icon: ShieldCheck,
@@ -218,55 +237,41 @@ export default function ServicesPage() {
       desc: t.servicesPage.conseilDesc,
       features: t.servicesPage.conseilFeatures,
     },
-    {
-      id: "reseau",
-      Icon: Network,
-      title: t.servicesPage.networkTitle,
-      subtitle: t.servicesPage.networkSub,
-      desc: t.servicesPage.networkDesc,
-      features: t.servicesPage.networkFeatures,
-    },
-    {
-      id: "securite-physique",
-      Icon: Lock,
-      title: t.servicesPage.lockTitle,
-      subtitle: t.servicesPage.lockSub,
-      desc: t.servicesPage.lockDesc,
-      features: t.servicesPage.lockFeatures,
-    },
-    {
-      id: "digital-workplace",
-      Icon: Globe,
-      title: t.servicesPage.workplaceTitle,
-      subtitle: t.servicesPage.workplaceSub,
-      desc: t.servicesPage.workplaceDesc,
-      features: t.servicesPage.workplaceFeatures,
-    },
-    {
-      id: "data",
-      Icon: Database,
-      title: t.servicesPage.dataTitle,
-      subtitle: t.servicesPage.dataSub,
-      desc: t.servicesPage.dataDesc,
-      features: t.servicesPage.dataFeatures,
-    },
-    {
-      id: "integration",
-      Icon: Settings,
-      title: t.servicesPage.integrationTitle,
-      subtitle: t.servicesPage.integrationSub,
-      desc: t.servicesPage.integrationDesc,
-      features: t.servicesPage.integrationFeatures,
-    },
-    {
-      id: "formation",
-      Icon: Wrench,
-      title: t.servicesPage.trainingTitle,
-      subtitle: t.servicesPage.trainingSub,
-      desc: t.servicesPage.trainingDesc,
-      features: t.servicesPage.trainingFeatures,
-    },
   ];
+
+  useEffect(() => {
+    let active = true;
+    publicApi.fetchServices()
+      .then((res) => {
+        if (active && res.data) {
+          setApiServices(res.data);
+        }
+      })
+      .catch(() => {
+        // Fallback gracefully on network/backend error
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
+  const displayServices: ServiceItem[] = apiServices.length > 0
+    ? apiServices.map((item) => {
+        const title = item.title?.[language] || item.title?.fr || item.slug;
+        const desc = item.shortDescription?.[language] || item.shortDescription?.fr || "";
+        const featuresRaw = item.features?.[language] || item.features?.fr || [];
+        const features = Array.isArray(featuresRaw) ? featuresRaw : [];
+        return {
+          id: item.slug,
+          Icon: getIconByName(item.icon),
+          title,
+          subtitle: item.accentColor || "SOLUTION",
+          desc,
+          features,
+        };
+      })
+    : defaultServices;
 
   useLayoutEffect(() => {
     const el = heroRef.current;
@@ -396,11 +401,19 @@ export default function ServicesPage() {
               {t.servicesPage.gridDesc}
             </p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }} className="services-page-grid">
-            {services.map((s, i) => (
-              <ServiceCard key={s.id} s={s} index={i} />
-            ))}
-          </div>
+
+          {loading ? (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "60px 0", gap: 12 }}>
+              <Loader2 size={24} className="animate-spin" color={ORANGE} />
+              <span style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT }}>Chargement des services...</span>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }} className="services-page-grid">
+              {displayServices.map((s, i) => (
+                <ServiceCard key={s.id} s={s} index={i} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../c
 import { usePageTransitionEffect } from "../hooks/usePageTransitionEffect";
 import { useTranslation } from "../context/LanguageContext";
 import { BLOG_SEEN_NEW_ARTICLES_KEY, blogArticles, newBlogArticleIds, type BlogCategory } from "../data/blogArticles";
+import { publicApi } from "../api/publicApi";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -142,10 +143,22 @@ function Sidebar({ selected, onSelect, categoriesList, recentArticles, counts }:
   const t = useTranslation();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSub = (e: React.FormEvent) => {
+  const handleSub = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) { setSent(true); setEmail(""); setTimeout(() => setSent(false), 4000); }
+    if (!email.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      await publicApi.subscribeNewsletter(email);
+    } catch {
+      // Fallback
+    } finally {
+      setSent(true);
+      setEmail("");
+      setSubmitting(false);
+      setTimeout(() => setSent(false), 4000);
+    }
   };
 
   return (
