@@ -67,17 +67,15 @@ export interface ClientItem {
   sector: string;
 }
 
-// ── Services (8 cards) ────────────────────────────────────
+// ── Services (6 cards) ────────────────────────────────────
 
 export const servicesData: ServiceItem[] = [
-  { icon: Globe, titleKey: "webDev", descKey: "webDevDesc", href: "/services" },
-  { icon: Smartphone, titleKey: "mobileApps", descKey: "mobileAppsDesc", href: "/services" },
-  { icon: Cloud, titleKey: "cloudInfra", descKey: "cloudInfraDesc", href: "/services" },
-  { icon: ShieldCheck, titleKey: "cybersecurity", descKey: "cybersecurityDesc", href: "/services" },
-  { icon: Wrench, titleKey: "maintenanceIT", descKey: "maintenanceITDesc", href: "/services" },
-  { icon: Headphones, titleKey: "techSupport", descKey: "techSupportDesc", href: "/services" },
-  { icon: RefreshCw, titleKey: "digitalTransform", descKey: "digitalTransformDesc", href: "/services" },
-  { icon: Lightbulb, titleKey: "itConsulting", descKey: "itConsultingDesc", href: "/services" },
+  { icon: ShieldCheck, titleKey: "cybersecurity", descKey: "cybersecurityDesc", href: "/services#cybersecurite" },
+  { icon: Cloud, titleKey: "cloudInfra", descKey: "cloudInfraDesc", href: "/services#cloud" },
+  { icon: Layers, titleKey: "erp", descKey: "erpDesc", href: "/services#erp" },
+  { icon: Headphones, titleKey: "techSupport", descKey: "techSupportDesc", href: "/services#support" },
+  { icon: BarChart3, titleKey: "bi", descKey: "biDesc", href: "/services#bi" },
+  { icon: Handshake, titleKey: "itConsulting", descKey: "itConsultingDesc", href: "/services#conseil" },
 ];
 
 // ── Solutions (8 cards) ───────────────────────────────────
@@ -160,14 +158,12 @@ export interface MegaMenuItem {
 }
 
 export const megaMenuServices: MegaMenuItem[] = [
-  { icon: Globe, titleKey: "webDev", descKey: "webDevShort", href: "/services" },
-  { icon: Smartphone, titleKey: "mobileApps", descKey: "mobileAppsShort", href: "/services" },
-  { icon: Cloud, titleKey: "cloudInfra", descKey: "cloudInfraShort", href: "/services" },
-  { icon: ShieldCheck, titleKey: "cybersecurity", descKey: "cybersecurityShort", href: "/services" },
-  { icon: Wrench, titleKey: "maintenanceIT", descKey: "maintenanceITShort", href: "/services" },
-  { icon: Headphones, titleKey: "techSupport", descKey: "techSupportShort", href: "/services" },
-  { icon: RefreshCw, titleKey: "digitalTransform", descKey: "digitalTransformShort", href: "/services" },
-  { icon: Lightbulb, titleKey: "itConsulting", descKey: "itConsultingShort", href: "/services" },
+  { icon: ShieldCheck, titleKey: "cybersecurity", descKey: "cybersecurityShort", href: "/services#cybersecurite" },
+  { icon: Cloud, titleKey: "cloudInfra", descKey: "cloudInfraShort", href: "/services#cloud" },
+  { icon: Layers, titleKey: "erp", descKey: "erpShort", href: "/services#erp" },
+  { icon: Headphones, titleKey: "techSupport", descKey: "techSupportShort", href: "/services#support" },
+  { icon: BarChart3, titleKey: "bi", descKey: "biShort", href: "/services#bi" },
+  { icon: Handshake, titleKey: "itConsulting", descKey: "itConsultingShort", href: "/services#conseil" },
 ];
 
 export const megaMenuSolutions: MegaMenuItem[] = [

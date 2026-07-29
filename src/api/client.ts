@@ -1,5 +1,8 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1").replace(/\/$/, "");
-const SANCTUM_URL = API_BASE_URL.replace(/\/api\/v1$/, "") + "/sanctum/csrf-cookie";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1").replace(/\/$/, "");
+// Sanctum must use the same origin as the API so its cookies are returned to
+// the host that receives the login and authenticated requests.
+const BACKEND_URL = new URL(API_BASE_URL).origin;
+const SANCTUM_URL = `${BACKEND_URL}/sanctum/csrf-cookie`;
 
 function getCsrfTokenFromCookie(): string | null {
   if (typeof document === "undefined") return null;
@@ -30,6 +33,11 @@ export class ApiError extends Error {
     this.status = status;
     this.errors = errors;
   }
+}
+
+export interface PostOptions {
+  /** Fetch a fresh Sanctum CSRF cookie before sending this request. */
+  csrf?: boolean;
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
@@ -68,14 +76,14 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const apiClient = {
   getCsrfCookie: async (): Promise<void> => {
-    try {
-      await fetch(SANCTUM_URL, {
-        method: "GET",
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-    } catch {
-      // Ignore network errors on csrf fetch attempt if server is unreachable
+    const response = await fetch(SANCTUM_URL, {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new ApiError(`HTTP error! Status: ${response.status}`, response.status);
     }
   },
 
@@ -96,8 +104,8 @@ export const apiClient = {
     return request<T>(url, { method: "GET" });
   },
 
-  post: async <T>(endpoint: string, body?: any): Promise<ApiResponse<T>> => {
-    if (["POST", "PUT", "PATCH", "DELETE"].includes("POST")) {
+  post: async <T>(endpoint: string, body?: any, options: PostOptions = {}): Promise<ApiResponse<T>> => {
+    if (options.csrf !== false) {
       await apiClient.getCsrfCookie();
     }
     return request<T>(endpoint, {

@@ -28,10 +28,10 @@ export default function Footer() {
     {
       title: t.footer.services,
       links: [
-        { label: t.megaMenu.webDev, to: "/services" },
-        { label: t.megaMenu.cybersecurity, to: "/services" },
-        { label: t.megaMenu.cloudInfra, to: "/services" },
-        { label: t.megaMenu.techSupport, to: "/services" },
+        { label: t.megaMenu.cybersecurity, to: "/services#cybersecurite" },
+        { label: t.megaMenu.cloudInfra, to: "/services#cloud" },
+        { label: t.megaMenu.erp, to: "/services#erp" },
+        { label: t.megaMenu.techSupport, to: "/services#support" },
       ],
     },
     {

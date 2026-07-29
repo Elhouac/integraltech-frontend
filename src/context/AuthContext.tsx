@@ -18,7 +18,7 @@ interface AuthContextType {
   user: AdminUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string, remember?: boolean) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   hasRole: (minimumRole: UserRole) => boolean;
 }
@@ -32,6 +32,29 @@ const ROLE_LEVELS: Record<UserRole, number> = {
   admin: 3,
   super_admin: 4,
 };
+
+function getLoginError(error: unknown): string {
+  if (error instanceof ApiError) {
+    switch (error.status) {
+      case 401:
+        return "Identifiants invalides";
+      case 403:
+        return "Accès refusé";
+      case 419:
+        return "Session expirée, veuillez réessayer";
+      case 500:
+        return "Erreur serveur";
+      default:
+        return error.message;
+    }
+  }
+
+  if (error instanceof TypeError && /fetch/i.test(error.message)) {
+    return "Backend inaccessible";
+  }
+
+  return "Erreur serveur";
+}
 
 // ── Context ──
 
@@ -50,7 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted && response.data?.user) {
           setUser(response.data.user);
         }
-      } catch {
+      } catch (error: unknown) {
+        // A guest has no session yet. This expected 401 must not be surfaced
+        // as a login or connectivity error.
+        if (error instanceof ApiError && error.status === 401) {
+          if (isMounted) {
+            setUser(null);
+          }
+          return;
+        }
+
         if (isMounted) {
           setUser(null);
         }
@@ -69,19 +101,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ── Login ──
-  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = useCallback(async (email: string, password: string, remember = false): Promise<{ success: boolean; error?: string }> => {
     try {
       await apiClient.getCsrfCookie();
-      const response = await apiClient.post<{ user: AdminUser }>("/auth/login", { email, password });
-      
+      await apiClient.post("/auth/login", { email, password, remember }, { csrf: false });
+      const response = await apiClient.get<{ user: AdminUser }>("/auth/me");
+
       if (response.data?.user) {
         setUser(response.data.user);
         return { success: true };
       }
-      return { success: false, error: response.message || "Erreur de connexion" };
-    } catch (err: any) {
-      const errorMessage = err instanceof ApiError ? err.message : "Identifiants invalides ou erreur serveur";
-      return { success: false, error: errorMessage };
+      return { success: false, error: "Accès refusé" };
+    } catch (error: unknown) {
+      return { success: false, error: getLoginError(error) };
     }
   }, []);
 

@@ -54,10 +54,6 @@ export default function LoginPage() {
 
       <AuthError message={error} />
 
-      <div className="admin-demo-notice" role="note" style={{ marginBottom: 20 }}>
-        Démonstration frontend uniquement : cette connexion repose sur des comptes mock de développement et ne constitue pas une authentification de production.
-      </div>
-
       <form onSubmit={handleSubmit} noValidate>
         <div style={{ marginBottom: 16 }}>
           <AuthInput
