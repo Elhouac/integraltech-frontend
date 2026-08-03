@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { motion, useInView, type Variants } from "framer-motion";
-import { servicesData } from "../../data/homeData";
+import { servicesData } from "../../data/servicesData";
 import SectionHeader from "../ui/SectionHeader";
 import ServiceCard from "../ui/ServiceCard";
 import { useTranslation } from "../../context/LanguageContext";
@@ -67,7 +67,7 @@ export default function Services() {
           animate={inView ? "animate" : "initial"}
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(2, 1fr)",
             gap: 24,
           }}
         >
@@ -78,7 +78,7 @@ export default function Services() {
               title={t.services[s.titleKey as keyof typeof t.services] ?? s.titleKey}
               description={t.services[s.descKey as keyof typeof t.services] ?? s.descKey}
               href={s.href}
-              ctaLabel={t.homeServices.learnMore}
+              ctaLabel={t.servicesPage?.request ?? "Demander"}
             />
           ))}
         </motion.div>

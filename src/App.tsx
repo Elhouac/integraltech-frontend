@@ -152,8 +152,8 @@ export default function App() {
                 <BackToTop />
                 <Routes>
                   {/* ── Public Routes ── */}
-                  <Route path="/" element={<ErrorBoundary><Suspense fallback={<PublicFallback />}><HomePage /></Suspense></ErrorBoundary>} />
-                  <Route path="/home" element={<ErrorBoundary><Suspense fallback={<PublicFallback />}><Home /></Suspense></ErrorBoundary>} />
+                  <Route path="/" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><HomePage /></Suspense></ErrorBoundary></AppShell>} />
+                  <Route path="/home" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><Home /></Suspense></ErrorBoundary></AppShell>} />
                   <Route path="/about" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><AboutPage /></Suspense></ErrorBoundary></AppShell>} />
                   <Route path="/solutions" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><SolutionsPage /></Suspense></ErrorBoundary></AppShell>} />
                   <Route path="/services" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><ServicesPage /></Suspense></ErrorBoundary></AppShell>} />

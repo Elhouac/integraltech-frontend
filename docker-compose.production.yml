@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./integraltech-frontend
+      dockerfile: Dockerfile
+    container_name: integraltech_frontend
+    restart: always
+    ports:
+      - "80:80"
+    networks:
+      - integraltech_network
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./integraltech-backend
+      dockerfile: Dockerfile
+    container_name: integraltech_backend
+    restart: always
+    volumes:
+      - backend_storage:/var/www/html/storage
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    networks:
+      - integraltech_network
+    depends_on:
+      - mysql
+
+  backend_nginx:
+    image: nginx:alpine
+    container_name: integraltech_backend_nginx
+    restart: always
+    ports:
+      - "8000:80"
+    volumes:
+      - ./integraltech-backend:/var/www/html
+      - ./integraltech-backend/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - integraltech_network
+    depends_on:
+      - backend
+
+  mysql:
+    image: mysql:8.0
+    container_name: integraltech_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-integraltech_db}
+      MYSQL_USER: ${DB_USERNAME:-integraltech_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-integraltech_secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret_2026}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - integraltech_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  integraltech_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  backend_storage:

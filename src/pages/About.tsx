@@ -6,7 +6,7 @@ import SEO from "../components/seo/SEO";
 import {
   Trophy, Lightbulb, ShieldCheck, TrendingUp,
   Users, Clock, Award, Globe,
-  CheckCircle, Cpu, Database, Wifi,
+  Cpu, Database, Wifi,
   ArrowRight
 } from "lucide-react";
 import { DARK, LIGHT_GRAY, NAVY, ORANGE, BODY_TEXT, BORDER, CARD_BG } from "../constants";
@@ -495,70 +495,7 @@ function AboutValues() {
   );
 }
 
-// ─── SECTION CERTIFICATIONS ───────────────────────────────────────────────────
-function AboutCertifications() {
-  const t = useTranslation();
-  const ref = useRef<HTMLElement>(null);
-  useGsapReveal(ref);
 
-  const certifications = [
-    "Microsoft Gold Partner",
-    "Cisco Certified Partner",
-    t.about.certifications.isoCertified,
-    "Oracle Partner Network",
-    "AWS Consulting Partner",
-    "VMware Partner",
-  ];
-
-  return (
-    <section ref={ref} style={{ background: LIGHT_GRAY, padding: "100px 0" }} className="about-cert-section">
-      <div style={{ width: "90%", maxWidth: 1200, margin: "0 auto" }}>
-        <div data-reveal style={{ textAlign: "center", marginBottom: 56 }}>
-          <div style={{
-            color: ORANGE, fontWeight: 700, fontSize: 12, letterSpacing: 2,
-            textTransform: "uppercase", marginBottom: 14, fontFamily: "Outfit, sans-serif",
-          }}>
-            {t.about.certifications.badge}
-          </div>
-          <h2 style={{
-            fontFamily: "Outfit, sans-serif", fontWeight: 800,
-            fontSize: "clamp(28px, 4vw, 38px)", color: DARK,
-            margin: "0 0 16px", letterSpacing: "-0.5px",
-          }}>
-            {t.about.certifications.title}
-          </h2>
-          <p style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT, fontSize: 16, maxWidth: 560, margin: "0 auto", lineHeight: 1.7 }}>
-            {t.about.certifications.desc}
-          </p>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center" }}>
-          {certifications.map((cert) => (
-            <div
-              key={cert}
-              data-reveal
-              style={{
-                background: CARD_BG, borderRadius: 12, padding: "14px 22px",
-                border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 10,
-                transition: "all 0.2s", cursor: "default",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = `${ORANGE}40`;
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(249,115,22,0.08)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = BORDER;
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              <CheckCircle size={16} color={ORANGE} />
-              <span style={{ fontFamily: "Open Sans, sans-serif", fontWeight: 600, fontSize: 14, color: DARK }}>{cert}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ─── SECTION TECHNOLOGIES ─────────────────────────────────────────────────────
 function AboutTechnologies() {
@@ -710,7 +647,6 @@ export default function AboutPage() {
       <AboutStats />
       <AboutMissionVision />
       <AboutValues />
-      <AboutCertifications />
       <AboutTechnologies />
       <AboutCTA />
     </div>

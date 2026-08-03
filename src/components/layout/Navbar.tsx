@@ -22,6 +22,7 @@ export default function Navbar() {
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
   const [newArticleCount, setNewArticleCount] = useState(0);
   const [openMegaMenu, setOpenMegaMenu] = useState<OpenMegaMenu>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,32 +114,41 @@ export default function Navbar() {
 
   const megaMenuTranslation = (key: string) => t.megaMenu[key as keyof typeof t.megaMenu];
 
+  const getLinkColor = (isActive: boolean) => {
+    if (isActive) return ORANGE;
+    if (!isScrolled) return "rgba(255, 255, 255, 0.95)";
+    return theme === "dark" ? "rgba(255, 255, 255, 0.92)" : "var(--text)";
+  };
+
+  const getUtilityIconColor = () => {
+    if (!isScrolled) return "rgba(255, 255, 255, 0.9)";
+    return theme === "dark" ? "rgba(255, 255, 255, 0.9)" : "var(--text)";
+  };
+
   return (
-    <motion.nav
-      className="navbar-shell"
-      initial={{ y: -80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      style={{
-        background: isScrolled ? "var(--glass-bg)" : "transparent",
-        backdropFilter: isScrolled ? "blur(12px)" : "none",
-        WebkitBackdropFilter: isScrolled ? "blur(12px)" : "none",
-        border: isScrolled ? "1px solid var(--glass-border)" : "1px solid transparent",
-        boxShadow: isScrolled ? "var(--shadow-md)" : "none",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        position: "sticky",
-        top: 20,
-        width: "90%",
-        maxWidth: 1400,
-        margin: "20px auto 0",
-        borderRadius: "18px",
-        zIndex: 1000,
-        boxSizing: "border-box",
-        transition: "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease",
-      }}
-    >
+    <header className="navbar-fixed-wrapper">
+      <motion.nav
+        className="navbar-shell"
+        initial={{ y: -80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        style={{
+          pointerEvents: "auto",
+          width: "100%",
+          margin: 0,
+          background: isScrolled ? "var(--glass-bg)" : "transparent",
+          backdropFilter: isScrolled ? "blur(12px)" : "none",
+          WebkitBackdropFilter: isScrolled ? "blur(12px)" : "none",
+          border: isScrolled ? "1px solid var(--glass-border)" : "1px solid transparent",
+          boxShadow: isScrolled ? "var(--shadow-md)" : "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderRadius: "18px",
+          boxSizing: "border-box",
+          transition: "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease",
+        }}
+      >
       {/* Brand Logo */}
       <div className="navbar-logo" style={{ display: "flex", alignItems: "center" }}>
         <img
@@ -179,7 +189,7 @@ export default function Navbar() {
                 }
               }}
               style={({ isActive }: { isActive: boolean }) => ({
-                color: isActive ? ORANGE : DARK,
+                color: getLinkColor(isActive),
                 fontWeight: isActive ? 600 : 500,
                 fontSize: 14,
                 textDecoration: "none",
@@ -191,6 +201,22 @@ export default function Navbar() {
                 position: "relative",
                 transition: "all 0.2s ease",
               })}
+              onMouseEnter={(e) => {
+                const isActive = location.pathname === link.to;
+                if (!isActive) {
+                  e.currentTarget.style.color = ORANGE;
+                  e.currentTarget.style.backgroundColor = isScrolled && theme === "light"
+                    ? "rgba(249, 115, 22, 0.08)"
+                    : "rgba(255, 255, 255, 0.12)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                const isActive = location.pathname === link.to;
+                if (!isActive) {
+                  e.currentTarget.style.color = getLinkColor(false);
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }
+              }}
             >
               {({ isActive }) => (
                 <>
@@ -237,7 +263,6 @@ export default function Navbar() {
                 items={menuType === "solutions" ? megaMenuSolutions : megaMenuServices}
                 isOpen={isMenuOpen}
                 onClose={closeMegaMenu}
-                t={megaMenuTranslation}
               />
             </div>
           );
@@ -260,15 +285,17 @@ export default function Navbar() {
             width: 38,
             height: 38,
             borderRadius: "10px",
-            color: BODY_TEXT,
+            color: getUtilityIconColor(),
             transition: "all 0.2s ease",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = DARK;
-            e.currentTarget.style.backgroundColor = theme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)";
+            e.currentTarget.style.color = ORANGE;
+            e.currentTarget.style.backgroundColor = isScrolled && theme === "light"
+              ? "rgba(249, 115, 22, 0.08)"
+              : "rgba(255, 255, 255, 0.12)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = BODY_TEXT;
+            e.currentTarget.style.color = getUtilityIconColor();
             e.currentTarget.style.backgroundColor = "transparent";
           }}
           aria-label={theme === "light" ? t.a11y.activateDarkMode : t.a11y.activateLightMode}
@@ -295,15 +322,17 @@ export default function Navbar() {
               width: 38,
               height: 38,
               borderRadius: "10px",
-              color: BODY_TEXT,
+              color: getUtilityIconColor(),
               transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = DARK;
-              e.currentTarget.style.backgroundColor = theme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)";
+              e.currentTarget.style.color = ORANGE;
+              e.currentTarget.style.backgroundColor = isScrolled && theme === "light"
+                ? "rgba(249, 115, 22, 0.08)"
+                : "rgba(255, 255, 255, 0.12)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = BODY_TEXT;
+              e.currentTarget.style.color = getUtilityIconColor();
               e.currentTarget.style.backgroundColor = "transparent";
             }}
             aria-label={t.nav.language}
@@ -494,24 +523,54 @@ export default function Navbar() {
             }}
           >
             {links.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                onClick={closeMobile}
-                style={({ isActive }: { isActive: boolean }) => ({
-                  color: isActive ? ORANGE : DARK,
-                  fontWeight: isActive ? 600 : 500,
-                  fontSize: 15,
-                  textDecoration: "none",
-                  fontFamily: "Outfit, sans-serif",
-                  padding: "12px 16px",
-                  borderRadius: "10px",
-                  background: isActive ? "rgba(249, 115, 22, 0.05)" : "transparent",
-                  transition: "all 0.2s ease",
-                })}
-              >
-                <span className="navbar-mobile-link-label">{renderLinkLabel(link)}</span>
-              </NavLink>
+              <div key={link.to} style={{ display: "flex", flexDirection: "column" }}>
+                <NavLink
+                  to={link.to}
+                  onClick={closeMobile}
+                  style={({ isActive }: { isActive: boolean }) => ({
+                    color: isActive ? ORANGE : (theme === "dark" ? "rgba(255, 255, 255, 0.92)" : "var(--text)"),
+                    fontWeight: isActive ? 600 : 500,
+                    fontSize: 15,
+                    textDecoration: "none",
+                    fontFamily: "Outfit, sans-serif",
+                    padding: "12px 16px",
+                    borderRadius: "10px",
+                    background: isActive ? "rgba(249, 115, 22, 0.05)" : "transparent",
+                    transition: "all 0.2s ease",
+                  })}
+                >
+                  <span className="navbar-mobile-link-label">{renderLinkLabel(link)}</span>
+                </NavLink>
+                {link.to === "/services" && (
+                  <div style={{ paddingInlineStart: 16, display: "flex", flexDirection: "column", gap: 2, margin: "2px 0 6px" }}>
+                    {megaMenuServices.map((srv) => {
+                      const Icon = srv.icon;
+                      const title = t.services[srv.titleKey as keyof typeof t.services] ?? srv.titleKey;
+                      return (
+                        <NavLink
+                          key={srv.slug}
+                          to={srv.href}
+                          onClick={closeMobile}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            fontSize: 13,
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            color: "var(--text-secondary)",
+                            textDecoration: "none",
+                            fontFamily: "Outfit, sans-serif",
+                          }}
+                        >
+                          <Icon size={15} color="var(--accent)" />
+                          <span>{title}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             ))}
             {/* Contact CTA in Mobile Menu */}
             <NavLink
@@ -537,6 +596,7 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.nav>
+      </motion.nav>
+    </header>
   );
 }

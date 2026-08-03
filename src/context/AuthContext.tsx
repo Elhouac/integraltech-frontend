@@ -42,18 +42,23 @@ function getLoginError(error: unknown): string {
         return "Accès refusé";
       case 419:
         return "Session expirée, veuillez réessayer";
+      case 422:
+        return "Données de formulaire invalides";
       case 500:
         return "Erreur serveur";
       default:
-        return error.message;
+        return error.message || "Erreur de communication avec le serveur";
     }
   }
 
   if (error instanceof TypeError && /fetch/i.test(error.message)) {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      return "Backend inaccessible (hors-ligne)";
+    }
     return "Backend inaccessible";
   }
 
-  return "Erreur serveur";
+  return "Erreur de connexion";
 }
 
 // ── Context ──

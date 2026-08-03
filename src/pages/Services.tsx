@@ -4,7 +4,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Link } from "react-router-dom";
 import SEO from "../components/seo/SEO";
 import {
-  ShieldCheck, Cloud, Layers, Wrench, BarChart3, Handshake,
+  Code2, Smartphone, ShieldCheck, Cloud, Layers, Wrench, BarChart3, Handshake,
   Network, Globe, Settings, Headphones, Lock, Database,
   ArrowRight, Loader2, AlertCircle
 } from "lucide-react";
@@ -35,12 +35,16 @@ interface ServiceItem {
 }
 
 const ICON_MAP: Record<string, any> = {
-  ShieldCheck, Cloud, Layers, Wrench, BarChart3, Handshake,
+  Code2, Smartphone, ShieldCheck, Cloud, Layers, Wrench, BarChart3, Handshake,
   Network, Globe, Settings, Headphones, Lock, Database,
 };
 
 function getIconByName(name?: string): any {
   if (name && ICON_MAP[name]) return ICON_MAP[name];
+  if (name?.includes("web")) return Code2;
+  if (name?.includes("mobile")) return Smartphone;
+  if (name?.includes("erp")) return Layers;
+  if (name?.includes("cloud")) return Cloud;
   return Layers;
 }
 
@@ -102,7 +106,7 @@ function ServiceCard({ s, index }: { s: ServiceItem; index: number }) {
       }}>
         <s.Icon size={24} color={ORANGE} />
       </div>
-      {s.subtitle && (
+      {s.subtitle && !s.subtitle.startsWith("#") && (
         <div style={{
           color: ORANGE, fontWeight: 700, fontSize: 11, letterSpacing: 2,
           textTransform: "uppercase", marginBottom: 6, fontFamily: "Outfit, sans-serif",
@@ -190,52 +194,36 @@ export default function ServicesPage() {
 
   const defaultServices: ServiceItem[] = [
     {
-      id: "cybersecurite",
-      Icon: ShieldCheck,
-      title: t.servicesPage.cybersecurityTitle,
-      subtitle: t.servicesPage.cybersecuritySub,
-      desc: t.servicesPage.cybersecurityDesc,
-      features: t.servicesPage.cybersecurityFeatures,
+      id: "developpement-web",
+      Icon: Code2,
+      title: t.services.webDev,
+      subtitle: "WEB",
+      desc: t.services.webDevDesc,
+      features: [],
     },
     {
-      id: "cloud",
-      Icon: Cloud,
-      title: t.servicesPage.cloudTitle,
-      subtitle: t.servicesPage.cloudSub,
-      desc: t.servicesPage.cloudDesc,
-      features: t.servicesPage.cloudFeatures,
+      id: "developpement-mobile",
+      Icon: Smartphone,
+      title: t.services.mobileDev,
+      subtitle: "MOBILE",
+      desc: t.services.mobileDevDesc,
+      features: [],
     },
     {
-      id: "erp",
+      id: "solutions-erp",
       Icon: Layers,
-      title: t.servicesPage.erpTitle,
-      subtitle: t.servicesPage.erpSub,
-      desc: t.servicesPage.erpDesc,
-      features: t.servicesPage.erpFeatures,
+      title: t.services.erp,
+      subtitle: "ERP",
+      desc: t.services.erpDesc,
+      features: [],
     },
     {
-      id: "support",
-      Icon: Headphones,
-      title: t.servicesPage.supportTitle,
-      subtitle: t.servicesPage.supportSub,
-      desc: t.servicesPage.supportDesc,
-      features: t.servicesPage.supportFeatures,
-    },
-    {
-      id: "bi",
-      Icon: BarChart3,
-      title: t.servicesPage.biTitle,
-      subtitle: t.servicesPage.biSub,
-      desc: t.servicesPage.biDesc,
-      features: t.servicesPage.biFeatures,
-    },
-    {
-      id: "conseil",
-      Icon: Handshake,
-      title: t.servicesPage.conseilTitle,
-      subtitle: t.servicesPage.conseilSub,
-      desc: t.servicesPage.conseilDesc,
-      features: t.servicesPage.conseilFeatures,
+      id: "solutions-cloud-et-hebergement",
+      Icon: Cloud,
+      title: t.services.cloudHosting,
+      subtitle: "CLOUD",
+      desc: t.services.cloudHostingDesc,
+      features: [],
     },
   ];
 
@@ -408,7 +396,7 @@ export default function ServicesPage() {
               <span style={{ fontFamily: "Open Sans, sans-serif", color: BODY_TEXT }}>Chargement des services...</span>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }} className="services-page-grid">
+            <div style={{ display: "grid", gridTemplateColumns: displayServices.length === 4 ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: 28 }} className="services-page-grid">
               {displayServices.map((s, i) => (
                 <ServiceCard key={s.id} s={s} index={i} />
               ))}

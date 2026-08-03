@@ -28,13 +28,33 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react") || id.includes("react-dom") || id.includes("react-router-dom")) {
+              return "vendor-react";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (id.includes("gsap")) {
+              return "vendor-gsap";
+            }
+            return "vendor";
+          }
+        },
+      },
+    },
   },
   server: {
-    port,
-    host: "0.0.0.0",
+    port: 5173,
+    host: "127.0.0.1",
+    strictPort: true,
   },
   preview: {
-    port,
-    host: "0.0.0.0",
+    port: 5173,
+    host: "127.0.0.1",
+    strictPort: true,
   },
 });

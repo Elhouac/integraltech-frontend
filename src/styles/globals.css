@@ -35,6 +35,10 @@
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-xl: 20px;
+
+  --navbar-height: 72px;
+  --navbar-top-offset: 16px;
+  --page-header-offset: calc(var(--navbar-height) + var(--navbar-top-offset) + 16px);
 }
 
 [data-theme='dark'] {
@@ -68,8 +72,6 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
 }
 
-
-
 * {
   box-sizing: border-box;
 }
@@ -88,6 +90,23 @@ header, footer, section, div, button, input, textarea, select, a, span, p, h1, h
   transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
 }
 
+
+.navbar-fixed-wrapper {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(90%, 1400px);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .navbar-fixed-wrapper {
+    top: 12px;
+    width: min(92%, 1400px);
+  }
+}
 
 img {
   display: block;
@@ -1924,7 +1943,6 @@ a:focus-visible,
   background: var(--accent);
   color: #fff;
   font: 700 10px/1 "Outfit", sans-serif;
-  box-sizing: border-box;
 }
 
 .navbar-mobile-link-label {

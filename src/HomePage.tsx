@@ -1,5 +1,3 @@
-import Navbar from "./components/layout/Navbar";
-import Footer from "./components/layout/Footer";
 import Hero from "./components/home/Hero";
 import TrustedBy from "./components/home/TrustedBy";
 import Services from "./components/home/Services";
@@ -18,31 +16,26 @@ function HomePage() {
   const { language } = useLanguage();
 
   return (
-    <div style={{ fontFamily: "var(--font-sans)", minHeight: "100vh" }}>
+    <div id="home-page-container" style={{ fontFamily: "var(--font-sans)", minHeight: "100vh" }}>
       <SEO
         title={language === "en" ? "IT Solutions & Digital Transformation in Morocco" : "Solutions IT & Transformation Numérique au Maroc"}
         description={t.hero.subtitle}
         path="/"
       />
-      <a className="skip-link" href="#main-content">{t.a11y.skipToContent}</a>
-      <Navbar />
-      <main id="main-content">
-        <Hero />
-        <Testimonials />
-        <TrustedBy />
-        <Services />
-        <HomeSolutions />
-        <WhyChooseUs />
-        <StatsBar />
-        <About />
-        <section className="cta-newsletter-section">
-          <div className="cta-newsletter-grid">
-            <CTA />
-            <Newsletter />
-          </div>
-        </section>
-      </main>
-      <Footer />
+      <Hero />
+      <Testimonials />
+      <TrustedBy />
+      <Services />
+      <HomeSolutions />
+      <WhyChooseUs />
+      <StatsBar />
+      <About />
+      <section className="cta-newsletter-section">
+        <div className="cta-newsletter-grid">
+          <CTA />
+          <Newsletter />
+        </div>
+      </section>
     </div>
   );
 }

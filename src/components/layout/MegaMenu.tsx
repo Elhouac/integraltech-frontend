@@ -1,8 +1,16 @@
 import { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavLink } from "react-router-dom";
-import type { MegaMenuItem } from "../../data/homeData";
+import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
+import { useTranslation } from "../../context/LanguageContext";
+
+export interface MegaMenuItem {
+  icon: LucideIcon;
+  titleKey: string;
+  descKey: string;
+  href: string;
+}
 
 interface MegaMenuProps {
   id: string;
@@ -10,18 +18,16 @@ interface MegaMenuProps {
   items: MegaMenuItem[];
   isOpen: boolean;
   onClose: () => void;
-  /** i18n lookup — given a key, returns the translated string */
-  t: (key: string) => string;
 }
 
 /**
- * Desktop mega-menu panel.
- * 2-column grid layout with icon, title, short description per item.
- * Closes on outside click; trigger hover/focus timing is owned by Navbar.
+ * Desktop compact dropdown panel for Services & Solutions.
+ * Clean 2-column grid layout with icon, title, and short description per item.
  */
-export default function MegaMenu({ id, labelledBy, items, isOpen, onClose, t }: MegaMenuProps) {
+export default function MegaMenu({ id, labelledBy, items, isOpen, onClose }: MegaMenuProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
+  const t = useTranslation();
 
   // Close on outside click
   useEffect(() => {
@@ -31,7 +37,6 @@ export default function MegaMenu({ id, labelledBy, items, isOpen, onClose, t }: 
         onClose();
       }
     };
-    // Delay binding to avoid immediate close on open click
     const timer = setTimeout(() => {
       document.addEventListener("click", handleClick);
     }, 10);
@@ -40,6 +45,23 @@ export default function MegaMenu({ id, labelledBy, items, isOpen, onClose, t }: 
       document.removeEventListener("click", handleClick);
     };
   }, [isOpen, onClose]);
+
+  // Helper to resolve translation for title / desc
+  const getTitle = (key: string) => {
+    return (
+      (t.services as Record<string, string>)[key] ||
+      (t.megaMenu as Record<string, string>)[key] ||
+      key
+    );
+  };
+
+  const getDesc = (key: string) => {
+    return (
+      (t.services as Record<string, string>)[key] ||
+      (t.megaMenu as Record<string, string>)[key] ||
+      key
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -61,13 +83,13 @@ export default function MegaMenu({ id, labelledBy, items, isOpen, onClose, t }: 
             borderRadius: 16,
             border: "1px solid var(--border)",
             boxShadow: "var(--shadow-xl)",
-            padding: "24px",
-            width: 620,
+            padding: "20px",
+            width: 580,
             maxWidth: "90vw",
             zIndex: 1001,
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: 8,
+            gap: 10,
             boxSizing: "border-box",
           }}
         >
@@ -81,16 +103,17 @@ export default function MegaMenu({ id, labelledBy, items, isOpen, onClose, t }: 
                 role="menuitem"
                 style={{
                   display: "flex",
-                  gap: 14,
+                  gap: 12,
                   alignItems: "flex-start",
-                  padding: "14px 16px",
+                  padding: "12px 14px",
                   borderRadius: 12,
                   textDecoration: "none",
                   transition: "background 0.15s ease",
                   color: "inherit",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = theme === "dark" ? "rgba(255, 255, 255, 0.06)" : "var(--hover)";
+                  e.currentTarget.style.background =
+                    theme === "dark" ? "rgba(255, 255, 255, 0.06)" : "var(--hover)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
@@ -98,14 +121,15 @@ export default function MegaMenu({ id, labelledBy, items, isOpen, onClose, t }: 
               >
                 <div
                   style={{
-                    width: 40,
-                    height: 40,
+                    width: 38,
+                    height: 38,
                     borderRadius: 10,
-                    background: theme === "dark" ? "rgba(59, 130, 246, 0.15)" : "rgba(30, 58, 138, 0.06)",
+                    background:
+                      theme === "dark" ? "rgba(249, 115, 22, 0.15)" : "rgba(30, 58, 138, 0.06)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "var(--primary)",
+                    color: "var(--accent)",
                     flexShrink: 0,
                   }}
                 >
@@ -122,17 +146,17 @@ export default function MegaMenu({ id, labelledBy, items, isOpen, onClose, t }: 
                       lineHeight: 1.3,
                     }}
                   >
-                    {t(item.titleKey)}
+                    {getTitle(item.titleKey)}
                   </div>
                   <div
                     style={{
                       fontFamily: "var(--font-sans)",
                       fontSize: 12,
                       color: "var(--text-secondary)",
-                      lineHeight: 1.5,
+                      lineHeight: 1.45,
                     }}
                   >
-                    {t(item.descKey)}
+                    {getDesc(item.descKey)}
                   </div>
                 </div>
               </NavLink>

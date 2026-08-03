@@ -15,7 +15,7 @@ export default function SEO({
   ogImage = "/hero-bg.webp",
   ogType = "website",
 }: SEOProps) {
-  const siteUrl = "https://integraltech.ma";
+  const siteUrl = (import.meta.env.VITE_SITE_URL || import.meta.env.VITE_FRONTEND_URL || "https://integraltech.ma").replace(/\/$/, "");
   const canonicalUrl = `${siteUrl}${path}`;
   const fullOgImage = ogImage.startsWith("http") ? ogImage : `${siteUrl}${ogImage}`;
 
@@ -35,7 +35,7 @@ export default function SEO({
       "telephone": "+212-5XX-XXXXXX",
       "contactType": "customer service",
       "areaServed": "MA",
-      "availableLanguage": ["French", "English"]
+      "availableLanguage": ["French", "English", "Arabic"]
     }
   };
 
@@ -51,13 +51,26 @@ export default function SEO({
     }
   };
 
+  const isAdminRoute = path.startsWith("/admin");
+
   return (
     <Helmet>
       {/* Primary Meta Tags */}
       <title>{`${title} | IntegralTech`}</title>
       <meta name="title" content={`${title} | IntegralTech`} />
       <meta name="description" content={description} />
+      <meta name="robots" content={isAdminRoute ? "noindex, nofollow" : "index, follow"} />
       <link rel="canonical" href={canonicalUrl} />
+
+      {/* Multilingual Alternate Links */}
+      {!isAdminRoute && (
+        <>
+          <link rel="alternate" hrefLang="fr" href={canonicalUrl} />
+          <link rel="alternate" hrefLang="en" href={canonicalUrl} />
+          <link rel="alternate" hrefLang="ar" href={canonicalUrl} />
+          <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />
+        </>
+      )}
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={ogType} />

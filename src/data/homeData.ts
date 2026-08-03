@@ -67,16 +67,9 @@ export interface ClientItem {
   sector: string;
 }
 
-// ── Services (6 cards) ────────────────────────────────────
+// ── Services (4 shared services from servicesData.ts) ──────
+export { servicesData } from "./servicesData";
 
-export const servicesData: ServiceItem[] = [
-  { icon: ShieldCheck, titleKey: "cybersecurity", descKey: "cybersecurityDesc", href: "/services#cybersecurite" },
-  { icon: Cloud, titleKey: "cloudInfra", descKey: "cloudInfraDesc", href: "/services#cloud" },
-  { icon: Layers, titleKey: "erp", descKey: "erpDesc", href: "/services#erp" },
-  { icon: Headphones, titleKey: "techSupport", descKey: "techSupportDesc", href: "/services#support" },
-  { icon: BarChart3, titleKey: "bi", descKey: "biDesc", href: "/services#bi" },
-  { icon: Handshake, titleKey: "itConsulting", descKey: "itConsultingDesc", href: "/services#conseil" },
-];
 
 // ── Solutions (8 cards) ───────────────────────────────────
 
@@ -157,14 +150,9 @@ export interface MegaMenuItem {
   href: string;
 }
 
-export const megaMenuServices: MegaMenuItem[] = [
-  { icon: ShieldCheck, titleKey: "cybersecurity", descKey: "cybersecurityShort", href: "/services#cybersecurite" },
-  { icon: Cloud, titleKey: "cloudInfra", descKey: "cloudInfraShort", href: "/services#cloud" },
-  { icon: Layers, titleKey: "erp", descKey: "erpShort", href: "/services#erp" },
-  { icon: Headphones, titleKey: "techSupport", descKey: "techSupportShort", href: "/services#support" },
-  { icon: BarChart3, titleKey: "bi", descKey: "biShort", href: "/services#bi" },
-  { icon: Handshake, titleKey: "itConsulting", descKey: "itConsultingShort", href: "/services#conseil" },
-];
+import { servicesData } from "./servicesData";
+
+export const megaMenuServices = servicesData;
 
 export const megaMenuSolutions: MegaMenuItem[] = [
   { icon: Building2, titleKey: "enterprise", descKey: "enterpriseShort", href: "/solutions" },
