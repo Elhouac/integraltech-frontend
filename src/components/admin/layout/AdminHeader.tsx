@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, Bell, User, LogOut, ChevronDown } from "lucide-react";
+import { Menu, Bell, User, LogOut, ChevronDown, Moon, Sun } from "lucide-react";
 import AdminBreadcrumb from "./AdminBreadcrumb";
 import NotificationCenterPanel from "../notifications/NotificationCenterPanel";
 import { useAuth } from "../../../context/AuthContext";
+import { useTheme } from "../../../context/ThemeContext";
 import { adminService, ADMIN_NOTIFICATIONS_CHANGED_EVENT } from "../../../services/adminService";
 import { ACCENT, BORDER, TEXT, TEXT_SECONDARY, SURFACE } from "../../../constants";
 
@@ -16,6 +17,7 @@ interface AdminHeaderProps {
 export default function AdminHeader({ onToggleSidebar, sidebarExpanded }: AdminHeaderProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -121,8 +123,31 @@ export default function AdminHeader({ onToggleSidebar, sidebarExpanded }: AdminH
         <AdminBreadcrumb />
       </div>
 
-      {/* Right: Notifications + User */}
+      {/* Right: Theme + Notifications + User */}
       <div className="admin-header-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {/* Theme toggle */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Activer le mode clair" : "Activer le mode sombre"}
+          title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 36,
+            height: 36,
+            border: "none",
+            borderRadius: "var(--radius-sm)",
+            background: "transparent",
+            color: TEXT_SECONDARY,
+            cursor: "pointer",
+            transition: "background 0.2s, color 0.2s",
+          }}
+        >
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
         {/* Notification bell */}
         <div ref={notifRef} style={{ position: "relative" }}>
           <button

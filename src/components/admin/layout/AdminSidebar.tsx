@@ -3,10 +3,9 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard, Inbox, Mail, FileText, FolderOpen,
   Image, Settings as SettingsIcon, Wrench, Lightbulb,
-  Users, User, Bell, History, BarChart3, Sun, Moon, X,
+  Users, History, BarChart3, X,
 } from "lucide-react";
 import SidebarLink from "./SidebarLink";
-import { useTheme } from "../../../context/ThemeContext";
 import { useAuth } from "../../../context/AuthContext";
 import { hasPermission } from "../../../utils/permissions";
 import { ACCENT, BORDER, SURFACE, TEXT, TEXT_SECONDARY } from "../../../constants";
@@ -41,7 +40,6 @@ function SectionLabel({ label, collapsed }: { label: string; collapsed: boolean 
 }
 
 export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: AdminSidebarProps) {
-  const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const role = user?.role || "reader";
 
@@ -211,48 +209,7 @@ export default function AdminSidebar({ collapsed, mobileOpen, onCloseMobile }: A
           <SidebarLink to="/admin/settings/general" label="Paramètres" icon={SettingsIcon} collapsed={collapsed} onClick={onCloseMobile} />
         )}
         <SidebarLink to="/admin/audit-log" label="Journal d’activité" icon={History} collapsed={collapsed} onClick={onCloseMobile} />
-
-        {/* Mon profil & Notifications — always visible to authenticated users */}
-        <SectionLabel label="Compte" collapsed={collapsed} />
-        <SidebarLink to="/admin/profile" label="Mon Profil" icon={User} collapsed={collapsed} onClick={onCloseMobile} />
-        <SidebarLink to="/admin/notifications" label="Notifications" icon={Bell} collapsed={collapsed} onClick={onCloseMobile} />
       </nav>
-
-      {/* ── Footer: Theme toggle ── */}
-      <div
-        style={{
-          padding: collapsed ? "12px 0" : "12px 16px",
-          borderTop: `1px solid ${BORDER}`,
-          flexShrink: 0,
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
-        <button
-          onClick={toggleTheme}
-          aria-label={theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: collapsed ? 0 : 10,
-            padding: collapsed ? "8px" : "8px 12px",
-            border: `1px solid ${BORDER}`,
-            borderRadius: "var(--radius-md)",
-            background: "transparent",
-            color: TEXT_SECONDARY,
-            cursor: "pointer",
-            fontFamily: "var(--font-sans)",
-            fontSize: 12,
-            fontWeight: 500,
-            width: collapsed ? 40 : "100%",
-            justifyContent: "center",
-            transition: "border-color 0.2s, color 0.2s",
-          }}
-        >
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-          {!collapsed && (theme === "dark" ? "Mode clair" : "Mode sombre")}
-        </button>
-      </div>
     </div>
   );
 

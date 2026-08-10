@@ -62,9 +62,10 @@ function IntegratedSolutionCard({
   const desc = customDesc || (t.solutionsPage as Record<string, string>)[solution.descKey] || "";
 
   return (
-    <article
+    <Link
       className="integrated-solution-card"
       id={solution.id}
+      to={solution.route}
       aria-labelledby={`${solution.id}-title`}
     >
       {/* Logo container */}
@@ -85,17 +86,16 @@ function IntegratedSolutionCard({
 
       {/* CTA */}
       <div className="integrated-solution-cta-wrap">
-        <a
-          href={solution.detailUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="integrated-solution-cta"
-        >
+        <span className="integrated-solution-cta">
           {ctaLabel}
-          <ExternalLink size={14} aria-hidden="true" />
-        </a>
+          <ExternalLink
+            className="integrated-solution-cta-icon"
+            size={14}
+            aria-hidden="true"
+          />
+        </span>
       </div>
-    </article>
+    </Link>
   );
 }
 
@@ -162,19 +162,21 @@ export default function SolutionsPage() {
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReduced) return;
 
-    const cards = Array.from(el.querySelectorAll<HTMLElement>(".integrated-solution-card"));
+    const cards = Array.from(el.querySelectorAll<HTMLElement>(".integrated-solution-entry"));
     if (cards.length === 0) return;
 
     const ctx = gsap.context(() => {
       gsap.fromTo(
         cards,
-        { opacity: 0, y: 32 },
+        { autoAlpha: 0, y: 22, scale: 0.985 },
         {
-          opacity: 1,
+          autoAlpha: 1,
           y: 0,
-          duration: 0.6,
-          stagger: 0.08,
+          scale: 1,
+          duration: 0.55,
+          stagger: 0.075,
           ease: "power3.out",
+          clearProps: "opacity,visibility,transform",
           scrollTrigger: {
             trigger: el,
             start: "top 80%",
@@ -287,12 +289,13 @@ export default function SolutionsPage() {
           ) : (
             <div ref={gridRef} className="integrated-solutions-grid">
               {mergedSolutions.map(({ solution, customDesc }) => (
-                <IntegratedSolutionCard
-                  key={solution.id}
-                  solution={solution}
-                  ctaLabel={t.solutionsPage.discoverBtn}
-                  customDesc={customDesc}
-                />
+                <div className="integrated-solution-entry" key={solution.id}>
+                  <IntegratedSolutionCard
+                    solution={solution}
+                    ctaLabel={t.solutionsPage.discoverBtn}
+                    customDesc={customDesc}
+                  />
+                </div>
               ))}
             </div>
           )}

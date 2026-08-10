@@ -6,7 +6,7 @@ import useSearch from "../../context/SearchContext";
 import { useLanguage, useTranslation } from "../../context/LanguageContext";
 import { useTheme } from "../../context/ThemeContext";
 import type { Language } from "../../i18n";
-import { ORANGE, NAVY, DARK, BODY_TEXT, BORDER } from "../../constants";
+import { ORANGE, NAVY, DARK, BORDER } from "../../constants";
 import { BLOG_SEEN_NEW_ARTICLES_KEY, newBlogArticleIds } from "../../data/blogArticles";
 import MegaMenu from "./MegaMenu";
 import { megaMenuServices, megaMenuSolutions } from "../../data/homeData";
@@ -116,12 +116,10 @@ export default function Navbar() {
 
   const getLinkColor = (isActive: boolean) => {
     if (isActive) return ORANGE;
-    if (!isScrolled) return "rgba(255, 255, 255, 0.95)";
     return theme === "dark" ? "rgba(255, 255, 255, 0.92)" : "var(--text)";
   };
 
   const getUtilityIconColor = () => {
-    if (!isScrolled) return "rgba(255, 255, 255, 0.9)";
     return theme === "dark" ? "rgba(255, 255, 255, 0.9)" : "var(--text)";
   };
 
@@ -418,7 +416,7 @@ export default function Navbar() {
             width: 38,
             height: 38,
             borderRadius: "10px",
-            color: BODY_TEXT,
+            color: getUtilityIconColor(),
             transition: "all 0.2s ease",
             marginInlineEnd: 4,
           }}
@@ -427,7 +425,7 @@ export default function Navbar() {
             e.currentTarget.style.backgroundColor = theme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = BODY_TEXT;
+            e.currentTarget.style.color = getUtilityIconColor();
             e.currentTarget.style.backgroundColor = "transparent";
           }}
           aria-label={t.search.placeholder}
@@ -593,6 +591,67 @@ export default function Navbar() {
             >
               {t.nav.contact}
             </NavLink>
+
+            <div
+              className="navbar-mobile-tools"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                marginTop: 8,
+                paddingTop: 12,
+                borderTop: `1px solid ${BORDER}`,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => { closeMobile(); openSearch(); }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "none",
+                  borderRadius: 8,
+                  background: "transparent",
+                  color: "var(--text)",
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontFamily: "Outfit, sans-serif",
+                  textAlign: "start",
+                }}
+              >
+                <Search size={16} />
+                <span>{t.search.placeholder}</span>
+              </button>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {(["fr", "en", "ar"] as Language[]).map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => { handleLanguageChange(lang); closeMobile(); }}
+                    aria-pressed={language === lang}
+                    style={{
+                      flex: "1 1 0",
+                      minWidth: 72,
+                      padding: "9px 10px",
+                      border: `1px solid ${language === lang ? ORANGE : BORDER}`,
+                      borderRadius: 8,
+                      background: language === lang ? "rgba(249, 115, 22, 0.08)" : "transparent",
+                      color: language === lang ? ORANGE : "var(--text-secondary)",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      fontFamily: "Outfit, sans-serif",
+                      fontWeight: language === lang ? 600 : 500,
+                    }}
+                  >
+                    {lang === "fr" ? t.nav.french : lang === "en" ? t.nav.english : t.nav.arabic}
+                  </button>
+                ))}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

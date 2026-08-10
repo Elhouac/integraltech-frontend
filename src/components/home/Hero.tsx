@@ -45,6 +45,7 @@ export default function Hero() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
+        paddingTop: "var(--page-header-offset)",
         overflow: "hidden",
         background: `
           radial-gradient(circle at 80% 20%, rgba(30, 58, 138, 0.08) 0%, transparent 60%),
@@ -94,52 +95,6 @@ export default function Hero() {
       >
         {/* LEFT: Headlines + CTAs */}
         <div className="hero-copy" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-          {/* Badge */}
-          <motion.div
-            className="hero-badge"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "var(--hover)",
-              border: "1px solid var(--border)",
-              color: "var(--primary)",
-              padding: "6px 14px",
-              borderRadius: 99,
-              fontSize: 12,
-              fontWeight: 600,
-              fontFamily: "var(--font-display)",
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-              marginBottom: 24,
-            }}
-          >
-            <span
-              style={{
-                display: "inline-flex",
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "var(--accent)",
-                position: "relative",
-              }}
-            >
-              <span
-                style={{
-                  position: "absolute",
-                  inset: -4,
-                  borderRadius: "50%",
-                  border: "2px solid var(--accent)",
-                  animation: "pulse-ring 2s cubic-bezier(0.24, 0, 0.38, 1) infinite",
-                }}
-              />
-            </span>
-            {t.hero.badge}
-          </motion.div>
-
           {/* Headline */}
           <motion.h1
             className="hero-title"

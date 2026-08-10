@@ -6,6 +6,7 @@ import Footer from "./components/layout/Footer";
 const HomePage = lazy(() => import("./HomePage"));
 const AboutPage = lazy(() => import("./pages/About"));
 const SolutionsPage = lazy(() => import("./pages/Solutions"));
+const SolutionDetailPage = lazy(() => import("./pages/SolutionDetail"));
 const ServicesPage = lazy(() => import("./pages/Services"));
 const BlogPage = lazy(() => import("./pages/Blog"));
 const ContactPage = lazy(() => import("./pages/Contact"));
@@ -156,6 +157,7 @@ export default function App() {
                   <Route path="/home" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><Home /></Suspense></ErrorBoundary></AppShell>} />
                   <Route path="/about" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><AboutPage /></Suspense></ErrorBoundary></AppShell>} />
                   <Route path="/solutions" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><SolutionsPage /></Suspense></ErrorBoundary></AppShell>} />
+                  <Route path="/solutions/:slug" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><SolutionDetailPage /></Suspense></ErrorBoundary></AppShell>} />
                   <Route path="/services" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><ServicesPage /></Suspense></ErrorBoundary></AppShell>} />
                   <Route path="/blog" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><BlogPage /></Suspense></ErrorBoundary></AppShell>} />
                   <Route path="/contact" element={<AppShell><ErrorBoundary><Suspense fallback={<PublicFallback />}><ContactPage /></Suspense></ErrorBoundary></AppShell>} />
